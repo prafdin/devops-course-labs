@@ -1,0 +1,59 @@
+name: Deploy app
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve IMAGE_NAME var
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY@L}:$GITHUB_SHA" >> "${GITHUB_ENV}"
+      - name: Checkout код
+        uses: actions/checkout@v4
+
+      - name: Create deployment directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p /var/catty-reminders-app/compose
+            rm -rf /var/catty-reminders-app/compose/docker-compose.yaml || true
+
+      - name: Copy docker-compose.yml
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "docker-compose.yaml"
+          target: "/var/catty-reminders-app/compose"
+
+      - name: Copy config
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "config.json"
+          target: "/var/catty-reminders-app/compose"
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /var/catty-reminders-app/compose
+            export IMAGE_NAME="${{ env.IMAGE_NAME }}"
+            docker compose pull
+            docker compose up -d
