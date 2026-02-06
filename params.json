@@ -6,8 +6,8 @@
   "poll_interval": 15,
   "users": [
     {
-      "login": "SA3000UDP",
-      "id": "sa3000udp",
+      "login": "sh1kaff",
+      "id": "sheff",
       "app": "catty-reminders-app"
     }
   ]
