@@ -29,4 +29,4 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
-python3 /home/alex/3kurs/dev-ops/catty-reminders-app/app/main.py
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
