@@ -3,7 +3,7 @@ import subprocess
 
 app = Flask(__name__)
 
-@app.route("/webhook", methods=["POST"])
+@app.route("/", methods=["POST"])
 def webhook():
     if request.headers.get("X-GitHub-Event") != "push":
         return "Ignored"
