@@ -14,7 +14,7 @@ def webhook():
 
     print(f"Push в ветку: {branch}")
 
-    result = subprocess.run(["/srv/deploy.sh", branch])
+    result = subprocess.run(["//home/alex/3kurs/dev-ops/catty-reminders-app/webhooks_handler/deploy.sh", branch])
 
     if result.returncode != 0:
         abort(500)
