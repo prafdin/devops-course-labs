@@ -23,10 +23,14 @@ git reset --hard origin/$BRANCH
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
+        echo "=== создание виртуального окружения $BRANCH ==="
         python -m venv venv
     fi
+    echo "=== запуск виртуального окружения $BRANCH ==="
     source venv/bin/activate
+    echo "=== установка зависимостей $BRANCH ==="
     pip install -r requirements.txt
 fi
 
+echo "=== запуск приложения $BRANCH ==="
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
