@@ -24,7 +24,8 @@ if [ -f "requirements.txt" ]; then
 fi
 
 cd /home/alex/3kurs/dev-ops/catty-reminders-app
-
+echo "Текущая директория: $(pwd)"
+export PYTHONPATH=/home/alex/3kurs/dev-ops/catty-reminders-app:$PYTHONPATH
 echo "=== Выполняем тесты из папки tests ==="
 pytest tests --maxfail=1 --disable-warnings -q
 
