@@ -33,4 +33,4 @@ if [ -f "requirements.txt" ]; then
 fi
 
 echo "=== запуск приложения $BRANCH ==="
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
+sudo systemctl restart myapp
