@@ -23,6 +23,8 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
+cd /home/alex/3kurs/dev-ops/catty-reminders-app
+
 echo "=== Выполняем тесты из папки tests ==="
 pytest tests --maxfail=1 --disable-warnings -q
 
