@@ -138,7 +138,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"      - Запуск тестов...")
             try:
                 result = subprocess.run(
-                    ["./test.sh"],
+                    ["./webhooks_handler/test.sh"],
                     cwd=tmpdir,
                     check=True,
                     capture_output=True,
@@ -150,7 +150,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 # Только если тесты прошли - запускаем деплой
                 print(f"      - Запуск деплоя...")
                 subprocess.run(
-                    ["./deploy.sh"],
+                    ["./webhooks_handler/deploy.sh"],
                     cwd=tmpdir,
                     check=True
                 )
@@ -182,7 +182,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 def main():
     """Запуск webhook сервера"""
-
+    cwd = os.getcwd()
+    print("Запускаемая директория:", cwd)
     print(f"🚀 Запуск DevOps Webhook Demo Server")
     print(f"📡 Порт: {PORT}")
     print(f"🌐 URL: http://0.0.0.0:{PORT}")
