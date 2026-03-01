@@ -1,0 +1,64 @@
+{
+  "proxy": "course.prafdin.ru",
+  "sa_login": "SA3000UDP",
+  "sa_mail": "pravdin.web@gmail.com",
+  "timeout": 180,
+  "poll_interval": 15,
+  "users": [
+    {
+      "login": "SA3000UDP",
+      "id": "sa3000udp",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Velesikamid",
+      "id": "kiselev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "sh1kaff",
+      "id": "sheff",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "mappy12",
+      "id": "zhestkov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "danlla",
+      "id": "glazkov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "APMorozov",
+      "id": "morozov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "AndreyPreobrazhenskiy",
+      "id": "preobrazhenskiy",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "VichurinNik",
+      "id": "vichurin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "dmitrievsn",
+      "id": "dmitriev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "limekh",
+      "id": "milyokhin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Rovver52",
+      "id": "abdulkhanov",
+      "app": "catty-reminders-app"
+    }
+  ]
+}
