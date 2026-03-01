@@ -39,6 +39,11 @@
       "login": "AndreyPreobrazhenskiy",
       "id": "preobrazhenskiy",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "VichurinNik",
+      "id": "vichurin",
+      "app": "catty-reminders-app"
     }
   ]
 }
