@@ -44,6 +44,16 @@
       "login": "VichurinNik",
       "id": "vichurin",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "dmitrievsn",
+      "id": "dmitriev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "limekh",
+      "id": "milyokhin",
+      "app": "catty-reminders-app"
     }
   ]
 }
