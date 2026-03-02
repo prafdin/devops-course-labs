@@ -8,20 +8,21 @@ APP_DIR="/home/alex/3kurs/dev-ops/catty-reminders-app"
 
 echo "=== DEPLOY ветки $BRANCH ==="
 
+
+
 if [ ! -d "$APP_DIR/.git" ]; then
     echo "Первый запуск — клонирование"
     git clone $REPO_URL $APP_DIR
 fi
 
-cd $APP_DIR
-
-git fetch origin
-
-git checkout -B $BRANCH origin/$BRANCH
-
-git reset --hard origin/$BRANCH
-
 if [ -f "requirements.txt" ]; then
+    cd $APP_DIR
+
+    git fetch origin
+
+    git checkout -B $BRANCH origin/$BRANCH
+
+    git reset --hard origin/$BRANCH
     if [ ! -d "venv" ]; then
         echo "=== создание виртуального окружения $BRANCH ==="
         python -m venv venv
@@ -30,7 +31,25 @@ if [ -f "requirements.txt" ]; then
     source venv/bin/activate
     echo "=== установка зависимостей $BRANCH ==="
     pip install -r requirements.txt
+
+    echo "=== запуск приложения $BRANCH ==="
+    sudo systemctl restart myapp
 fi
 
-echo "=== запуск приложения $BRANCH ==="
-sudo systemctl restart myapp
+if [ -f "Csharp-example.sln" ]; then
+    cd $APP_DIR
+
+    git fetch origin
+
+    git checkout -B $BRANCH origin/$BRANCH
+
+    git reset --hard origin/$BRANCH
+
+
+
+    echo "=== установка зависимостей $BRANCH ==="
+
+
+    echo "=== запуск приложения $BRANCH ==="
+
+fi
