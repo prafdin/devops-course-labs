@@ -3,9 +3,8 @@ set -e
 APP_DIR="/home/alex/3kurs/dev-ops/catty-reminders-app"
 VENV="$APP_DIR/venv"
 
-echo "=== Запуск тестов проекта ==="
+echo "=== Запуск тестов проекта ветки $BRANCH==="
 
-cd "$APP_DIR"
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
@@ -24,7 +23,6 @@ if [ -f "requirements.txt" ]; then
 fi
 
 
-cd /home/alex/3kurs/dev-ops/catty-reminders-app
 echo "Текущая директория: $(pwd)"
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
@@ -37,10 +35,12 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
-echo "=== запуск приложения $BRANCH ==="
-systemctl stop myapp
+echo "=== запуск приложения $BRANCH   !==="
+sudo systemctl stop myapp
 nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8181 > /dev/null 2>&1 &
 APP_PID=$!
+
+sleep 3
 
 
 
