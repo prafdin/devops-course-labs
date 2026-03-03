@@ -1,0 +1,12 @@
+[Unit]
+Description=Catty Reminders App
+After=network.target
+
+[Service]
+User=appuser
+WorkingDirectory=/opt/catty-reminders
+ExecStart=/usr/bin/python3 /opt/catty-reminders/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
