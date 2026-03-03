@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Обработчик вебхуков GitHub - Версия с установкой зависимостей
+Обработчик вебхуков GitHub - Полная версия с перезапуском приложения
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -9,6 +9,7 @@ import logging
 import subprocess
 import os
 import threading
+import time
 
 # Конфигурация
 REPO_URL = "https://github.com/goganizmrulit40/catty-reminders-app.git"
@@ -22,6 +23,32 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+def restart_app():
+    """Перезапуск приложения"""
+    try:
+        logging.info("Перезапуск приложения...")
+        subprocess.run(["sudo", "systemctl", "restart", "catty-reminders"], check=True)
+        
+        # Ждем запуска приложения
+        time.sleep(3)
+        
+        # Проверяем, запустилось ли приложение
+        result = subprocess.run(
+            ["curl", "-f", "http://localhost:8181/health"],
+            capture_output=True,
+            timeout=5
+        )
+        
+        if result.returncode == 0:
+            logging.info("Приложение успешно перезапущено")
+            return True
+        else:
+            logging.error("Приложение не запустилось")
+            return False
+    except Exception as e:
+        logging.error(f"Не удалось перезапустить приложение: {e}")
+        return False
 
 def install_dependencies():
     """Установка Python зависимостей"""
@@ -67,6 +94,9 @@ def update_code():
         # Устанавливаем зависимости
         install_dependencies()
         
+        # Перезапускаем приложение
+        restart_app()
+        
         return True, commit_hash
     except Exception as e:
         logging.error(f"Не удалось обновить код: {e}")
@@ -82,13 +112,23 @@ class WebhookHandler(BaseHTTPRequestHandler):
         try:
             payload = json.loads(post_data)
             event = self.headers.get('X-GitHub-Event', 'неизвестно')
-            logging.info(f"Получено событие {event}")
+            logging.info(f"Получено событие {event} от {self.client_address[0]}")
             
             if event == 'push':
                 branch = payload.get('ref', '').replace('refs/heads/', '')
-                logging.info(f"Push в ветку: {branch}")
+                repo_name = payload.get('repository', {}).get('full_name', 'неизвестно')
+                pusher = payload.get('pusher', {}).get('name', 'неизвестно')
+                
+                logging.info(f"Push в {repo_name} ветка {branch} от {pusher}")
                 
                 if branch == BRANCH:
+                    # Получаем информацию о коммитах
+                    commits = payload.get('commits', [])
+                    if commits:
+                        last_commit = commits[-1]
+                        commit_msg = last_commit.get('message', '')
+                        logging.info(f"Сообщение коммита: {commit_msg}")
+                    
                     # Запускаем обновление в фоне
                     thread = threading.Thread(target=update_code)
                     thread.start()
@@ -99,7 +139,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps({
                         "status": "принято",
                         "branch": branch,
-                        "message": "Обновление с зависимостями запущено"
+                        "repo": repo_name,
+                        "message": "Развертывание запущено"
                     }, ensure_ascii=False).encode())
                 else:
                     self.send_response(200)
@@ -112,10 +153,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     }, ensure_ascii=False).encode())
             else:
                 self.send_response(200)
+                self.send_header('Content-type', 'application/json')
                 self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "игнорируется",
+                    "event": event
+                }, ensure_ascii=False).encode())
                 
+        except json.JSONDecodeError:
+            logging.error("Неверный формат JSON")
+            self.send_response(400)
+            self.end_headers()
         except Exception as e:
-            logging.error(f"Ошибка: {e}")
+            logging.error(f"Ошибка обработки вебхука: {e}")
             self.send_response(500)
             self.end_headers()
     
@@ -124,7 +174,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 def run(port=8080):
     server = HTTPServer(('', port), WebhookHandler)
-    print(f"Сервер вебхуков запущен на порту {port}")
+    print(f"✅ Сервер вебхуков запущен на порту {port}")
+    print(f"📁 Отслеживаемая ветка: {BRANCH}")
+    print(f"📦 Репозиторий: {REPO_URL}")
+    print("Нажмите Ctrl+C для остановки")
     server.serve_forever()
 
 if __name__ == '__main__':
