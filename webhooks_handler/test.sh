@@ -36,7 +36,7 @@ if [ -f "requirements.txt" ]; then
 fi
 
 echo "=== запуск приложения $BRANCH   !==="
-sudo systemctl stop myapp
+sudo systemctl stop myapp.service 
 nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8181 > /dev/null 2>&1 &
 APP_PID=$!
 
