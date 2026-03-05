@@ -89,6 +89,11 @@
       "login": "Pyshisha",
       "id": "ryzkov",
       "app": "catty-reminders-app"
-    } 
+    },
+    {
+      "login": "catchtimings",
+      "id": "chindina",
+      "app": "catty-reminders-app"
+    }
   ]
 }
