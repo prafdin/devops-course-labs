@@ -16,8 +16,8 @@ curl -X POST \
 -H "Accept: application/vnd.github+json" \
 https://api.github.com/repos/$OWNER/$REPO/statuses/$SHA \
 -d '{
-	"state":"$STATE",
-	"context":"webhook-deploy",
-	"description":"$DESCRIPTION",
-	"target_url":"http://app.chindna.course.prafdin.ru"
+    "state":"$STATE",
+    "context":"webhook-deploy",
+    "description":"$DESCRIPTION",
+    "target_url":"http://app.chindna.course.prafdin.ru"
 }'
