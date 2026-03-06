@@ -27,9 +27,19 @@ if [ -f "requirements.txt" ]; then
 	pip install -r requirements.txt
 fi
 
+echo "> Starting temporary app"
+uvicorn app.main:app --host 127.0.0.1 --port 8181 > /tmp/catty-test.log 2>&1 &
+APP_PID=$!
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
 sleep 4
+
+echo "> Running pytest"
 python3 -m pytest -v
 
+RESULT=$?
+
+echo "> Stopping temporary app"
+kill "$APP_PID"
+
+exit "$RESULT"
 echo ">Tests passed"
