@@ -30,5 +30,5 @@ if [ -f "requirements.txt" ]; then
 fi
 
 echo ">Restarting app..."
-sudo systemctl restart app
+sudo systemctl restart app.service
 echo ">Done"
