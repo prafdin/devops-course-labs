@@ -15,9 +15,9 @@ curl -X POST \
 -H "Authorization: Bearer $GITHUB_TOKEN" \
 -H "Accept: application/vnd.github+json" \
 https://api.github.com/repos/$OWNER/$REPO/statuses/$SHA \
--d '{
-    "state":"$STATE",
-    "context":"webhook-deploy",
-    "description":"$DESCRIPTION",
-    "target_url":"http://app.chindna.course.prafdin.ru"
-}'
+-d "{
+    \"state\":\"$STATE\",
+    \"context\":\"webhook-deploy\",
+    \"description\":\"$DESCRIPTION\",
+    \"target_url\":\"http://app.chindna.course.prafdin.ru\"
+}"
