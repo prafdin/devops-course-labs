@@ -156,11 +156,27 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 )
                 print(f"      ✅ Деплой завершен успешно!")
 
+                print("       - Отправляем ответ...")
+                subprocess.run(
+                    ["/home/ct/catty-reminders-app/webhook/deployment.sh",
+                    "sucess",
+                    "Deployment successfull"
+                    ],
+                    check=False
+                )
+
             except subprocess.CalledProcessError as e:
                 print(f"      ❌ Тесты упали! Деплой ОТМЕНЕН")
                 print(f"         {e.stdout if e.stdout else 'Нет вывода'}")
                 if e.stderr:
                     print(f"         Ошибка: {e.stderr}")
+                subprocess.run(
+                    ["/home/ct/catty-reminders-app/webhook/deployment.sh",
+                    "fail",
+                    "Deployment failed"
+                    ],
+                    check=False
+                )
                 return
 
 
