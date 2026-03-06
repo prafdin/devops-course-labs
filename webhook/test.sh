@@ -43,5 +43,3 @@ python3 -m pytest -v
 
 #exit "$RESULT"
 echo ">Tests finished"
-
-sudo systemctl restart app
