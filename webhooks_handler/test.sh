@@ -5,6 +5,8 @@ VENV="$APP_DIR/venv"
 
 echo "=== Запуск тестов проекта ветки $BRANCH==="
 
+echo "Текущий SHA ветки $BRANCH: $(git rev-parse HEAD)"
+
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
