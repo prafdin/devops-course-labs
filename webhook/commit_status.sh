@@ -19,5 +19,5 @@ https://api.github.com/repos/$OWNER/$REPO/statuses/$SHA \
     \"state\":\"$STATE\",
     \"context\":\"webhook-deploy\",
     \"description\":\"$DESCRIPTION\",
-    \"target_url\":\"http://app.chindna.course.prafdin.ru\"
+    \"target_url\":\"http://app.chindina.course.prafdin.ru\"
 }"
