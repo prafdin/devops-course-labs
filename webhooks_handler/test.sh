@@ -46,8 +46,7 @@ sleep 3
 
 export PYTHONPATH=/home/alex/3kurs/dev-ops/catty-reminders-app:$PYTHONPATH
 echo "=== Выполняем тесты из папки tests ==="
-pytest tests --maxfail=1 --disable-warnings -q
-
+PLAYWRIGHT_BROWSERS_PATH=/home/alex/.cache/ms-playwright pytest tests --maxfail=1 --disable-warnings -q
 RESULT=$?
 kill $APP_PID
 
