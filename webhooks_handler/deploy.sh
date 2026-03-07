@@ -21,6 +21,8 @@ git checkout -B $BRANCH origin/$BRANCH
 
 git reset --hard origin/$BRANCH
 
+echo "Текущий SHA ветки $BRANCH: $(git rev-parse HEAD)"
+
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
         echo "=== создание виртуального окружения $BRANCH ==="
