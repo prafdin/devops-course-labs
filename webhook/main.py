@@ -108,77 +108,58 @@ class WebhookHandler(BaseHTTPRequestHandler):
         commits = payload.get('commits', [])
         branch = payload.get('ref', '').replace('refs/heads/', '')
         pusher = payload.get('pusher', {}).get('name', 'unknown')
-        clone_url = payload.get('repository', {}).get('clone_url', 'unknown')
 
         print(f"   📝 Push в ветку: {branch}")
         print(f"   👤 Автор: {pusher}")
         print(f"   📊 Коммитов: {len(commits)}")
 
-        # Имитируем автоматические действия
-        print(f"   🚀 ЗАПУСКАЕМ АВТОМАТИЗАЦИЮ:")
+        print("   🚀 ЗАПУСКАЕМ АВТОМАТИЗАЦИЮ:")
         print(f"      - Запуск тестов для ветки {branch}")
-        print(f"      - Проверка качества кода")
+        print("      - Проверка качества кода")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            print(f"Временная директория: {tmpdir}")
+        print("      - Запуск тестов...")
+        try:
+            result = subprocess.run(
+                ["/home/ct/catty-reminders-app/webhook/test.sh", branch],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            print("      ✅ Тесты прошли успешно!")
+            print(f"         {result.stdout.strip()}")
 
-            # Выполняем git clone
+            print("      - Запуск деплоя...")
             subprocess.run(
-                ["git", "clone", clone_url, tmpdir],
+                ["/home/ct/catty-reminders-app/webhook/deploy.sh", branch],
                 check=True
             )
+            print("      ✅ Деплой завершен успешно!")
 
+            print("      - Отправляем ответ...")
             subprocess.run(
-                ["git", "checkout", branch],
-                cwd=tmpdir,
-                check=True
-            )
-
-            # Запускаем тесты перед деплоем
-            print(f"      - Запуск тестов...")
-            try:
-                result = subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/test.sh", branch],
-                    cwd=tmpdir,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-                print(f"      ✅ Тесты прошли успешно!")
-                print(f"         {result.stdout.strip()}")
-
-                # Только если тесты прошли - запускаем деплой
-                print(f"      - Запуск деплоя...")
-                subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/deploy.sh", branch],
-                    cwd=tmpdir,
-                    check=True
-                )
-                print(f"      ✅ Деплой завершен успешно!")
-
-                print("       - Отправляем ответ...")
-                subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/commit_status.sh",
+                [
+                    "/home/ct/catty-reminders-app/webhook/commit_status.sh",
                     "success",
-                    "Deployment successfull"
-                    ],
-                    check=False
-                )
+                    "Deployment successful"
+                ],
+                check=False
+            )
 
-            except subprocess.CalledProcessError as e:
-                print(f"      ❌ Тесты упали! Деплой ОТМЕНЕН")
-                print(f"         {e.stdout if e.stdout else 'Нет вывода'}")
-                if e.stderr:
-                    print(f"         Ошибка: {e.stderr}")
-                subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/commit_status.sh",
+        except subprocess.CalledProcessError as e:
+            print("      ❌ Тесты упали! Деплой ОТМЕНЕН")
+            print(f"         {e.stdout if e.stdout else 'Нет вывода'}")
+            if e.stderr:
+                print(f"         Ошибка: {e.stderr}")
+
+            subprocess.run(
+                [
+                    "/home/ct/catty-reminders-app/webhook/commit_status.sh",
                     "failure",
                     "Deployment failed"
-                    ],
-                    check=False
-                )
-                return
-
+                ],
+                check=False
+            )
+            return
 
     def _handle_pr_event(self, payload):
         """Обработка Pull Request события"""
