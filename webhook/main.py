@@ -158,7 +158,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
                 print("       - Отправляем ответ...")
                 subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/deployment.sh",
+                    ["/home/ct/catty-reminders-app/webhook/commit_status.sh",
                     "success",
                     "Deployment successfull"
                     ],
@@ -171,7 +171,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 if e.stderr:
                     print(f"         Ошибка: {e.stderr}")
                 subprocess.run(
-                    ["/home/ct/catty-reminders-app/webhook/deployment.sh",
+                    ["/home/ct/catty-reminders-app/webhook/commit_status.sh",
                     "failure",
                     "Deployment failed"
                     ],
