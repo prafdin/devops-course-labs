@@ -16,6 +16,10 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 echo ">Pull $BRANCH branch"
 git pull origin "$BRANCH"
 
+DEPLOY_REF=$(git rev-parse HEAD)
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/ct/catty-reminders-app/.env.deploy
+echo ">Deploy ref: $DEPLOY_REF"
+
 if [ ! -d ".venv" ]; then
 	echo ">Virtual environment was not found, creating..."
 	python3 -m venv .venv/
