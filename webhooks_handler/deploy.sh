@@ -23,8 +23,8 @@ git reset --hard origin/$BRANCH
 
 DEPLOY_REF="$(git rev-parse HEAD)"
 
-echo "Текущий SHA ветки $BRANCH: $LAST_HASH_COMMIT"
-echo "DEPLOY_REF=$LAST_HASH_COMMIT" > /home/alex/3kurs/dev-ops/catty-reminders-app/.env.deploy
+echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/alex/3kurs/dev-ops/catty-reminders-app/.env.deploy
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
