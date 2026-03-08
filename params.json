@@ -94,6 +94,11 @@
       "login": "catchtimings",
       "id": "chindina",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "SemeenS",
+      "id": "strebelev",
+      "app": "catty-reminders-app"
     }
   ]
 }
