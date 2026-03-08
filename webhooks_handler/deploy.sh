@@ -21,7 +21,10 @@ git checkout -B $BRANCH origin/$BRANCH
 
 git reset --hard origin/$BRANCH
 
-echo "Текущий SHA ветки $BRANCH: $(git rev-parse HEAD)"
+DEPLOY_REF="$(git rev-parse HEAD)"
+
+echo "Текущий SHA ветки $BRANCH: $LAST_HASH_COMMIT"
+echo "DEPLOY_REF=$LAST_HASH_COMMIT" > /home/alex/3kurs/dev-ops/catty-reminders-app/.env.deploy
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
