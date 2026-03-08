@@ -42,6 +42,9 @@ fi
 
 echo "=== запуск приложения $BRANCH   !==="
 sudo systemctl stop myapp.service 
+set -a
+source $APP_DIR/.env.deploy
+set +a
 nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8181 > /dev/null 2>&1 &
 APP_PID=$!
 
@@ -51,9 +54,6 @@ sleep 3
 
 export PYTHONPATH=/home/alex/3kurs/dev-ops/catty-reminders-app:$PYTHONPATH
 echo "=== Выполняем тесты из папки tests ==="
-set -a
-source $APP_DIR/.env.deploy
-set +a
 PLAYWRIGHT_BROWSERS_PATH=/home/alex/.cache/ms-playwright pytest tests --maxfail=1 --disable-warnings -q
 RESULT=$?
 kill $APP_PID
