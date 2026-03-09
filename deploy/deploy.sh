@@ -16,7 +16,7 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 echo "Pull $BRANCH branch"
 git pull origin "$BRANCH"
 
-DEPLOY_REF=$(git rev-parse HEAD)
+DEPLOY_REF=$(git rev-parse HEAD | tr -d '\r')
 echo "DEPLOY_REF=$DEPLOY_REF" > /mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/.env.deploy
 echo "Deploy ref: $DEPLOY_REF"
 
