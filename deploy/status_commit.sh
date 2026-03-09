@@ -1,7 +1,7 @@
 STATE=$1
 DESCRIPTION=$2
 
-REPO_DIR="../../catty-reminders-app"
+REPO_DIR="/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app"
 OWNER="sh1kaff"
 REPO="catty-reminders-app"
 

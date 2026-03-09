@@ -1,6 +1,6 @@
 set -e
 
-REPO_DIR="../../catty-reminders-app/"
+REPO_DIR="/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app"
 BRANCH=$1
 
 cd "$REPO_DIR"

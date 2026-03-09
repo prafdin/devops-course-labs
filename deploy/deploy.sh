@@ -1,6 +1,6 @@
 set -e
 
-REPO_DIR="../../catty-reminders-app"
+REPO_DIR="/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app"
 BRANCH=$1
 
 echo "Deploying $BRANCH branch"
@@ -15,7 +15,7 @@ echo "Pull $BRANCH branch"
 git pull origin "$BRANCH"
 
 DEPLOY_REF=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$DEPLOY_REF" > ../../catty-reminders-app/.env.deploy
+echo "DEPLOY_REF=$DEPLOY_REF" > /mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/.env.deploy
 echo "Deploy ref: $DEPLOY_REF"
 
 if [ ! -d ".venv" ]; then
