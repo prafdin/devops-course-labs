@@ -108,7 +108,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print("      - Запуск тестов...")
         try:
             result = subprocess.run(
-                ["/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/deploy/test.sh", branch],
+                ["bash", "/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/deploy/test.sh", branch],
                 check=True,
                 capture_output=True,
                 text=True
@@ -118,7 +118,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
             print("      - Запуск деплоя...")
             subprocess.run(
-                ["/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/deploy/deploy.sh", branch],
+                ["bash", "/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/deploy/deploy.sh", branch],
                 check=True
             )
             print("      ✅ Деплой завершен успешно!")
@@ -126,6 +126,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print("      - Отправляем ответ...")
             subprocess.run(
                 [
+                    "bash",
                     "/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/deploy/status_commit.sh",
                     "success",
                     "Deployment successful"

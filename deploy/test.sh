@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -e
 
 REPO_DIR="/mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app"

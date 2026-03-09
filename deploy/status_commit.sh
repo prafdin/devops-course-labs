@@ -1,3 +1,5 @@
+#!/bin/bash
+
 STATE=$1
 DESCRIPTION=$2
 
