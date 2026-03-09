@@ -32,7 +32,7 @@ echo "Virutal environment activated"
 
 if [ -f "requirements.txt" ]; then
 	echo "Installing/Updating requirements"
-	pip install -r requirements.txt
+	# pip install -r requirements.txt
 fi
 
 echo "Restarting app..."
