@@ -16,10 +16,11 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 echo "Pull $BRANCH branch"
 git pull origin "$BRANCH"
 
-DEPLOY_REF=$(git rev-parse HEAD | tr -d '\r')
-echo "DEPLOY_REF=$DEPLOY_REF" > /mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/.env.deploy
+CLEAN_REF=$(git rev-parse HEAD | tr -d '\r')
+echo "DEPLOY_REF=$CLEAN_REF" > /tmp/app.env
+echo "DEPLOY_REF=$CLEAN_REF" > /mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/.env.deploy
 chmod 644 /mnt/c/Users/Sergo/Documents/prog/university/catty-reminders-app/.env.deploy
-echo "Deploy ref: $DEPLOY_REF"
+echo "Deploy ref: $CLEAN_REF"
 
 if [ ! -d ".venv" ]; then
 	echo "Virtual environment was not found, creating..."
