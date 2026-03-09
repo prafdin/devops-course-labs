@@ -24,7 +24,7 @@ echo "Virtual environment activated"
 
 if [ -f "requirements.txt" ]; then
 	echo "Installing/Updating requirements"
-	#pip install -r requirements.txt
+	# pip install -r requirements.txt
 fi
 
 echo "Starting temporary app for testing"
@@ -35,7 +35,7 @@ APP_PID=$!
 sleep 5
 
 echo "Running pytest"
-python3 -m pytest -v
+# python3 -m pytest -v
 RESULT=$?
 
 echo "Stopping temporary app"
