@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Webhook handler for catty-reminders-app auto-deployment
 import os
 import subprocess
 import sys
