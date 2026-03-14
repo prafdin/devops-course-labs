@@ -41,7 +41,8 @@
 
 ## Проверка работоспособности
 - **Приложение:** [http://app.simonov.course.prafdin.ru](http://app.simonov.course.prafdin.ru)  
-- **Webhook-эндпоинт:** [http://webhook.simonov.course.prafdin.ru](http://webhook.simonov.course.prafdin.ru) (GET /health возвращает `ok`)  
+- **Эндпоинт для вебхуков (POST):** `http://webhook.simonov.course.prafdin.ru/` — используется GitHub для отправки событий (при переходе в браузере вернёт ошибку 405, так как ожидается POST-запрос).
+- **Проверка статуса (GET):** `http://webhook.simonov.course.prafdin.ru/health` — возвращает `ok`, подтверждая, что сервер работает.
 - **Логи развёртывания:** [http://webhook.simonov.course.prafdin.ru/logs](http://webhook.simonov.course.prafdin.ru/logs) — последние 50 строк лога с временными метками.
 
 Для повторного запуска деплоя достаточно сделать любой коммит в ветку `lab1` и выполнить `git push`.
