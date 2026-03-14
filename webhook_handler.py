@@ -72,6 +72,18 @@ def deploy():
             log_message(f"❌ Ошибка при установке зависимостей:\n{e.stderr}")
             return
 
+    # Получение хеша коммита для deployref
+    try:
+        commit_hash = subprocess.run(
+            ["git", "-C", APP_DIR, "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True
+        ).stdout.strip()
+        with open("/etc/catty-app-env", "w") as f:
+            f.write(f"DEPLOY_REF={commit_hash}\n")
+        log_message(f"✅ Хеш коммита сохранён: {commit_hash}")
+    except Exception as e:
+        log_message(f"⚠️ Не удалось получить хеш коммита: {e}")
+
     # 5. Перезапуск сервиса
     try:
         subprocess.run(["sudo", "systemctl", "restart", "catty-app"], check=True, capture_output=True, text=True)
