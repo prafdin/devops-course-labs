@@ -51,7 +51,7 @@ def webhook():
         return jsonify({'msg': 'ignored'}), 200
 
     print("📩 Получен webhook, запускаем deploy в фоне")
-    subprocess.Popen([sys.executable, os.path.abspath(file), 'deploy'])
+    subprocess.Popen([sys.executable, os.path.abspath(__file__), 'deploy'])
     return jsonify({'status': 'accepted'}), 202
 
 @app.route('/health', methods=['GET'])
