@@ -1,0 +1,6 @@
+{
+   "id": "simonov",
+   "SSH_PORT": "3120",
+   "PROXY": "course.prafdin.ru",
+   "TOKEN": "devops"
+ }

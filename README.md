@@ -1,138 +1,62 @@
-![Catty Logo](static/img/logos/catty-100px.png)
+# Лабораторная работа №1: GitHub Webhooks и автоматическое развёртывание
 
-# Catty: The Reminders App
+**Автор:** Симонов И.И.  
+**Группа:** 63NN  
+**Дата:** 15 марта 2026 г.
 
-*Catty* is a small demo web app for tracking reminders.
-It uses:
+## Описание проекта
+В данной лабораторной работе реализован автоматический деплой приложения **catty-reminders-app** при каждом push в ветку `lab1` репозитория. Обработчик webhook написан на Python (Flask), запущен как systemd-сервис и доступен через FRP-туннель. При получении push-события выполняются следующие этапы:
+- обновление кода из репозитория;
+- сборка (скрипт `build.sh`);
+- тестирование (скрипт `test.sh`);
+- установка зависимостей;
+- сохранение хеша коммита для метки `deployref`;
+- перезапуск сервиса приложения.
 
-* [Python](https://www.python.org/) as the main programming language
-* [FastAPI](https://fastapi.tiangolo.com/) for the backend
-* [HTMX](https://htmx.org/) 1.8.6 for handling dynamic interactions (instead of raw JavaScript)
-* [Jinja templates](https://jinja.palletsprojects.com/en/3.1.x/) with HTML and CSS for the frontend
-* [TinyDB](https://tinydb.readthedocs.io/en/latest/index.html) for the database
-* [Playwright](https://playwright.dev/python/) and [pytest](https://docs.pytest.org/) for testing
+Все действия логируются в файл `/var/log/webhook/deploy.log` и доступны для просмотра через веб-интерфейс.
 
-## Installing dependencies
+## Структура репозитория (ветка `lab1`)
 
-You will need a recent version of Python to run this app.
-To install project dependencies:
+| Файл | Описание |
+|------|----------|
+| `.github/workflows/` | Каталог с GitHub Actions (не используется в работе) |
+| `README.md` | Данный файл |
+| `build.sh` | Скрипт имитации сборки (выводит сообщение) |
+| `deploy-20260315-031427.log` | Снимок лога развёртывания (для истории) |
+| `params.json` | Файл регистрации в системе автоматических проверок |
+| `requirements.txt` | Зависимости для webhook-обработчика (`Flask`) |
+| `schema-params.json` | Схема для `params.json` |
+| `test-deploy.txt`, `test-sudo-fix.txt`, `test-webhook.txt`, `test.txt`, `trigger-deploy.txt` | Тестовые файлы, использовавшиеся для проверки срабатывания webhook |
+| `test.sh` | Скрипт тестирования: пытается запустить `pytest`, при его отсутствии проверяет синтаксис Python-файлов |
+| `varik.json` | Вспомогательный файл (не относится к основной логике) |
+| `webhook_handler.py` | Основной обработчик webhook (точка входа) |
 
-```
-pip install -r requirements.txt
-```
+## Как это работает
+1. На сервере запущены два systemd-сервиса:
+   - `webhook-handler` – слушает порт 8080, принимает POST-запросы от GitHub.
+   - `catty-app` – само приложение (FastAPI + uvicorn) на порту 8181.
+2. FRP-клиент пробрасывает внешние адреса `webhook.simonov.course.prafdin.ru` → порт 8080 и `app.simonov.course.prafdin.ru` → порт 8181.
+3. При push в ветку `lab1` GitHub отправляет POST-запрос на `http://webhook.simonov.course.prafdin.ru/` (только POST).
+4. Обработчик запускает фоновый процесс `deploy`, который:
+   - обновляет код в `/opt/catty-app`;
+   - запускает `build.sh` (если есть);
+   - запускает `test.sh` (если есть);
+   - устанавливает зависимости из `requirements.txt`;
+   - сохраняет текущий хеш коммита в файл `/etc/catty-app-env` для передачи приложению;
+   - перезапускает сервис `catty-app`.
+5. Приложение при запуске читает переменную `DEPLOY_REF` из этого файла и вставляет её в мета-тег `deployref` на всех страницах, что позволяет автоматическим проверкам убедиться в актуальности деплоя.
 
-It is recommended to install dependencies into a [virtual environment](https://docs.python.org/3/library/venv.html).
+## Проверка работоспособности
+- **Приложение:** [http://app.simonov.course.prafdin.ru](http://app.simonov.course.prafdin.ru)  
+- **Эндпоинт для вебхуков (POST):** `http://webhook.simonov.course.prafdin.ru/` (используется GitHub)
+- **Проверка статуса обработчика (GET):** [http://webhook.simonov.course.prafdin.ru/health](http://webhook.simonov.course.prafdin.ru/health) (возвращает `ok`)
+- **Логи развёртывания:** [http://webhook.simonov.course.prafdin.ru/logs](http://webhook.simonov.course.prafdin.ru/logs) — последние 50 строк лога с временными метками.
 
+Для повторного запуска деплоя достаточно сделать любой коммит в ветку `lab1` и выполнить `git push`.
 
-## Running the app
+## Замечания
+- Скрипты `build.sh` и `test.sh` добавлены для демонстрации этапов сборки и тестирования. В реальном Python-приложении сборка не требуется, поэтому `build.sh` только имитирует процесс.
+- В логах видно, что тесты проходят успешно (проверка синтаксиса).
+- Правило sudoers настроено так, что перезапуск сервиса `catty-app` происходит без запроса пароля.
+- Для корректной работы автоматических проверок в приложение передаётся хеш коммита через переменную окружения `DEPLOY_REF`, что позволяет отображать актуальное значение в мета-теге `deployref`.
 
-Prepare environment variables from template and export it:
-```bash
-cp .env.example .env
-# Edit the .env file as needed
-set -a; source .env; set +a
-```
-
-To run the app:
-
-```
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
-```
-
-Then, open your browser to [`http://127.0.0.1:8181`](http://127.0.0.1:8181) to load the app.
-
-
-
-## Logging into the app
-
-The [`config.json`](config.json) file declares the users for the app.
-You may use any configured user credentials, or change them to your liking.
-
-## Setting the database path
-
-The app uses TinyDB, which stores the database as a JSON file.
-The default database filepath is `reminder_db.json`.
-You may change this path in [`config.json`](config.json).
-If you change the filepath, the app will automatically create a new, empty database.
-
-
-## Using the app
-
-Catty is a reminders app.
-After you log in, you can create reminder lists.
-
-![Catty login](static/img/readme/catty-login.png)
-
-Each reminder list appears on the left,
-and the items in the list appear on the right.
-You may add, delete, or edit lists and items.
-You may also strike out completed items.
-
-![Catty reminders](static/img/readme/catty-reminders.png)
-
-
-## Running tests
-
-The app includes comprehensive tests using pytest and Playwright. Before running tests, make sure the app is running on `http://127.0.0.1:8181`.
-
-First, install test dependencies if you haven't already:
-
-```bash
-pip install -r requirements.txt
-```
-
-Install Playwright browsers for UI testing:
-
-```bash
-playwright install --with-deps chromium
-```
-
-Then configure test settings in `inputs.json`:
-
-```json
-{
-  "base_url": "http://127.0.0.1:8181",
-  "users": [
-    {
-      "username": "heisenberg",
-      "password": "P@ssw0rd"
-    },
-    {
-      "username": "tester", 
-      "password": "foobar123"
-    }
-  ]
-}
-```
-
-Run all tests:
-
-```bash
-python3 -m pytest
-```
-
-Run specific test types:
-
-```bash
-# Unit tests only
-python3 -m pytest tests/test_unit.py
-
-# API tests only  
-python3 -m pytest tests/test_api.py
-
-# UI tests only
-python3 -m pytest -s -v --browser chromium tests/test_ui.py
-```
-
-Run tests with verbose output:
-
-```bash
-python3 -m pytest -v --browser chromium tests
-```
-
-## Reading the docs
-
-To read the API docs, open the following pages:
-
-* [`/docs`](http://127.0.0.1:8181/docs) for classic OpenAPI docs
-* [`/redoc`](http://127.0.0.1:8181/redoc) for more modern ReDoc docs
