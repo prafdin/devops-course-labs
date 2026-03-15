@@ -4,3 +4,9 @@ __pycache__/
 .idea/
 reminder_db.json
 .env.deploy
+
+.idea/
+.env.deploy
+.venv/
+__pycache__/
+.pytest_cache/
