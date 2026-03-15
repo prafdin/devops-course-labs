@@ -1,3 +1,6 @@
-
-# lab1 point_2.4 local deploy artifacts
-lab1/point_2.4/_deploy/
+.venv/
+__pycache__/
+.pytest_cache/
+.idea/
+reminder_db.json
+.env.deploy
