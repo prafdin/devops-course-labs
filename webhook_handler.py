@@ -16,6 +16,7 @@ import sys
 
 # Конфигурация
 PORT = 8080
+APP_DIR = "/home/kali/catty-reminders-app"
 
 class WebhookHandler(BaseHTTPRequestHandler):
 
@@ -105,43 +106,78 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
     def _handle_push_event(self, payload):
         """Обработка push события"""
-        
+        commits = payload.get('commits', [])
         branch = payload.get('ref', '').replace('refs/heads/', '')
-        commit_sha = payload.get('after', 'NA')  # ← Хеш коммита от GitHub!
-        
-        print(f"📦 Push в ветку: {branch}")
-        print(f"🔖 Commit SHA: {commit_sha}")
-        
-        APP_DIR = "/home/andrey/Desktop/DevOps_lab1/catty-reminders-app"
-        APP_SERVICE = "catty-app"
-        
-        try:
-            # 1. Обновляем код
-            print("🔄 git pull...")
-            subprocess.run(['git', '-C', APP_DIR, 'fetch'], check=True, capture_output=True)
-            subprocess.run(['git', '-C', APP_DIR, 'checkout', branch], check=True, capture_output=True)
-            subprocess.run(['git', '-C', APP_DIR, 'pull', 'origin', branch], check=True, capture_output=True)
-            print("✅ Код обновлён")
-            
-            # 2. 🔥 ВАЖНО: Записываем хеш коммита в файл!
-            print(f"📝 Запись deploy_ref: {commit_sha}")
-            with open(f"{APP_DIR}/deploy_ref.txt", 'w') as f:
-                f.write(commit_sha)
-            
-            # 3. Установка зависимостей
-            if os.path.exists(f"{APP_DIR}/requirements.txt"):
-                print("📦 Установка зависимостей...")
-                subprocess.run(['pip3', 'install', '--break-system-packages', '-r', f"{APP_DIR}/requirements.txt"], 
-                             check=True, capture_output=True)
-                print("✅ Зависимости установлены")
-            
-            # 4. Перезапуск приложения
-            print(f"🚀 Перезапуск сервиса {APP_SERVICE}...")
-            subprocess.run(['sudo', 'systemctl', 'restart', APP_SERVICE], check=True)
-            print("✅ Деплой завершён!")
-            
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Ошибка деплоя: {e}")
+        pusher = payload.get('pusher', {}).get('name', 'unknown')
+        clone_url = payload.get('repository', {}).get('clone_url', 'unknown')
+
+        print(f"   📝 Push в ветку: {branch}")
+        print(f"   👤 Автор: {pusher}")
+        print(f"   📊 Коммитов: {len(commits)}")
+
+        # Имитируем автоматические действия
+        print(f"   🚀 ЗАПУСКАЕМ АВТОМАТИЗАЦИЮ:")
+        print(f"      - Запуск тестов для ветки {branch}")
+        print(f"      - Проверка качества кода")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            print(f"Временная директория: {tmpdir}")
+
+            # Выполняем git clone
+            subprocess.run(
+                ["git", "clone", clone_url, tmpdir],
+                check=True
+            )
+
+            subprocess.run(
+                ["git", "checkout", branch],
+                cwd=tmpdir,
+                check=True
+            )
+
+            # Запускаем тесты перед деплоем
+            print(f"      - Запуск тестов...")
+            try:
+                result = subprocess.run(
+                    ["./test.sh"],
+                    cwd=tmpdir,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                print(f"      ✅ Тесты прошли успешно!")
+                print(f"         {result.stdout.strip()}")
+                print(f"      Обновляем рабочую папку приложения...")
+                subprocess.run(
+                    ["git", "fetch", "origin"],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                subprocess.run(
+                    ["git", "checkout", branch],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                subprocess.run(
+                    ["git", "reset", "--hard", f"origin/{branch}"],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                print(f"      Рабочая папка обновлена")
+                print(f"      Запуск деплоя из рабочей папки...")
+                subprocess.run(
+                    ["./deploy.sh"],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                print(f"      ✅ Деплой завершен успешно!")
+                
+            except subprocess.CalledProcessError as e:
+                print(f"      ❌ Тесты упали! Деплой ОТМЕНЕН")
+                print(f"         {e.stdout if e.stdout else 'Нет вывода'}")
+                if e.stderr:
+                    print(f"         Ошибка: {e.stderr}")
+                return
 
 
     def _handle_pr_event(self, payload):
