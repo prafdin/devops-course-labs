@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="/home/kali/catty-reminders-app"
+APP_DIR="/home/kirill/desktop/devops"
 ENV_FILE="$APP_DIR/.env.deploy"
 
 echo "🚀 Deploying Catty..."
