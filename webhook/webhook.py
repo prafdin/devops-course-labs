@@ -14,7 +14,6 @@ import datetime
 import signal
 import sys
 import getpass
-import time
 
 # Configuration
 REPO_URL = "git@github.com:TimurMif/catty-reminders-app.git"
@@ -30,10 +29,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Функция больше не нужна, но оставим для совместимости или удалим
-# def branch_exists_on_origin(branch):
-#     ...
-
 class WebhookHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
@@ -46,10 +41,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
             event = self.headers.get('X-GitHub-Event', 'unknown')
             logging.info(f"Received {event} event")
 
+            # Check if it's a push event
             if event == 'push':
                 branch = payload.get('ref', '').replace('refs/heads/', '')
                 logging.info(f"Push event detected for branch: {branch}")
 
+                # Get commit info
                 commits = payload.get('commits', [])
                 if commits:
                     last_commit = commits[-1]
@@ -61,6 +58,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 thread = threading.Thread(target=self.deploy_app, args=(branch,))
                 thread.start()
 
+                # Send immediate response
                 self.send_response(202)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -69,6 +67,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     "message": f"Deployment started for branch {branch}"
                 }).encode())
             else:
+                # Ignore other events
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -85,121 +84,77 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
     def deploy_app(self, branch):
         """Deploy the application"""
-        lock_file = "/tmp/deploy.lock"
-        # Try to acquire lock
-        lock_acquired = False
-        for attempt in range(5):
-            if not os.path.exists(lock_file):
-                try:
-                    with open(lock_file, 'w') as f:
-                        f.write(str(os.getpid()))
-                    lock_acquired = True
-                    break
-                except:
-                    pass
-            logging.warning(f"Deployment already in progress, waiting... (attempt {attempt+1}/5)")
-            time.sleep(2)
-        if not lock_acquired:
-            logging.error("Could not acquire lock after 5 attempts, skipping deployment")
-            return
-
         try:
             logging.info(f"Starting deployment for branch: {branch}")
 
-            # Ensure repository exists
+            # Create a lock file to prevent concurrent deployments
+            lock_file = "/tmp/deploy.lock"
+            if os.path.exists(lock_file):
+                logging.warning("Deployment already in progress, skipping...")
+                return
+
+            # Create lock
+            with open(lock_file, 'w') as f:
+                f.write(str(os.getpid()))
+
+            # Clone or update repository
             if not os.path.exists(os.path.join(APP_DIR, '.git')):
                 logging.info("Cloning repository...")
-                result = subprocess.run(
-                    ["git", "clone", REPO_URL, APP_DIR],
-                    capture_output=True, text=True, timeout=60
-                )
-                if result.returncode != 0:
-                    logging.error(f"Clone failed: {result.stderr}")
-                    return
+                result = subprocess.run([
+                    "git", "clone", REPO_URL, APP_DIR
+                ], check=True, capture_output=True, text=True)
                 logging.info(f"Clone output: {result.stdout}")
 
+            # Update code
+            logging.info(f"Updating code for branch: {branch}")
             os.chdir(APP_DIR)
 
-            # Fetch all branches
-            logging.info("Fetching all branches...")
-            result = subprocess.run(
-                ["git", "fetch", "--all"],
-                capture_output=True, text=True, timeout=30
-            )
-            if result.returncode != 0:
-                logging.error(f"Fetch failed: {result.stderr}")
-                return
+            logging.info(f"Git operations running as user: {getpass.getuser()}")
+
+            # Fetch all branches and reset
+            result = subprocess.run([
+                "git", "fetch", "--all"
+            ], check=True, capture_output=True, text=True)
             logging.info(f"Fetch output: {result.stdout}")
 
-            # Всегда развёртываем ветку lab1
-            target_branch = "lab1"
-            logging.info(f"Forcing deployment of lab1 branch (original push was to {branch})")
-
-            # Reset to lab1
-            logging.info(f"Resetting to origin/{target_branch}")
-            result = subprocess.run(
-                ["git", "reset", "--hard", f"origin/{target_branch}"],
-                capture_output=True, text=True, timeout=30
-            )
-            if result.returncode != 0:
-                logging.error(f"Reset failed: {result.stderr}")
-                return
+            # Reset to the specific branch
+            result = subprocess.run([
+                "git", "reset", "--hard", f"origin/{branch}"
+            ], check=True, capture_output=True, text=True)
             logging.info(f"Reset output: {result.stdout}")
 
-            # Ensure we are on lab1
-            subprocess.run(
-                ["git", "checkout", "lab1"],
-                capture_output=True, text=True, timeout=10
-            )
-
-            # Get current SHA
-            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-            logging.info(f"Current commit SHA: {sha} (from branch {target_branch})")
-
-            # Write deploy ref
             try:
+                sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=APP_DIR, text=True).strip()
                 with open(os.path.join(APP_DIR, ".deploy_ref"), "w") as f:
                     f.write(f"DEPLOY_REF={sha}\n")
                 logging.info(f"Updated deploy ref: {sha}")
             except Exception as e:
                 logging.error(f"Failed to write deploy ref: {e}")
-
-            # Install dependencies
+            # Install dependencies using virtual environment
             requirements_file = os.path.join(APP_DIR, "requirements.txt")
             if os.path.exists(requirements_file):
                 logging.info("Installing Python dependencies...")
                 pip_path = os.path.join(VENV_DIR, "bin", "pip")
                 if os.path.exists(pip_path):
-                    result = subprocess.run(
-                        [pip_path, "install", "-r", requirements_file],
-                        capture_output=True, text=True, timeout=120
-                    )
-                    if result.returncode != 0:
-                        logging.error(f"Pip install failed: {result.stderr}")
-                        # Continue anyway
-                    else:
-                        logging.info(f"Pip install output: {result.stdout}")
+                    result = subprocess.run([
+                        pip_path, "install", "-r", requirements_file
+                    ], check=True, capture_output=True, text=True)
+                    logging.info(f"Pip install output: {result.stdout}")
                 else:
                     logging.error(f"Virtual environment pip not found at {pip_path}")
 
             # Restart the application service
             logging.info("Restarting application service...")
-            result = subprocess.run(
-                ["sudo", "systemctl", "restart", "catty-reminders"],
-                capture_output=True, text=True, timeout=30
-            )
-            if result.returncode != 0:
-                logging.error(f"Restart failed: {result.stderr}")
-                return
-            logging.info(f"Restart output: {result.stdout}")
+            result = subprocess.run([
+                "sudo", "systemctl", "restart", "catty-reminders"
+            ], check=True, capture_output=True, text=True)
 
             # Log successful deployment
             with open(DEPLOY_LOG, 'a') as f:
-                f.write(f"{datetime.datetime.now()} - Deployed branch {target_branch} (original: {branch}) successfully\n")
-            logging.info(f"Deployment completed successfully for branch: {target_branch} (original: {branch})")
+                f.write(f"{datetime.datetime.now()} - Deployed branch {branch} successfully\n")
 
-        except subprocess.TimeoutExpired as e:
-            logging.error(f"Timeout during deployment: {e}")
+            logging.info(f"Deployment completed successfully for branch: {branch}")
+
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr if e.stderr else str(e)
             logging.error(f"Deployment failed: {error_msg}")
