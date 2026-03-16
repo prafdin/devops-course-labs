@@ -16,7 +16,7 @@ with open('/opt/catty-reminders/config.json') as config_json:
 # DEPLOY_REF - хэш текущего коммита
 try:
     result = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
+        ["git", "rev-parse", "HEAD"],
         cwd="/opt/catty-reminders",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
