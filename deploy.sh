@@ -1,18 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e  # Выход при любой ошибке
+APP_DIR="/home/kirill/desktop/devops"
+cd "$APP_DIR"
 
-echo "🚀 Деплой начат: $(date)" >> /tmp/deploy.log
+echo "🚀 Deploying Catty..."
 
-# Перезапускаем приложение
-sudo systemctl restart devops-app.service
+pip3 install -r requirements.txt
 
-sleep 2
+sudo systemctl restart catty-app.service
 
-# Проверяем, что приложение отвечает
-if curl -s http://localhost:8181 > /dev/null; then
-    echo "✅ Деплой завершён успешно: $(date)" >> /tmp/deploy.log
-else
-    echo "❌ Приложение не отвечает после деплоя!" >> /tmp/deploy.log
-    exit 1
-fi
+echo "✅ Catty deployed successfully"

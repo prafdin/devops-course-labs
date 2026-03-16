@@ -16,6 +16,7 @@ import sys
 
 # Конфигурация
 PORT = 8080
+APP_DIR = "/home/kirill/desktop/devops"  # ← Добавил путь к реальной папке
 
 class WebhookHandler(BaseHTTPRequestHandler):
 
@@ -107,7 +108,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         """Обработка push события"""
         commits = payload.get('commits', [])
         branch = payload.get('ref', '').replace('refs/heads/', '')
-        pusher = payload.get('pusher', {}).get('name', 'unknown')
+        pusher = payload.get('pusher',{}).get('name', 'unknown')
         clone_url = payload.get('repository', {}).get('clone_url', 'unknown')
 
         print(f"   📝 Push в ветку: {branch}")
@@ -147,11 +148,29 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 print(f"      ✅ Тесты прошли успешно!")
                 print(f"         {result.stdout.strip()}")
 
-                # Только если тесты прошли - запускаем деплой
+                print(f"      🔄 Обновляем {APP_DIR}...")
+                subprocess.run(
+                    ["git", "fetch", "origin"],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                subprocess.run(
+                    ["git", "checkout", branch],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                subprocess.run(
+                    ["git", "reset", "--hard", f"origin/{branch}"],
+                    cwd=APP_DIR,
+                    check=True
+                )
+                print(f"      ✅ {APP_DIR} обновлён")
+
+                # Только если тесты прошли - запускаем деплой ИЗ РЕАЛЬНОЙ ПАПКИ
                 print(f"      - Запуск деплоя...")
                 subprocess.run(
                     ["bash", "./deploy.sh"],
-                    cwd=tmpdir,
+                    cwd=APP_DIR,
                     check=True
                 )
                 print(f"      ✅ Деплой завершен успешно!")
@@ -162,7 +181,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 if e.stderr:
                     print(f"         Ошибка: {e.stderr}")
                 return
-
 
     def _handle_pr_event(self, payload):
         """Обработка Pull Request события"""
@@ -198,4 +216,4 @@ def main():
         print(f"\n🛑 Сервер остановлен")
 
 if __name__ == '__main__':
-    main()
+	main()
