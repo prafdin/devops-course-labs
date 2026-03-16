@@ -7,6 +7,7 @@ Type=simple
 User=andrey
 WorkingDirectory=/home/andrey/Desktop/DevOps_lab1/catty-reminders-app
 Environment="PATH=/home/andrey/.local/bin:/usr/bin:/bin"
+EnvironmentFile=/tmp/deploy_ref.txt
 ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 RestartSec=5

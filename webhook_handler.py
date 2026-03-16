@@ -108,6 +108,15 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print(f"   📝 Push в ветку: {branch}")
         print(f"   👤 Автор: {pusher}")
         print(f"   🔖 Commit SHA: {commit_sha}")
+        
+        deploy_ref_file = '/tmp/deploy_ref.txt'
+        try:
+            with open(deploy_ref_file, 'w') as f:
+                f.write(f'DEPLOY_REF={commit_sha}\n')
+            print(f"   📝 Запись {deploy_ref_file}: DEPLOY_REF={commit_sha[:12]}")
+        except Exception as e:
+            print(f"   ⚠️ Не удалось записать {deploy_ref_file}: {e}")
+        
         print(f"   🚀 ЗАПУСКАЕМ АВТОМАТИЗАЦИЮ:")
         
         try:
