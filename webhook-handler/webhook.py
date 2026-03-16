@@ -76,16 +76,15 @@ def restart_app(commit_hash=None):
         
         if check.stdout and check.stdout.strip() == "200":
             logging.info(f"Приложение успешно перезапущено и отвечает 200")
+
+	    import datetime
+	    with open('/opt/catty-reminders/deploy_time.txt', 'w') as f:
+                f.write(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+	    logging.info(f"⏱️ Deploy time записан")
+
             return True
         else:
             logging.warning(f"Приложение перезапущено, но отвечает кодом {check.stdout}")
-
-	    # Записываем время деплоя
-            import datetime
-	    with open('/opt/catty-reminders/deploy_time.txt', 'w') as f:
-    		f.write(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-            logging.info(f"⏱️ Deploy time записан")
-
             return True  # Всё равно считаем успехом, потому что restart прошел
     except Exception as e:
         logging.error(f"Исключение при перезапуске: {e}")
