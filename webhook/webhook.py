@@ -78,7 +78,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def deploy_app(self, branch):
-        """Основная функция деплоя"""
+        """Деплой с явным fetch нужной ветки"""
         lock_file = "/tmp/deploy.lock"
         lock_acquired = False
         for attempt in range(5):
@@ -90,7 +90,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     break
                 except:
                     pass
-            logging.warning(f"Деплой уже выполняется, ожидание... (попытка {attempt+1}/5)")
+            logging.warning(
+                f"Деплой уже выполняется, ожидание... (попытка {attempt + 1}/5)")
             time.sleep(2)
         if not lock_acquired:
             logging.error("Не удалось получить блокировку, пропускаем")
@@ -113,55 +114,53 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
             os.chdir(APP_DIR)
 
-            # Получаем все ветки
-            logging.info("Fetch всех веток...")
-            result = subprocess.run(
-                ["git", "fetch", "--all"],
-                capture_output=True, text=True, timeout=30
-            )
-            if result.returncode != 0:
-                logging.error(f"Ошибка fetch: {result.stderr}")
-                return
-            logging.info(f"Fetch: {result.stdout}")
-
-            # ПРОВЕРЯЕМ, ЕСТЬ ЛИ ВЕТКА НА ORIGIN
+            # Проверяем существование ветки на origin
             result = subprocess.run(
                 ["git", "ls-remote", "--heads", "origin", branch],
                 capture_output=True, text=True, timeout=10
             )
             branch_exists = branch in result.stdout
-            
+
             if not branch_exists:
-                logging.warning(f"Ветка '{branch}' не найдена на origin, используем 'lab1'")
+                logging.warning(
+                    f"Ветка '{branch}' не найдена на origin, используем 'lab1'")
                 branch = "lab1"
 
-            # ПЕРЕКЛЮЧАЕМСЯ ПРАВИЛЬНО:
-            # 1. Создаём локальную ветку, отслеживающую origin/branch
-            logging.info(f"Создаём локальную ветку {branch} из origin/{branch}")
-            checkout_cmd = ["git", "checkout", "-B", branch, f"origin/{branch}"]
-            result = subprocess.run(
-                checkout_cmd,
+            # Явно подтягиваем целевую ветку (даже если она уже есть)
+            logging.info(f"Fetching origin/{branch}")
+            fetch_result = subprocess.run(
+                ["git", "fetch", "origin", branch],
                 capture_output=True, text=True, timeout=30
             )
-            
-            if result.returncode != 0:
-                logging.error(f"Ошибка checkout: {result.stderr}")
-                # Если не получилось, пробуем просто сбросить
-                logging.info("Пробуем простой reset...")
-                result = subprocess.run(
-                    ["git", "reset", "--hard", f"origin/{branch}"],
+            if fetch_result.returncode != 0:
+                logging.error(f"Fetch failed: {fetch_result.stderr}")
+                # Пробуем lab1 как запасной вариант
+                branch = "lab1"
+                fetch_result = subprocess.run(
+                    ["git", "fetch", "origin", "lab1"],
                     capture_output=True, text=True, timeout=30
                 )
-                if result.returncode != 0:
-                    logging.error(f"Ошибка reset: {result.stderr}")
+                if fetch_result.returncode != 0:
+                    logging.error("Не удалось подтянуть даже lab1, выход")
                     return
-            logging.info(f"Checkout результат: {result.stdout}")
+
+            # Сбрасываем HEAD до нужной ветки
+            logging.info(f"Resetting to origin/{branch}")
+            reset_result = subprocess.run(
+                ["git", "reset", "--hard", f"origin/{branch}"],
+                capture_output=True, text=True, timeout=30
+            )
+            if reset_result.returncode != 0:
+                logging.error(f"Reset failed: {reset_result.stderr}")
+                return
+            logging.info(f"Reset output: {reset_result.stdout}")
 
             # Получаем текущий SHA
-            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+            sha = subprocess.check_output(["git", "rev-parse", "HEAD"],
+                                          text=True).strip()
             logging.info(f"Текущий SHA: {sha} (ветка {branch})")
 
-            # Записываем SHA в файл для приложения
+            # Записываем SHA в файл
             try:
                 with open(os.path.join(APP_DIR, ".deploy_ref"), "w") as f:
                     f.write(f"DEPLOY_REF={sha}\n")
@@ -169,7 +168,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 logging.error(f"Не удалось записать deploy ref: {e}")
 
-            # Установка зависимостей (если есть)
+            # Установка зависимостей
             req_file = os.path.join(APP_DIR, "requirements.txt")
             if os.path.exists(req_file):
                 logging.info("Установка Python-зависимостей...")
@@ -195,11 +194,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
             if result.returncode != 0:
                 logging.error(f"Ошибка перезапуска: {result.stderr}")
                 return
-            logging.info(f"Перезапуск выполнен: {result.stdout}")
+            logging.info(f"Перезапуск выполнен")
 
             # Логирование успеха
             with open(DEPLOY_LOG, 'a') as f:
-                f.write(f"{datetime.datetime.now()} - Деплой ветки {branch} успешен\n")
+                f.write(
+                    f"{datetime.datetime.now()} - Деплой ветки {branch} успешен\n")
             logging.info(f"Деплой завершён для ветки {branch}")
 
         except subprocess.TimeoutExpired as e:
@@ -208,12 +208,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
             error_msg = e.stderr if e.stderr else str(e)
             logging.error(f"Ошибка деплоя: {error_msg}")
             with open(DEPLOY_LOG, 'a') as f:
-                f.write(f"{datetime.datetime.now()} - Деплой ветки {branch} провален: {error_msg}\n")
+                f.write(
+                    f"{datetime.datetime.now()} - Деплой ветки {branch} провален: {error_msg}\n")
         except Exception as e:
             logging.error(f"Неожиданная ошибка: {str(e)}")
         finally:
             if os.path.exists(lock_file):
                 os.remove(lock_file)
+
 
     def log_message(self, format, *args):
         logging.info(f"{self.address_string()} - {format % args}")
