@@ -1,0 +1,18 @@
+[Unit]
+Description=Catty Reminders App
+After=network.target
+
+[Service]
+Type=simple
+User=timur
+Group=appuser
+WorkingDirectory=/opt/catty-reminders
+Environment="PORT=8181"
+Environment="PYTHONPATH=/opt/catty-reminders"
+Environment="PATH=/opt/catty-reminders/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/catty-reminders/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
