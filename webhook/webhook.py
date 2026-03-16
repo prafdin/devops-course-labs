@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Webhook handler for catty-reminders-app
-Правильное переключение на любую ветку
+Поддержка создания веток и пушей в любые ветки
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -41,6 +41,16 @@ class WebhookHandler(BaseHTTPRequestHandler):
             event = self.headers.get('X-GitHub-Event', 'unknown')
             logging.info(f"Получено событие: {event}")
 
+            # Обрабатываем создание ветки
+            if event == 'create':
+                ref_type = payload.get('ref_type', '')
+                if ref_type == 'branch':
+                    branch = payload.get('ref', '')
+                    logging.info(f"Создана новая ветка: {branch}")
+                    # Можно сразу развернуть новую ветку, если нужно
+                    # Но для тестов бота достаточно обработать push
+
+            # Обрабатываем push в любую ветку
             if event == 'push':
                 branch = payload.get('ref', '').replace('refs/heads/', '')
                 logging.info(f"Push в ветку: {branch}")
@@ -78,7 +88,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def deploy_app(self, branch):
-        """Деплой с явным fetch нужной ветки"""
+        """Деплой с поддержкой любых веток"""
         lock_file = "/tmp/deploy.lock"
         lock_acquired = False
         for attempt in range(5):
@@ -114,6 +124,17 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
             os.chdir(APP_DIR)
 
+            # Получаем все ветки
+            logging.info("Fetch всех веток...")
+            fetch_all_result = subprocess.run(
+                ["git", "fetch", "--all"],
+                capture_output=True, text=True, timeout=30
+            )
+            if fetch_all_result.returncode != 0:
+                logging.error(f"Ошибка fetch --all: {fetch_all_result.stderr}")
+                return
+            logging.info(f"Fetch --all: {fetch_all_result.stdout}")
+
             # Проверяем существование ветки на origin
             result = subprocess.run(
                 ["git", "ls-remote", "--heads", "origin", branch],
@@ -126,7 +147,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     f"Ветка '{branch}' не найдена на origin, используем 'lab1'")
                 branch = "lab1"
 
-            # Явно подтягиваем целевую ветку (даже если она уже есть)
+            # Явно подтягиваем целевую ветку
             logging.info(f"Fetching origin/{branch}")
             fetch_result = subprocess.run(
                 ["git", "fetch", "origin", branch],
@@ -163,16 +184,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     return
             else:
                 logging.info(f"Checkout output: {checkout_result.stdout}")
-
-            # Дополнительный reset для гарантии (если checkout уже переключил, reset не повредит)
-            reset_result = subprocess.run(
-                ["git", "reset", "--hard", f"origin/{branch}"],
-                capture_output=True, text=True, timeout=30
-            )
-            if reset_result.returncode != 0:
-                logging.error(f"Reset failed: {reset_result.stderr}")
-                return
-            logging.info(f"Reset output: {reset_result.stdout}")
 
             # Получаем текущий SHA
             sha = subprocess.check_output(["git", "rev-parse", "HEAD"],
@@ -234,7 +245,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
         finally:
             if os.path.exists(lock_file):
                 os.remove(lock_file)
-
 
     def log_message(self, format, *args):
         logging.info(f"{self.address_string()} - {format % args}")
