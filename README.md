@@ -142,3 +142,4 @@ To read the API docs, open the following pages:
 # Test realy deploy ref Mon Mar 16 21:29:40 +04 2026
 # Final fix: universal branch support
 # Final fix: correct branch switching
+# Final fix: create local branch from FETCH_HEAD
