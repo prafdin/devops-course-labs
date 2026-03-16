@@ -135,3 +135,4 @@ To read the API docs, open the following pages:
 # Reload webhook
 # Test fixed webhook
 # Fix restart check
+# Test sudo fix
