@@ -21,9 +21,18 @@ with open('config.json') as config_json:
   users = config['users']
   db_path = config['db_path']
 
-# Получаем текущий коммит из git
+# Функция для получения времени последнего деплоя
 import datetime
-DEPLOY_REF = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+import os
+
+def get_deploy_ref():
+    """Возвращает время последнего обновления или NA"""
+    deploy_time_file = '/opt/catty-reminders/deploy_time.txt'
+    try:
+        with open(deploy_time_file, 'r') as f:
+            return f.read().strip()
+    except:
+        return "NA"
 
 # --------------------------------------------------------------------------------
 # Establish the Secret Key
