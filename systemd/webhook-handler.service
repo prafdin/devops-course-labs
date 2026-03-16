@@ -1,0 +1,23 @@
+[Unit]
+Description=GitHub Webhook Handler
+After=network.target
+Before=catty-reminders.service
+
+[Service]
+Type=simple
+User=timur
+Group=appuser
+WorkingDirectory=/opt/webhook-handler
+ExecStart=/usr/bin/python3 /opt/webhook-handler/webhook.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=3
+KillMode=mixed
+SendSIGKILL=yes
+
+# Логирование
+StandardOutput=append:/var/log/webhook/handler.log
+StandardError=append:/var/log/webhook/handler-error.log
+
+[Install]
+WantedBy=multi-user.target
