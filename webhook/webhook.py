@@ -147,6 +147,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             if not branch_exists_on_origin(branch):
                 logging.warning(f"Branch '{branch}' not found on origin, falling back to 'lab1'")
                 target_branch = "lab1"
+                # Важно: сразу переходим к развёртыванию lab1
             else:
                 logging.info(f"Branch '{branch}' exists on origin, will deploy it")
 
