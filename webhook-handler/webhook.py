@@ -33,7 +33,7 @@ def restart_app():
         logging.info("Перезапуск приложения...")
         # Не используем check=True, проверяем сами
         result = subprocess.run(
-            ["sudo", "systemctl", "restart", "catty-reminders"],
+            ["sudo", "-n", "systemctl", "restart", "catty-reminders"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True
