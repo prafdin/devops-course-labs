@@ -26,7 +26,7 @@ sudo systemctl restart catty-app.service
 sleep 3
 
 
-if sudo systemctl is-active --quiet catty-app.service; then
+if sudo systemctl is-active catty-app.service; then
     echo "✅ Service restarted successfully"
 else
     echo "❌ Service failed to restart!"
