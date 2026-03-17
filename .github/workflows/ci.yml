@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest
-        pip install -e
+        pip install -e .
 
     - name: Run tests
       run: pytest > test_result.txt 2>&1 || true
