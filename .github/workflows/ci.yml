@@ -27,6 +27,11 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      - name: Start app
+        run: |
+          uvicorn main:app --host 127.0.0.1 --port 8181 &
+          sleep 3
+
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
