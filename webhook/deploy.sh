@@ -62,7 +62,7 @@ else
 fi
 
 log "Выполняется перезапуск приложения..."
-sudo systemctl reastart app
+sudo systemctl restart app
 
 log "ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH ЗАВЕРШЕН УСПЕШНО"
 log ""
