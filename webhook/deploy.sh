@@ -62,7 +62,7 @@ else
 fi
 
 log "Выполняется перезапуск приложения..."
-sudo systemctl restart app
+pkill -f uvicorn
 
 log "ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH ЗАВЕРШЕН УСПЕШНО"
 log ""
