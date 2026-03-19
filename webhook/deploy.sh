@@ -28,6 +28,10 @@ git fetch origin
 git checkout $BRANCH
 git reset --hard origin/$BRANCH
 
+DEPLOY_REF=$(git rev-parse HEAD)
+log "Текущий коммит: $DEPLOY_REF"
+echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env.deploy
+
 if [ -f "requirements.txt" ]; then
 	log "Установка зависимостей..."
 	if [ ! -d "venv" ]; then
