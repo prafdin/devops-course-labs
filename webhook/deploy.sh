@@ -55,7 +55,7 @@ Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d
         $TMP_DIR/ $APP_DIR/
     
     log "Перезапуск приложения..."
-    sudo systemctl restart
+    pkill -f "unicorn app:main:app" || true
     
     log "=== ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH УСПЕШНО ЗАВЕРШЕН ==="
 
