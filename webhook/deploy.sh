@@ -14,59 +14,56 @@ log() {
 log "НАЧАЛО ДЕПЛОЯ"
 log "Ветка: $BRANCH"
 
-if [ ! -d "$APP_DIR/.git" ]; then
-	log "Репозиторий не найден. Клонирование..."
-	git clone --branch $BRANCH $REPO_URL $APP_DIR
+TMP_DIR=$(mktemp -d)
+log "Временная директория: $TMP_DIR"
+
+log "Клонирование репозитория..."
+git clone --branch $BRANCH $REPO_URL $TMP_DIR
+
+cd $TMP_DIR
+
+log "Установка зависимостей во временной папке..."
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+if pytest tests -v --maxfail=1 --disable-warnings; then
+    TEST_RESULT=$?
+    log "ТЕСТЫ ПРОШЛИ УСПЕШНО!"
+    
+    DEPLOY_REF=$(git rev-parse HEAD)
+    log "SHA коммита: $DEPLOY_REF"
+    
+    log "Настройка переменной окружения для приложения..."
+    
+    sudo mkdir -p /etc/systemd/system/app.service.d
+    echo "[Service]
+Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d/override.conf > /dev/null
+
+    sudo systemctl daemon-reload    
+    
+    log "Обновление рабочей папки приложения..."
+    
+    rsync -a --delete \
+        --exclude='venv' \
+        --exclude='.git' \
+        --exclude='__pycache__' \
+        --exclude='*.pyc' \
+        $TMP_DIR/ $APP_DIR/
+    
+    log "Перезапуск приложения..."
+    sudo systemctl restart app
+    
+    log "=== ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH УСПЕШНО ЗАВЕРШЕН ==="
+
 else
-	log "Репозиторий найден..."
+    TEST_RESULT=$?
+    log "ТЕСТЫ НЕ ПРОШЛИ! Код ошибки: $TEST_RESULT"
+    log "Остановка деплоя."
+    
+    exit $TEST_RESULT
+
 fi
 
-cd $APP_DIR
-
-log "Получение последних изменений..."
-git fetch origin
-git checkout $BRANCH
-git reset --hard origin/$BRANCH
-
-DEPLOY_REF=$(git rev-parse HEAD)
-log "Текущий коммит: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env.deploy
-
-if [ -f "requirements.txt" ]; then
-	log "Установка зависимостей..."
-	if [ ! -d "venv" ]; then
-		log "Создание виртуального окружения..."
-		python3 -m venv venv
-	fi
-
-	source venv/bin/activate
-	pip install -r requirements.txt
-
-	pip install pytest
-else
-	log "requirements.txt не найден"
-fi
-
-log "ЗАПУСК ТЕСТОВ"
-
-export PYTHONPATH=$APP_DIR:$PYTHONPATH
-
-if [ -d "tests" ]; then
-	if pytest tests -v --maxfail=1 --disable-warnings; then
-		TEST_RESULT=$?
-		log "Тесты прошли успешно!"
-	else
-		TEST_RESULT=$?
-		log "Тесты не прошли! Код ошибки: $TEST_REUSLT"
-		log "Остановка деплоя."
-		exit $TEST_RESULT
-	fi
-else
-	log "Папки tests не существует, переходим к запуску приложения..."
-fi
-
-log "Выполняется перезапуск приложения..."
-sudo systemctl restart app
-
-log "ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH ЗАВЕРШЕН УСПЕШНО"
-log ""
+log "Очистка временной директории..."
+rm -rf $TMP_DIR
