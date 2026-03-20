@@ -40,7 +40,6 @@ if pytest tests -v --maxfail=1 --disable-warnings; then
     
     log "Настройка переменной окружения для приложения..."
     
-    sudo mkdir -p /etc/systemd/system/app.service.d
     echo "[Service]
 Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d/override.conf > /dev/null
 
@@ -56,7 +55,7 @@ Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d
         $TMP_DIR/ $APP_DIR/
     
     log "Перезапуск приложения..."
-    sudo systemctl restart app
+    sudo systemctl restart
     
     log "=== ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH УСПЕШНО ЗАВЕРШЕН ==="
 
