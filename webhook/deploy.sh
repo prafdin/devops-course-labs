@@ -20,6 +20,8 @@ log "Временная директория: $TMP_DIR"
 log "Клонирование репозитория..."
 git clone --branch $BRANCH $REPO_URL $TMP_DIR
 
+cp -r $APP_DIR/testlib $TMP_DIR/tests/
+
 cd $TMP_DIR
 
 log "Установка зависимостей во временной папке..."
