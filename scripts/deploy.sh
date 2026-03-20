@@ -7,8 +7,8 @@ if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
     exit 1
 fi
 
-if [ -z "$BRANCH" ]; then
-    echo "Error: BRANCH must be set"
+if [ -z "$RELEASE_HASH" ]; then
+    echo "Error: RELEASE_HASH must be set"
     exit 1
 fi
 
@@ -17,7 +17,8 @@ DEPLOY_DIR="/home/ct/catty-reminders-app"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
 echo "User: $DEPLOY_USER"
-echo "Branch: $BRANCH"
+echo "Release hash: $RELEASE_HASH"
+echo "Release branch: $RELEASE_BRANCH"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
@@ -27,8 +28,8 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     cd $DEPLOY_DIR
     
     git fetch origin
-    git checkout -B $BRANCH origin/$BRANCH
-    git pull origin $BRANCH
+    git checkout $RELEASE_BRANCH
+    git pull origin "$RELEASE_BRANCH"
     
     DEPLOY_REF=\$(git rev-parse HEAD)
     echo "DEPLOY_REF=\$DEPLOY_REF" > .env.deploy
@@ -46,5 +47,12 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     
     sudo systemctl restart app.service
     
-    echo "Deployment completed successfully"
+    sleep 4
+    
+    if sudo systemctl is-active --quiet app.service; then
+        echo "Deployment completed successfully"
+    else
+        echo "ERROR: Application failed to start"
+        exit 1
+    fi
 EOF
