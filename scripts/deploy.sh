@@ -56,3 +56,4 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
         exit 1
     fi
 EOF
+# for commit
