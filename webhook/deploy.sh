@@ -22,6 +22,8 @@ git clone --branch $BRANCH $REPO_URL $TMP_DIR
 
 cp -r $APP_DIR/testlib $TMP_DIR/tests/
 
+export PYTHONPATH=$TMP_DIR:$PYTHONPATH
+
 cd $TMP_DIR
 
 log "Установка зависимостей во временной папке..."
