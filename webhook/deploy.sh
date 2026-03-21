@@ -5,6 +5,7 @@ set -e
 REPO_URL="https://github.com/mappy12/catty-reminders-app"
 LOG_FILE="/home/mappy/webhook/deploy.log"
 APP_DIR="/home/mappy/Desktop/catty-reminders-app"
+ENV_FILE="$APP_DIR/.env"
 
 BRANCH=$1
 
@@ -41,10 +42,7 @@ if pytest tests -v --maxfail=1 --disable-warnings; then
     
     log "Настройка переменной окружения для приложения..."
     
-    echo "[Service]
-Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d/override.conf > /dev/null
-
-    sudo systemctl daemon-reload    
+    echo "DEPLOY_REF=$DEPLOY_REF" > $ENV_FILE  
     
     log "Обновление рабочей папки приложения..."
     
@@ -53,6 +51,7 @@ Environment=DEPLOY_REF=$DEPLOY_REF" | sudo tee /etc/systemd/system/app.service.d
         --exclude='.git' \
         --exclude='__pycache__' \
         --exclude='*.pyc' \
+        --exclude='.env' \
         $TMP_DIR/ $APP_DIR/
     
     log "Перезапуск приложения..."
