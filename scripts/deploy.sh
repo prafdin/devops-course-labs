@@ -17,7 +17,7 @@ DEPLOY_DIR="/home/ct/catty-reminders-app"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
 echo "User: $DEPLOY_USER"
-echo "Release hash: $RELEASE_HASH"
+#echo "Release hash: $RELEASE_HASH"
 echo "Release branch: $RELEASE_BRANCH"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
@@ -28,8 +28,7 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     cd $DEPLOY_DIR
     
     git fetch origin
-    git checkout $RELEASE_BRANCH
-    git pull origin "$RELEASE_BRANCH"
+    git checkout $RELEASE_HASH
     
     DEPLOY_REF=\$(git rev-parse HEAD)
     echo "DEPLOY_REF=\$DEPLOY_REF" > .env.deploy
