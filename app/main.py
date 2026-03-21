@@ -1,6 +1,6 @@
 """
 This module is the main module for the FastAPI app.
-Deploy test №5
+Deploy test №6
 """
 
 # --------------------------------------------------------------------------------
