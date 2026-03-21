@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - lab2
+      - lab2_autotests*
   pull_request:
     branches:
       - lab2
+      - lab2_autotests*
 
 jobs:
   pipeline:
@@ -35,11 +37,11 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest 2>&1 | tee test_result.txt
+        run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_result.txt
+          path: test_result.xml
