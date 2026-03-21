@@ -137,11 +137,3 @@ To read the API docs, open the following pages:
 * [`/docs`](http://127.0.0.1:8181/docs) for classic OpenAPI docs
 * [`/redoc`](http://127.0.0.1:8181/redoc) for more modern ReDoc docs
 
-test Пн 16 мар 2026 09:32:59 +04
-test Пн 16 мар 2026 09:41:12 +04
-test Пн 16 мар 2026 10:20:49 +04
-test Пн 16 мар 2026 10:46:49 +04
-test Пн 16 мар 2026 10:51:38 +04
-test Пн 16 мар 2026 11:00:56 +04
-test Пн 16 мар 2026 11:05:48 +04
-test

@@ -21,7 +21,6 @@ echo "Using DEPLOY_REF=$DEPLOY_REF"
 
 
 echo "🔄 Restarting catty-app.service..."
-sudo systemctl daemon-reload
 sudo systemctl restart catty-app.service
 sleep 3
 
