@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
-import subprocess
 import os
 
 PORT = 8181
-REPO_DIR = "/home/ct/catty-reminders-app"
+ENV_FILE = "/home/ct/catty-reminders-app/.env.deploy"
 
-def get_commit_sha():
+def get_deploy_ref():
     try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=REPO_DIR,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return result.stdout.strip()[:8]
+        with open(ENV_FILE, 'r') as f:
+            for line in f:
+                if line.startswith('DEPLOY_REF='):
+                    return line.strip().split('=')[1][:8]
     except:
-        return "unknown"
+        pass
+    return "unknown"
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        commit_sha = get_commit_sha()
+        deploy_ref = get_deploy_ref()
         
         if self.path == '/login':
             self.send_response(200)
@@ -45,7 +41,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
             <h1>🚀 Webhook Demo Application</h1>
             <p>Приложение успешно развернуто через webhook!</p>
             <p>Время: {datetime.now()}</p>
-            <p>Deploy ref: {commit_sha}</p>
+            <p>Deploy ref: {deploy_ref}</p>
         </body>
         </html>
         '''
