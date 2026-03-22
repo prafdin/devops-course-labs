@@ -2,7 +2,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
 import subprocess
-import os
 
 PORT = 8181
 REPO_DIR = "/home/ct/catty-reminders-app"
@@ -22,14 +21,6 @@ def get_commit_sha():
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Обработка /login — максимально простой ответ
-        if self.path == '/login':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b'ok')
-            return
-
         commit_sha = get_commit_sha()
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
