@@ -8,8 +8,6 @@ echo "🚀 Deploying Catty..."
 
 cd "$APP_DIR"
 
-git pull origin main
-
 if [ ! -d .venv ]; then
   python3 -m venv .venv
 fi
@@ -21,9 +19,11 @@ printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
 
 echo "Using DEPLOY_REF=$DEPLOY_REF"
 
+
 echo "🔄 Restarting catty-app.service..."
 sudo systemctl restart catty-app.service
 sleep 3
+
 
 if sudo systemctl is-active catty-app.service; then
     echo "✅ Service restarted successfully"
