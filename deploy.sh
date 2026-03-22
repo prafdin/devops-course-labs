@@ -22,6 +22,7 @@ printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
 echo "Using DEPLOY_REF=$DEPLOY_REF"
 
 echo "🔄 Restarting app.service..."
+# Устанавливаем XDG_RUNTIME_DIR для пользовательского systemctl
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 systemctl --user restart app.service
 sleep 3
