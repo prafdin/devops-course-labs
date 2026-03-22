@@ -22,10 +22,10 @@ printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
 echo "Using DEPLOY_REF=$DEPLOY_REF"
 
 echo "🔄 Restarting app.service..."
-sudo systemctl restart app.service
+systemctl restart app.service
 sleep 3
 
-if sudo systemctl is-active app.service; then
+if systemctl is-active app.service; then
     echo "✅ Service restarted successfully"
 else
     echo "❌ Service failed to restart!"
