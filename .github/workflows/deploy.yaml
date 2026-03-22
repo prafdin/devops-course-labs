@@ -19,7 +19,7 @@ jobs:
 
       - name: Run tests before deploy
         run: |
-          chmod +x test.sh
+          chmod +x test.sh deploy.sh
           ./test.sh
 
       - name: Set up SSH key
