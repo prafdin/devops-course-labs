@@ -4,9 +4,14 @@ echo "Запуск деплоя catty-reminders-app..."
 echo "======================================"
 
 APP_DIR="/home/deemeed/catty-reminders-app"
-REPO_DIR=$(pwd)  # Текущая директория
+REPO_DIR=$(pwd) 
 PORT=8181
 SERVICE_NAME="catty-app"
+
+DEPLOY_REF="$(git rev-parse HEAD)"
+
+echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
 
 sudo mkdir -p $APP_DIR
 
@@ -31,15 +36,9 @@ if [ -f "/home/$USER/catty-env/.env" ]; then
     echo "Копирование .env файла..."
     sudo cp /home/$USER/catty-env/.env $APP_DIR/
 else
-    echo ".env файл не найден! Создаю из шаблона..."
+    echo ".env файл не найден! Создание из шаблона..."
     sudo cp .env.example $APP_DIR/.env
-    echo "НЕ ЗАБУДЬ отредактировать $APP_DIR/.env с реальными данными!"
 fi
-
-DEPLOY_REF="$(git rev-parse HEAD)"
-
-echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
 
 echo "Перезапуск сервиса..."
 sudo systemctl daemon-reload
