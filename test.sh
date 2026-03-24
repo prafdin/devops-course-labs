@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo "Запуск тестов приложения catty-reminders-app..."
+echo "================================================"
+
+if [ ! -d "venv" ]; then
+    echo "Создание виртуального окружения..."
+    python3 -m venv venv
+fi
+
+source venv/bin/activate
+
+echo "Установка зависимостей..."
+pip install -r requirements.txt
+
+echo "Установка браузеров Playwright..."
+playwright install --with-deps chromium
+
+if [ ! -f "inputs.json" ]; then
+    echo "Создание конфигурации тестов..."
+    cat > inputs.json << EOF
+{
+    "base_url": "http://127.0.0.1:8181",
+    "users": [
+        {
+            "username": "heisenberg",
+            "password": "P@ssw0rd"
+        },
+        {
+            "username": "tester",
+            "password": "foobar123"
+        }
+    ]
+}
+EOF
+fi
+
+echo "Запуск pytest..."
+python3 -m pytest tests/
+
+TEST_RESULT=$?
+
+deactivate
+
+if [ $TEST_RESULT -eq 0 ]; then
+    echo "Все тесты пройдены успешно!"
+    exit 0
+else
+    echo "Тесты не пройдены! Деплой будет отменен."
+    exit 1
+fi
