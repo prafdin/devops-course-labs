@@ -27,7 +27,7 @@ jobs:
     - name: Run tests
       run: |
         echo "🧪 Running tests..."
-        # Запускаем pytest с генерацией JUnit XML отчёта
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
         pytest --junitxml=test_result.xml
 
     - name: Upload test results
