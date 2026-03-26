@@ -32,18 +32,17 @@ jobs:
           script: |
             echo "🚀 Starting deployment..."
 
-            # Переходим в папку приложения
             cd ~/Desktop/DevOps_lab1/catty-reminders-app
 
-            # Обновляем код из ветки lab2
             git fetch origin lab2
             git reset --hard origin/lab2
 
-            # Устанавливаем зависимости
             pip3 install --break-system-packages -r requirements.txt
 
-            # Перезапускаем приложение
-            sudo systemctl restart ssh
-            sudo systemctl restart catty-app.service
+            echo "🔄 Stopping old app..."
+            pkill -f app.py || true
+
+            echo "🚀 Starting app..."
+            nohup python3 app.py > app.log 2>&1 &
 
             echo "✅ Deployment complete!"
