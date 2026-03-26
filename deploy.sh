@@ -25,21 +25,6 @@ sudo rsync -av --delete \
     --exclude '.env' \
     ./ $APP_DIR/
 
-if [ ! -d "$APP_DIR/venv" ]; then
-    echo "Создание виртуального окружения..."
-    cd $APP_DIR
-    sudo python3 -m venv venv
-    cd $REPO_DIR
-fi
-
-if [ -f "/home/$USER/catty-env/.env" ]; then
-    echo "Копирование .env файла..."
-    sudo cp /home/$USER/catty-env/.env $APP_DIR/
-else
-    echo ".env файл не найден! Создание из шаблона..."
-    sudo cp .env.example $APP_DIR/.env
-fi
-
 echo "Перезапуск сервиса..."
 sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE_NAME
