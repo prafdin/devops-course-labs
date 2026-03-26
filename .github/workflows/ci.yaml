@@ -31,4 +31,6 @@ jobs:
         sleep 5
 
     - name: Run tests
-      run: pytest --junitxml=test_result.xml
+      run:
+        export PYTHONPATH=$PYTHONPATH:$PWD
+        pytest --junitxml=test_result.xml
