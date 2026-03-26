@@ -1,0 +1,44 @@
+on:
+  push:
+    branches: [lab2]
+  pull_request:
+    branches: [lab2]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests and save results
+        run: |
+          mkdir -p test_results
+          pytest tests/ -v --tb=short > test_results/output.txt 2>&1
+          echo $? > test_results/exit_code.txt
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_results/
+          if-no-files-found: error
+
+      - name: Check if tests passed
+        run: |
+          exit_code=$(cat test_results/exit_code.txt)
+          if [ "$exit_code" -ne 0 ]; then
+            echo "Tests failed with exit code $exit_code"
+            exit 1
+          else
+            echo "All tests passed!"
+          fi
