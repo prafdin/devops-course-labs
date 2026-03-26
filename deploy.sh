@@ -10,7 +10,7 @@ SERVICE_NAME="catty-app"
 
 DEPLOY_REF="$(git rev-parse HEAD)"
 
-echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
+echo "Текущий SHA ветки: $DEPLOY_REF"
 echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
 
 sudo mkdir -p $APP_DIR
