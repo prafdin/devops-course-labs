@@ -40,9 +40,10 @@ jobs:
             pip3 install --break-system-packages -r requirements.txt
 
             echo "🔄 Stopping old app..."
-            pgrep -f app.py && pkill -f main.py || echo "app not running"
+            pkill -f uvicorn 2>/dev/null || true
+            sleep 2
 
             echo "🚀 Starting app..."
-            nohup python3 app.py > app.log 2>&1 &
+            nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
 
             echo "✅ Deployment complete!"
