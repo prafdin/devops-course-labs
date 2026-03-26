@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [lab2]
   pull_request:
-    branches: [lab2]
 
 jobs:
   test:
@@ -24,17 +22,21 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-playwright
+          pip install -e .
           playwright install
 
       - name: Run application and tests
         run: |
-          # Запуск сервера в фоне
-          uvicorn catty_reminders.main:app --host 0.0.0.0 --port 8181 &
-          sleep 5
           # Добавляем корень проекта в PYTHONPATH
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          # Запуск тестов с JUnit XML
+          # Запуск сервера в фоне
+          uvicorn catty_reminders.main:app --host 0.0.0.0 --port 8181 &
+          SERVER_PID=$!
+          sleep 5  # ждем пока сервер поднимется
+          # Запуск тестов
           pytest --junitxml=test_result.xml
+          # Убиваем сервер после тестов
+          kill $SERVER_PID
 
       - name: Upload test result
         if: always()
@@ -42,4 +44,3 @@ jobs:
         with:
           name: test_result
           path: test_result.xml
-          retention-days: 7
