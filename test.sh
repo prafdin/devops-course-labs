@@ -23,11 +23,9 @@ EOF
 fi
 
 echo "Запуск pytest..."
-python3 -m pytest tests/
+python3 -m pytest
 
 TEST_RESULT=$?
-
-deactivate
 
 if [ $TEST_RESULT -eq 0 ]; then
     echo "Все тесты пройдены успешно!"
