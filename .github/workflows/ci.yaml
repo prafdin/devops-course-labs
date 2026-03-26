@@ -17,28 +17,26 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies and Playwright
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest pytest-playwright
-          pip install -e .
-          playwright install
+          pip install -r requirements.txt
+          pip install pytest-playwright
 
-      - name: Run application and tests
+      - name: Run server and tests
         run: |
-          # Добавляем корень проекта в PYTHONPATH
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          # Запуск сервера в фоне
-          uvicorn catty_reminders.main:app --host 0.0.0.0 --port 8181 &
+          # Указываем, где искать пакеты
+          export PYTHONPATH=$(pwd)/app
+          # Запуск uvicorn сервера в фоне
+          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           SERVER_PID=$!
-          sleep 5  # ждем пока сервер поднимется
+          sleep 5  # ждём, пока сервер полностью поднимется
           # Запуск тестов
           pytest --junitxml=test_result.xml
-          # Убиваем сервер после тестов
+          # Останавливаем сервер
           kill $SERVER_PID
 
-      - name: Upload test result
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
