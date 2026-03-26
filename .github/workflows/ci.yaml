@@ -7,35 +7,35 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
+      
       - name: Run tests with JUnit output
         run: |
           mkdir -p tests
           cat > tests/test_dummy.py << 'EOF'
-def test_example():
-    assert True
-
-def test_another():
-    assert 1 + 1 == 2
-EOF
+          def test_example():
+              assert True
+          
+          def test_another():
+              assert 1 + 1 == 2
+          EOF
           pytest tests/ --junitxml=test_result.xml -v
           echo "Tests executed at $(date)" > test_result.txt
           echo "Status: PASSED" >> test_result.txt
-
+      
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
