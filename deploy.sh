@@ -32,6 +32,13 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
+echo ">Running tests..."
+pip install pytest 
+
+# Если тесты упадут, скрипт прервется здесь из-за 'set -e'
+python3 -m pytest
+echo ">Tests passed successfully!"
+
 echo ">Restarting app..."
 sudo systemctl restart catty.service
 echo ">Done"
