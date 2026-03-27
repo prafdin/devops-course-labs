@@ -1,8 +1,6 @@
 on:
   push:
-    branches: [lab2]
   pull_request:
-    branches: [lab2]
 
 jobs:
   build_and_test:
