@@ -24,7 +24,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             if event_type == 'push':
                 self._handle_push(payload)
             else:
-                print(f"\nПропускаем событие '{event_type}'")
+                print(f"Пропускаем событие '{event_type}'")
 
             self.send_response(200)
             self.end_headers()
