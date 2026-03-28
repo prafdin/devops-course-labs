@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=password-123
+WorkingDirectory=/home/password-123/webhook-handler
+ExecStart=/home/password-123/webhook-handler/venv/bin/python sofa.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
