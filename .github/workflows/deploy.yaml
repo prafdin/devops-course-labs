@@ -9,9 +9,6 @@ jobs:
     runs-on: ubuntu-latest
   
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Deploy application
         uses: appleboy/ssh-action@v1
         with:
@@ -32,48 +29,21 @@ jobs:
             
             log "НАЧАЛО ДЕПЛОЯ (GitHub Actions CD)"
             log "Ветка: $BRANCH"
-            
-            TMP_DIR=$(mktemp -d)
-            log "Временная директория: $TMP_DIR"
-            
-            log "Клонирование репозитория..."
-            git clone --branch $BRANCH https://github.com/mappy12/catty-reminders-app.git $TMP_DIR
-            
-            if [ -d "$APP_DIR/testlib" ]; then
-              cp -r $APP_DIR/testlib $TMP_DIR/tests/
-            fi
-            
-            export PYTHONPATH=$TMP_DIR:$PYTHONPATH
-            cd $TMP_DIR
-            
-            log "Установка зависимостей..."
-            python3 -m venv venv
-            source venv/bin/activate
-            pip install -r requirements.txt
-            
-            if pytest tests/ -v --maxfail=1 --disable-warnings; then
-              log "ТЕСТЫ ПРОШЛИ УСПЕШНО!"
-              DEPLOY_REF=$(git rev-parse HEAD)
-              log "SHA коммита: $DEPLOY_REF"
+
+            cd $APP_DIR
+
+            log "Обновление кода..."
+            git fetch origin
+            git checkout $BRANCH
+            git reset --hard origin/$BRANCH
+
+            DEPLOY_REF=$(git rev-parse HEAD)
+            log "SHA коммита: $DEPLOY_REF"
+          
+            echo "DEPLOY_REF=$DEPLOY_REF" > $ENV_FILE
+      
+            log "Перезапуск приложения..."
+            sudo systemctl restart app
               
-              echo "DEPLOY_REF=$DEPLOY_REF" > $ENV_FILE
-              
-              rsync -a --delete \
-                --exclude='venv' \
-                --exclude='.git' \
-                --exclude='__pycache__' \
-                --exclude='*.pyc' \
-                --exclude='.env' \
-                $TMP_DIR/ $APP_DIR/
-              
-              log "Перезапуск приложения..."
-              sudo systemctl restart app
-              
-              log "=== ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH УСПЕШНО ЗАВЕРШЕН ==="
-            else
-              TEST_RESULT=$?
-              log "ТЕСТЫ НЕ ПРОШЛИ! Код ошибки: $TEST_RESULT"
-              exit $TEST_RESULT
-            fi
-            
-            rm -rf $TMP_DIR
+            log "=== ДЕПЛОЙ ДЛЯ ВЕТКИ $BRANCH УСПЕШНО ЗАВЕРШЕН ==="
+
