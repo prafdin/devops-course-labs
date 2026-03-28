@@ -20,7 +20,7 @@ jobs:
             set -e
             APP_DIR="/home/mappy/Desktop/catty-reminders-app"
             ENV_FILE="$APP_DIR/.env"
-            BRANCH="${{ github.event.release.target_commitish }}"
+            BRANCH="lab2"
             LOG_FILE="/home/mappy/webhook/deploy.log"
             
             log() {
