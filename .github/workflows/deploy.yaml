@@ -16,7 +16,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
-          port: 2200
+          port: 3169
           username: mappy
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
