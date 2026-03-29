@@ -1,0 +1,13 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=ilya
+WorkingDirectory=/home/ilya/webhook-handler
+ExecStart=/home/ilya/webhook-handler/venv/bin/python deploy_manager.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
