@@ -7,7 +7,7 @@ on:
     branches: ["**"]
 
 jobs:
-  pipeline:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,29 +25,30 @@ jobs:
           pip install pytest-playwright uvicorn
           playwright install --with-deps chromium
 
-      - name: Prepare Config
-        # Твой conftest.py требует inputs.json. Создаем его для тестов.
+      - name: Create inputs.json
+        # Это нужно тестам (conftest.py), чтобы они не падали
         run: |
           echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
 
-      - name: Start app
-        # Запускаем приложение в фоне, чтобы тесты могли к нему «достучаться»
+      - name: Start Application
+        # Запускаем сервер, чтобы тесты могли к нему подключиться
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
 
       - name: Run tests
         env:
-          # Чтобы тесты видели папки app и testlib в корне проекта
           PYTHONPATH: ${{ github.workspace }}
-        # Генерируем именно XML-отчет
-        run: pytest --junitxml=test_result.xml || true
+        run: |
+          mkdir -p test_reports
+          # Генерируем и XML, и текстовый отчет
+          pytest --junitxml=test_reports/junit.xml > test_reports/test_result 2>&1 || true
 
-      - name: Upload Artifact
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # Имя архива должно быть 'test_result'
+          # Имя артефакта строго по инструкции
           name: test_result
-          # Имя файлйа внутри архива - 'test_result.xml'
-          path: test_result.xml
+          # Загружаем всю папку, чтобы бот точно нашел нужный ему файл внутри
+          path: test_reports/
