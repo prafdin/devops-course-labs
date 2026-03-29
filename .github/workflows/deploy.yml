@@ -7,20 +7,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Deploy via script
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
-          script: |
-            cd ~/catty-reminders-app
-            git fetch origin lab2
-            git reset --hard origin/lab2
-            pip install -r requirements.txt
-            pkill -f "app.main" || true
-            # Запуск с полной изоляцией
-            nohup python3 -m app.main --port 8181 > /dev/null 2>&1 &
-            sleep 2
-            exit 0
+          # Просто запускаем готовый скрипт
+          script: bash ~/catty-reminders-app/run_app.sh
