@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# Этот декоратор заставит Flask ловить ВСЕ пути (/, /health, /github-webhook и т.д.)
 @app.route('/', defaults={'path': ''}, methods=['POST', 'GET'])
 @app.route('/<path:path>', methods=['POST', 'GET'])
 def handle_webhook(path):
