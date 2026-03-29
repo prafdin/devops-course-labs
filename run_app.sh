@@ -1,23 +1,28 @@
 #!/bin/bash
 cd ~/catty-reminders-app
 
-# 1. Принудительно очищаем локальную ветку и тянем свежак
+# 1. Принудительно чистим и обновляем код
 git fetch origin lab2
 git reset --hard origin/lab2
 
-# 2. Убиваем ВСЁ, что связано с приложением (-9)
+# 2. Убиваем старые процессы (жестко)
 pkill -9 -f "app.main" || true
 pkill -9 -f "uvicorn" || true
-pkill -9 -f "python3 -m app.main" || true
 
-# 3. Даем системе секунду прийти в себя и проверяем, свободен ли порт 8181
-sleep 1
+# 3. Устанавливаем зависимости
+pip install -r requirements.txt --user
 
-# 4. Запускаем приложение
-nohup python3 -m app.main --port 8181 </dev/null > deploy.log 2>&1 &
+# 4. Запускаем через uvicorn
+# Добавим задержку, чтобы логи успели записаться
+nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > deploy.log 2>&1 &
 
-# 5. Финальная проверка для лога
-sleep 3
-ps aux | grep "app.main" | grep -v grep
-echo "Deployment finished. Site should be updated now."
+# 5. Проверка порта
+sleep 5
+if sudo ss -tulpn | grep -q ":8181"; then
+    echo "SUCCESS: Port 8181 is open."
+else
+    echo "ERROR: Port 8181 is NOT open. Log content:"
+    cat deploy.log
+    exit 1
+fi
 exit 0
