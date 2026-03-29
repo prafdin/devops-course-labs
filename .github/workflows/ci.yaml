@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -26,27 +26,31 @@ jobs:
           python -m playwright install chromium --with-deps
 
       - name: Prepare inputs.json
-        #conftest.py требует этот файл. Создаем его, чтобы pytest не упал.
         run: |
-          echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
+          echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "simonov", "password": "password"}]}' > inputs.json
 
       - name: Start app in background
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          # Запускаем uvicorn, передавая PYTHONPATH, чтобы он видел папку app
+          PYTHONPATH=. nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 10 # Даем больше времени на запуск
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        # Генерируем XML отчет. Важно: workflow должен завершиться успешно,
-        # поэтому используем || true, если вдруг какой-то тест упадет.
-        run: pytest -v --junitxml=test_result.xml || true
+        # Запускаем pytest строго по папке tests/
+        # Генерируем XML и текстовый лог одновременно
+        run: |
+          mkdir -p output
+          pytest tests/ -v --junitxml=output/test_result.xml > output/test_result 2>&1 || true
+          # Копируем XML в корень папки артефакта для надежности
+          cp output/test_result.xml output/test_result.xml.backup 
 
       - name: Upload test result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # Имя артефакта (ZIP-архива)
           name: test_result
-          # Путь похоже нужен только к одномуфайлу XML
-          path: test_result.xml
+          # Загружаем содержимое папки output. 
+          # По идее бот найдет там и test_result (текст), и test_result.xml
+          path: output/
