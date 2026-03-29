@@ -1,50 +1,53 @@
-name: CI Workflow
+name: CI
+
 on:
   push:
-    branches: ["**"] 
+    branches: ["**"]
   pull_request:
     branches: ["**"]
 
 jobs:
-  build-and-test:
+  pipeline:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-playwright uvicorn # Ставим uvicorn для запуска
+          pip install pytest-playwright uvicorn
           playwright install --with-deps chromium
 
       - name: Prepare Config
-        # Твой conftest.py ищет inputs.json. Создаем его, чтобы не было ошибки.
+        # Твой conftest.py требует inputs.json. Создаем его для тестов.
         run: |
           echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
 
-      - name: Launch Application
-        # Запускаем Catty в фоне прямо в GitHub Actions
+      - name: Start app
+        # Запускаем приложение в фоне, чтобы тесты могли к нему «достучаться»
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5 # Даем время серверу проснуться
+          sleep 5
 
-      - name: Execute Tests
+      - name: Run tests
         env:
+          # Чтобы тесты видели папки app и testlib в корне проекта
           PYTHONPATH: ${{ github.workspace }}
-        # Генерируем JUnit XML отчет
-        run: pytest --junitxml=report.xml || true
+        # Генерируем именно XML-отчет
+        run: pytest --junitxml=test_result.xml || true
 
       - name: Upload Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # Имя артефакта СТРОГО 'test_result'
+          # Имя архива должно быть 'test_result'
           name: test_result
-          # Путь к нашему XML отчету
-          path: report.xml
+          # Имя файлйа внутри архива - 'test_result.xml'
+          path: test_result.xml
