@@ -1,0 +1,29 @@
+name: CD Workflow
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: ilya
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3120
+          script: |
+            cd ~/catty-reminders-app
+            git pull origin lab2
+            # Установка зависимостей и запуск
+            pip install -r requirements.txt
+            # Перезапуск приложения (команда зависит от того, мы  запускаем)
+            # Если через nohup или screen, то нужно убить старый процесс и запустить новый
+            pkill -f "python3 main.py" || true
+            nohup python3 main.py > log.txt 2>&1 &
+            echo "Deployed successfully"
