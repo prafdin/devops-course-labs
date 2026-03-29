@@ -17,30 +17,28 @@ jobs:
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
-          debug: true
           script_stop: true
           script: |
-            # Переходим в папку проекта
+            # 1. Переходим в папку
             cd ~/catty-reminders-app
             
-            # Обновляем код из нужной ветки
+            # 2. Обновляем код
             git fetch origin lab2
             git reset --hard origin/lab2
             
-            # Устанавливаем зависимости
-            pip install -r requirements.txt
-            
-            # 1. Убиваем старый обработчик вебхуков (елси запущен)
+            # 3. Убиваем старые процессы (обязательно!)
+            pkill -f "app.main" || true
             pkill -f "webhook_handler.py" || true
             
-            # 2. Убиваем старое запущенное приложение
-            pkill -f "app.main" || true
+            # 4. Запускаем приложение
+            # Добавляем & disown в конце - это ВАЖНО для GitHub
+            nohup python3 -m app.main --port 8181 </dev/null > deploy.log 2>&1 & disown
             
-            # 3. Запускаем приложение в фоне
-            # Используем </dev/null для корректного закрытия SSH-сессии
-            nohup python3 -m app.main --port 8181 </dev/null > deploy.log 2>&1 &
-            
-            # Даем 3 секунды на запуск и проверяем процесс
+            # 5. Проверка
             sleep 3
-            ps aux | grep "app.main" | grep -v grep
-            echo "Deployment finished successfully!"
+            if ps aux | grep -v grep | grep -q "app.main"; then
+              echo "Deployment finished successfully!"
+            else
+              echo "APP FAILED TO START"
+              exit 1
+            fi
