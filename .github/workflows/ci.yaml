@@ -1,9 +1,9 @@
 name: CI Workflow
 on:
   push:
-    branches: [ lab2 ]
+    branches: ["**"]  # Запускать на любой ветке
   pull_request:
-    branches: [ lab2 ]
+    branches: ["**"]
 
 jobs:
   build-and-test:
