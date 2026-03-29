@@ -1,0 +1,72 @@
+name: CD - Deploy to Server
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Клонируем код
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # 2. Настраиваем SSH агент с приватным ключом
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      # 3. Копируем файлы на сервер через SCP
+      - name: Copy application files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.PROXY_HOST }}
+          port: ${{ vars.SSH_PORT }}
+          username: ${{ vars.SERVER_USER }}
+          source: "."
+          target: "/opt/catty-reminders/"
+          strip_components: 0
+      
+      # 4. Выполняем деплой на сервере
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.PROXY_HOST }}
+          port: ${{ vars.SSH_PORT }}
+          username: ${{ vars.SERVER_USER }}
+          script: |
+            cd /opt/catty-reminders
+            
+            # Активируем виртуальное окружение и обновляем зависимости
+            if [ -d "venv" ]; then
+              source venv/bin/activate
+            fi
+            
+            # Обновляем зависимости
+            pip install -r requirements.txt
+            
+            # Перезапускаем приложение
+            sudo systemctl restart catty-reminders
+            
+            # Ждем запуска
+            sleep 3
+            
+            # Проверяем, что приложение работает
+            if curl -s --fail http://localhost:8181/login; then
+              echo "✅ Application restarted successfully"
+            else
+              echo "❌ Application failed to start"
+              sudo journalctl -u catty-reminders -n 20 --no-pager
+              exit 1
+            fi
+      
+      # 5. Проверяем внешний доступ
+      - name: Verify external access
+        run: |
+          sleep 5
+          curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
+          echo "✅ Application is accessible at http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}"

@@ -1,0 +1,56 @@
+name: CI - Test and Build
+
+on:
+  push:
+    branches: [ main, master, develop, lab2 ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Run Python Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Клонируем код
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # 2. Устанавливаем Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      # 3. Устанавливаем зависимости
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-xml
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Устанавливаем playwright для UI тестов
+          pip install playwright
+          playwright install chromium
+      
+      # 4. Запускаем тесты
+      - name: Run tests
+        run: |
+          # Запуск всех тестов с созданием XML отчета
+          pytest tests/ -v --junitxml=test_results.xml --cov=. --cov-report=xml --cov-report=html
+        continue-on-error: false
+      
+      # 5. Загружаем результаты тестов как artifact
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: |
+            test_results.xml
+            coverage.xml
+            htmlcov/
+          if-no-files-found: warn
+      
+      # 6. Проверка, что приложение может быть импортировано
+      - name: Check application imports
+        run: |
+          python -c "import sys; sys.path.insert(0, '.'); from app.main import app; print('✅ Application imports successfully')"
