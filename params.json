@@ -134,6 +134,26 @@
       "login": "Deemeed",
       "id": "chentsov",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "keshacheshek",
+      "id": "golosov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "sofiastepanova",
+      "id": "stepanova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Nika34V",
+      "id": "baranova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "only-hell",
+      "id": "ladygin", 
+      "app": "catty-reminders-app"
     }
   ]
 }
