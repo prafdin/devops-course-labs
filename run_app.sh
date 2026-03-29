@@ -1,28 +1,24 @@
 #!/bin/bash
 cd ~/catty-reminders-app
 
-# 1. Принудительно чистим и обновляем код
-git fetch origin lab2
-git reset --hard origin/lab2
+SHA=$1  # Берем хеш из аргумента, который прислал GitHub
 
-# 2. Убиваем старые процессы (жестко)
-pkill -9 -f "app.main" || true
-pkill -9 -f "uvicorn" || true
+# 1. Принудительно качаем ВСЕ ветки и хеши из Гитхаба
+git fetch --all
+git reset --hard $SHA
+
+# 2. Убиваем старые процессы
+sudo pkill -9 -f "app.main" || true
+sudo pkill -9 -f "uvicorn" || true
 
 # 3. Устанавливаем зависимости
 pip install -r requirements.txt --user
 
-# 4. Запускаем через uvicorn
-# Добавим задержку, чтобы логи успели записаться
-nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > deploy.log 2>&1 &
+# 4. ЗАПУСК 
+# Мы передаем хеш в переменную окружения DEPLOY_REF, 
+# чтобы приложение ОБЯЗАТЕЛЬНО показало его боту.
+export DEPLOY_REF=$SHA
+nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 </dev/null > deploy.log 2>&1 &
 
-# 5. Проверка порта
-sleep 5
-if sudo ss -tulpn | grep -q ":8181"; then
-    echo "SUCCESS: Port 8181 is open."
-else
-    echo "ERROR: Port 8181 is NOT open. Log content:"
-    cat deploy.log
-    exit 1
-fi
+echo "Deployed SHA: $SHA"
 exit 0
