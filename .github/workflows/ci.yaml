@@ -1,7 +1,7 @@
 name: CI Workflow
 on:
   push:
-    branches: ["**"]
+    branches: ["**"] 
   pull_request:
     branches: ["**"]
 
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -20,24 +20,31 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-playwright
+          pip install pytest-playwright uvicorn # Ставим uvicorn для запуска
           playwright install --with-deps chromium
 
-      - name: Run Tests
+      - name: Prepare Config
+        # Твой conftest.py ищет inputs.json. Создаем его, чтобы не было ошибки.
         run: |
-          # Создаем заглушку inputs.json, чтобы conftest.py не падал
-          if [ ! -f inputs.json ]; then
-            echo '{"base_url": "http://localhost:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
-          fi
+          echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
 
-          # Сохраняем в файл 'test_result' без расширения .txt
-          # Добавляем --color=no, чтобы в файле не было лишних спецсимволов
-          PYTHONPATH=. pytest --color=no --disable-warnings -v > test_result 2>&1 || true
+      - name: Launch Application
+        # Запускаем Catty в фоне прямо в GitHub Actions
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 5 # Даем время серверу проснуться
+
+      - name: Execute Tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        # Генерируем JUnit XML отчет
+        run: pytest --junitxml=report.xml || true
 
       - name: Upload Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          # Имя артефакта остается 'test_result'
+          # Имя артефакта СТРОГО 'test_result'
           name: test_result
-          # Путь теперь ведет к файлу без расширения
-          path: test_result
+          # Путь к нашему XML отчету
+          path: report.xml
