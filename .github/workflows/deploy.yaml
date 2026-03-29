@@ -9,9 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to VM via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -20,37 +17,34 @@ jobs:
           username: andrey
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
+
             echo "🚀 Starting deployment on VM..."
 
             DEPLOY_DIR=~/Desktop/DevOps_lab1/catty-reminders-app
+            COMMIT_SHA="${{ github.sha }}"
 
-            # Создаём папку, если её нет
             mkdir -p $DEPLOY_DIR
-
             cd $DEPLOY_DIR
 
-            # Если папка уже репозиторий — обновляем, иначе клонируем
+            echo "📦 Deploying commit: $COMMIT_SHA"
+
             if [ -d ".git" ]; then
-              git fetch --all --tags
-              git checkout ${{ github.event.release.target_commitish }} || git checkout -b deploy-temp ${{ github.event.release.target_commitish }}
-              git reset --hard ${{ github.event.release.target_commitish }}
-              git clean -fd
+              git fetch origin
             else
               git clone git@github.com:AndreyPreobrazhenskiy/catty-reminders-app.git .
-              git checkout ${{ github.event.release.target_commitish }}
             fi
 
-            # Устанавливаем зависимости
+            git checkout --detach $COMMIT_SHA
+            git reset --hard $COMMIT_SHA
+
             pip3 install --break-system-packages -r requirements.txt
 
-            # Обновляем референс деплоя
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt
+            echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /tmp/deploy_ref.txt
 
-            # Перезапускаем сервис
             sudo systemctl restart catty-app.service
             sleep 5
 
-            # Проверяем доступность приложения
             if curl -s http://localhost:8181/login | grep -q "deployref"; then
               echo "✅ Application is running on port 8181"
             else
