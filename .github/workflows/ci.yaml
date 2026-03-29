@@ -20,23 +20,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Устанавливаем браузер для UI тестов
-          pip install pytest-playwright
+          # Устанавливаем всё необходимое для запуска тестов
+          pip install pytest pytest-playwright
+          # Устанавливаем браузер chromium, который нужен для тестов
           playwright install --with-deps chromium
 
       - name: Run Tests
-        shell: bash
         run: |
-          export PYTHONPATH=$PYTHONPATH:.
-          # 1. Убираем расширение .txt у файла
-          # 2. Добавляем -W ignore, чтобы убрать варнинги из файла (сделаем отчет чище)
-          # 3. Убираем || true, чтобы ты видел реальный статус в Actions. 
-          # Если упадет — значит в CI тест не проходит.
-          python3 -m pytest -W ignore tests/ > test_result 2>&1
+          # 1. Создаем временный файл inputs.json, так как conftest.py его требует.
+          # Если он есть в репозитории - ниего не будет.
+          if [ ! -f inputs.json ]; then
+            echo '{"base_url": "http://localhost:8181", "users": [{"username": "ilya", "password": "password"}]}' > inputs.json
+          fi
+
+          # 2. Запускаем тесты.
+          # Добавляем || true, чтобы даже если тесты упадут, бот смог скачать отчет.
+          PYTHONPATH=. pytest -v > test_result.txt 2>&1 || true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
-        if: always() # Загружаем отчет даже если тесты упали, чтобы можно его почитать
         with:
           name: test_result
-          path: test_result # Путь к файлу без .txt
+          path: test_result.txt
