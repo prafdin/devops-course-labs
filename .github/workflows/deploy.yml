@@ -17,13 +17,24 @@ jobs:
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
+          debug: true
+            script_stop: true
           script: |
             cd ~/catty-reminders-app
-            git pull origin lab2
-            # Установка зависимостей и запуск
+            git fetch origin lab2
+            git reset --hard origin/lab2
+            
+            # Установка зависимостей
             pip install -r requirements.txt
-            # Перезапуск приложения (команда зависит от того, мы  запускаем)
-            # Если через nohup или screen, то нужно убить старый процесс и запустить новый
+            
+            # Убиваем старый процесс (если он есть)
             pkill -f "python3 main.py" || true
-            nohup python3 main.py > log.txt 2>&1 &
-            echo "Deployed successfully"
+            
+            # Запускаем приложение на порту 8181
+            # Добавляем </dev/null, чтобы SSH сессия могла закрыться
+            nohup python3 main.py --port 8181 </dev/null > log.txt 2>&1 &
+            
+            # Даем приложению 2 секунды завестись и проверяем, что процесс живой
+            sleep 2
+            ps aux | grep "python3 main.py" | grep -v grep
+            echo "Deployment finished successfully"
