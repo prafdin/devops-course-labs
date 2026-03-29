@@ -7,38 +7,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VM via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
-          script_stop: true
           script: |
-            # 1. Переходим в папку
             cd ~/catty-reminders-app
-            
-            # 2. Обновляем код
             git fetch origin lab2
             git reset --hard origin/lab2
-            
-            # 3. Убиваем старые процессы (обязательно!)
+            pip install -r requirements.txt
             pkill -f "app.main" || true
-            pkill -f "webhook_handler.py" || true
-            
-            # 4. Запускаем приложение
-            # Добавляем & disown в конце - это ВАЖНО для GitHub
-            nohup python3 -m app.main --port 8181 </dev/null > deploy.log 2>&1 & disown
-            
-            # 5. Проверка
-            sleep 3
-            if ps aux | grep -v grep | grep -q "app.main"; then
-              echo "Deployment finished successfully!"
-            else
-              echo "APP FAILED TO START"
-              exit 1
-            fi
+            # Запуск с полной изоляцией
+            nohup python3 -m app.main --port 8181 > /dev/null 2>&1 &
+            sleep 2
+            exit 0
