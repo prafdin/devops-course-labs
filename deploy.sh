@@ -33,7 +33,6 @@ if [ -f "requirements.txt" ]; then
 fi
 
 echo ">Running tests..."
-pip install pytest 
 
 # Если тесты упадут, скрипт прервется здесь из-за 'set -e'
 python3 -m pytest
