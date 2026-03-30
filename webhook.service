@@ -1,0 +1,17 @@
+[Unit]
+Description=Catty Webhook Handler Service
+After=network.target
+
+[Service]
+User=yui1337
+Group=www-data
+
+WorkingDirectory=/home/yui1337/my_project
+
+ExecStart=/home/yui1337/my_project/venv/bin/python3 /home/yui1337/my_project/webhook_handler.py
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
