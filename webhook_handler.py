@@ -47,7 +47,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"\n🔔 Push: {branch} by {pusher}")
             self._run_deploy(branch)
 
-def _run_deploy(self, branch):
+    def _run_deploy(self, branch):
         print(f"🚀 Running deploy for: {branch}...")
         try:
             result = subprocess.run(
