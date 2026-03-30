@@ -25,6 +25,9 @@ set -a
 source .env.deploy
 set +a
 
+uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+sleep 3
+
 echo "=== запуск pytest ==="
 
 export PYTHONPATH=$PWD
@@ -35,5 +38,5 @@ pytest tests \
   -q
 
 RESULT=$?
-
+lsof -ti:8181 | xargs kill -9 || true
 exit $RESULT
