@@ -30,12 +30,32 @@ jobs:
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e  # прерывать при ошибке
             cd /opt/catty-reminders
-            if [ -d "venv" ]; then source venv/bin/activate; fi
-            pip install -r requirements.txt
-            echo "DEPLOY_REF=${{ github.sha }}" | tee .deploy_ref
+
+            # Активируем виртуальное окружение, если есть
+            if [ -d "venv" ]; then
+              source venv/bin/activate
+              PIP_CMD="pip"
+            else
+              PIP_CMD="pip3"
+            fi
+
+            # Устанавливаем зависимости (с флагом для новых Ubuntu, если нет venv)
+            if [ "$PIP_CMD" = "pip3" ]; then
+              $PIP_CMD install --break-system-packages -r requirements.txt
+            else
+              $PIP_CMD install -r requirements.txt
+            fi
+
+            # Записываем SHA в .deploy_ref (с правами sudo, чтобы гарантировать запись)
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee .deploy_ref > /dev/null
+
+            # Перезапускаем сервис (sudo без пароля требуется)
             sudo systemctl restart catty-reminders
+
             sleep 3
+
             if curl -s --fail http://localhost:8181/login; then
               echo "✅ Application restarted successfully"
             else
