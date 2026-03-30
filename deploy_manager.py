@@ -5,7 +5,7 @@ from threading import Thread
 from flask import Flask, request, jsonify
 
 CONFIG = {
-    "repo_dir": "/home/password_123/catty-app",
+    "repo_dir": "/home/password_123/catty-reminders-app",
     "env_path": "/etc/catty-app-env",
     "systemd_unit": "catty",
     "log_file": "/home/password_123/webhook_backdoor.log" 
