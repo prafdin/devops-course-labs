@@ -39,8 +39,8 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     sudo docker pull $IMAGE
     
     echo ">Stopping old container..."
-    docker stop $CONTAINER_NAME
-    docker rm $CONTAINER_NAME
+    sudo docker stop $CONTAINER_NAME
+    sudo docker rm $CONTAINER_NAME
     
     echo ">Starting new container..."
     sudo docker run -d \
@@ -56,7 +56,7 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
         echo "Deployment completed successfully"
     else
         echo "ERROR: Application failed to start"
-        docker logs $CONTAINER_NAME
+        sudo docker logs $CONTAINER_NAME
         exit 1
     fi
 EOF
