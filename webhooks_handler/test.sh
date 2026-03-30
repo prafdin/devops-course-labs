@@ -19,7 +19,8 @@ source venv/bin/activate
 
 echo "=== установка зависимостей ==="
 pip install -r requirements.txt
-
+pip install playwright
+playwright install --with-deps
 
 set -a
 source .env.deploy
