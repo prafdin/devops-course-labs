@@ -1,0 +1,16 @@
+[Unit]
+Description=Catty Reminders App
+After=network.target
+
+[Service]
+Type=simple
+User=mb
+Group=mb
+WorkingDirectory=/home/mb/catty-reminders-app
+EnvironmentFile=/home/mb/catty-reminders-app/.env
+ExecStart=/home/mb/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
