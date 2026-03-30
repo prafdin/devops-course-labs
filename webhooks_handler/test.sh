@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-APP_DIR="/home/alex/3kurs/dev-ops/catty-reminders-app"
+APP_DIR="."
 VENV="$APP_DIR/venv"
 
 echo "=== Запуск тестов проекта ветки $BRANCH==="
@@ -8,7 +8,7 @@ echo "=== Запуск тестов проекта ветки $BRANCH==="
 DEPLOY_REF="$(git rev-parse HEAD)"
 
 echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/alex/3kurs/dev-ops/catty-reminders-app/.env.deploy
+echo "DEPLOY_REF=$DEPLOY_REF" > .env.deploy
 
 
 if [ -f "requirements.txt" ]; then
@@ -50,11 +50,8 @@ APP_PID=$!
 
 sleep 3
 
-
-
-export PYTHONPATH=/home/alex/3kurs/dev-ops/catty-reminders-app:$PYTHONPATH
 echo "=== Выполняем тесты из папки tests ==="
-PLAYWRIGHT_BROWSERS_PATH=/home/alex/.cache/ms-playwright pytest tests --maxfail=1 --disable-warnings -q
+pytest tests --maxfail=1 --disable-warnings -q
 RESULT=$?
 kill $APP_PID
 
