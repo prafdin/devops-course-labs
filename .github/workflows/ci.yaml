@@ -29,28 +29,23 @@ jobs:
         run: |
           echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "simonov", "password": "password"}]}' > inputs.json
 
-      - name: Start app in background
+      - name: Start app
         run: |
-          # Запускаем uvicorn, передавая PYTHONPATH, чтобы он видел папку app
           PYTHONPATH=. nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 10 # Даем больше времени на запуск
+          sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        # Запускаем pytest строго по папке tests/
-        # Генерируем XML и текстовый лог одновременно
+        # Пробуем создать прямо в корне рабочей директории, без папки output
         run: |
-          mkdir -p output
-          pytest tests/ -v --junitxml=output/test_result.xml > output/test_result 2>&1 || true
-          # Копируем XML в корень папки артефакта для надежности
-          cp output/test_result.xml output/test_result.xml.backup 
+          pytest tests/ -v --junitxml=test_result.xml > test_result 2>&1 || true
 
       - name: Upload test result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          # Загружаем содержимое папки output. 
-          # По идее бот найдет там и test_result (текст), и test_result.xml
-          path: output/
+          path: |
+            test_result
+            test_result.xml
