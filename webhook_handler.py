@@ -47,20 +47,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"\n🔔 Push: {branch} by {pusher}")
             self._run_deploy(branch)
 
-    def _run_deploy(self, branch):
+def _run_deploy(self, branch):
         print(f"🚀 Running deploy for: {branch}...")
         try:
             result = subprocess.run(
                 ["bash", DEPLOY_SCRIPT, branch],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
+                stderr=subprocess.STDOUT
             )
             print("✅ Deploy success!")
-            print(f"Output: {result.stdout.strip()}")
+            print(f"Output:\n{result.stdout.strip()}")
         except subprocess.CalledProcessError as e:
             print(f"❌ DEPLOY FAILED!")
-            print(f"Error: {e.stderr}")
+            print(f"Full Log:\n{e.stdout}")
 
 def main():
     try:
