@@ -29,7 +29,7 @@ jobs:
         run: |
           echo '{"base_url": "http://127.0.0.1:8181", "users": [{"username": "simonov", "password": "password"}]}' > inputs.json
 
-      - name: Start app
+      - name: Start app in background
         run: |
           PYTHONPATH=. nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
@@ -37,15 +37,12 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        # Пробуем создать прямо в корне рабочей директории, без папки output
-        run: |
-          pytest tests/ -v --junitxml=test_result.xml > test_result 2>&1 || true
+        run: pytest tests/ -v --junitxml=test_result.xml || true
 
       - name: Upload test result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test_result
-          path: |
-            test_result
-            test_result.xml
+          # Имя артефакта строго по инструкции
+          name: test_result .
+          path: test_result.xml
