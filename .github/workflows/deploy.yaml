@@ -15,14 +15,12 @@ jobs:
     - name: Get release commit hash
       run: |
         TAG=${{ github.event.release.tag_name }}
-        BRANCH=${{ github.event.release.target_commitish }}
         HASH=$(git rev-list -n 1 $TAG)
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
         echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-        echo "RELEASE_BRANCH=$BRANCH" >> $GITHUB_ENV
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
         echo "Deploying release: $TAG"
-        echo "From branch: $BRANCH"
         echo "Commit hash: $HASH"
+        echo "Image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$COMMIT_HASH"
     
     - name: Setup SSH Agent
       uses: webfactory/ssh-agent@v0.7.0
@@ -35,7 +33,10 @@ jobs:
         DEPLOY_USER: ${{ vars.DEPLOY_USER }}
         DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        RELEASE_BRANCH: ${{ env.RELEASE_BRANCH }}
+        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
       run: |
         chmod +x scripts/deploy.sh
         ./scripts/deploy.sh
+        

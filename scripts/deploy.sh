@@ -12,46 +12,51 @@ if [ -z "$RELEASE_HASH" ]; then
     exit 1
 fi
 
+if [ -z "$IMAGE_NAME" ]; then
+    echo "Error: IMAGE_NAME must be set"
+    exit 1
+fi
+
 DEPLOY_PORT=${DEPLOY_PORT:-22}
-DEPLOY_DIR="/home/ct/catty-reminders-app"
+CONTAINER_NAME="catty-app"
+PORT="8181"
+IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
 echo "User: $DEPLOY_USER"
 echo "Release hash: $RELEASE_HASH"
-echo "Release branch: $RELEASE_BRANCH"
+echo "Image: $IMAGE"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
 ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
     
-    cd $DEPLOY_DIR
+    echo ">Logging in to GitHub Container Registry..."
+    echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+    echo ">Pulling image: $IMAGE"
+    docker pull $IMAGE
     
-    git fetch origin
-    git checkout $RELEASE_HASH
+    echo ">Stopping old container..."
+    docker stop $CONTAINER_NAME
+    docker rm $CONTAINER_NAME
     
-    DEPLOY_REF=\$(git rev-parse HEAD)
-    echo "DEPLOY_REF=\$DEPLOY_REF" > .env.deploy
-    echo "Deployed version: \$DEPLOY_REF"
-    
-    if [ ! -d ".venv" ]; then
-        python3 -m venv .venv/
-    fi
-    
-    source .venv/bin/activate
-    
-    if [ -f "requirements.txt" ]; then
-        pip install -r requirements.txt
-    fi
-    
-    sudo systemctl restart app.service
+    echo ">Starting new container..."
+    docker run -d \
+        -p $PORT:$PORT \
+        --name $CONTAINER_NAME \
+        --restart unless-stopped \
+        -e DEPLOY_REF=$RELEASE_HASH \
+        $IMAGE
     
     sleep 4
     
-    if sudo systemctl is-active --quiet app.service; then
+    if docker ps | grep -q $CONTAINER_NAME; then
         echo "Deployment completed successfully"
     else
         echo "ERROR: Application failed to start"
+        docker logs $CONTAINER_NAME
         exit 1
     fi
 EOF
