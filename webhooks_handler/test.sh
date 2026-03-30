@@ -40,8 +40,7 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
-echo "=== запуск приложения $BRANCH   !==="
-sudo systemctl stop myapp.service 
+echo "=== запуск приложения $BRANCH   !===" 
 set -a
 source $APP_DIR/.env.deploy
 set +a
