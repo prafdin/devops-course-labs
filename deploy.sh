@@ -6,6 +6,9 @@ echo "======================================"
 
 SERVICE="catty-app"
 
+DEPLOY_REF="$(git rev-parse HEAD)"
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/mb/catty-reminders-app/.env
+
 sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE
 sudo systemctl restart $SERVICE
