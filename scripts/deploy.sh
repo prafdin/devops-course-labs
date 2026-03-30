@@ -33,17 +33,17 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
     
     echo ">Logging in to GitHub Container Registry..."
-    echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+    echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
     echo ">Pulling image: $IMAGE"
-    docker pull $IMAGE
+    sudo docker pull $IMAGE
     
     echo ">Stopping old container..."
     docker stop $CONTAINER_NAME
     docker rm $CONTAINER_NAME
     
     echo ">Starting new container..."
-    docker run -d \
+    sudo docker run -d \
         -p $PORT:$PORT \
         --name $CONTAINER_NAME \
         --restart unless-stopped \
@@ -52,7 +52,7 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     
     sleep 4
     
-    if docker ps | grep -q $CONTAINER_NAME; then
+    if sudo docker ps | grep -q $CONTAINER_NAME; then
         echo "Deployment completed successfully"
     else
         echo "ERROR: Application failed to start"
