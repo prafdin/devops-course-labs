@@ -50,12 +50,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
     def _run_deploy(self, branch):
         print(f"🚀 Running deploy for: {branch}...")
         try:
+            # Убираем capture_output=True и добавляем stdout=subprocess.PIPE
             result = subprocess.run(
                 ["bash", DEPLOY_SCRIPT, branch],
                 check=True,
-                capture_output=True,
-                text=True,
-                stderr=subprocess.STDOUT
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.STDOUT,
+                text=True
             )
             print("✅ Deploy success!")
             print(f"Output:\n{result.stdout.strip()}")
