@@ -3,12 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - lab2
-      - lab2_autotests*
+      - lab3*
   pull_request:
     branches:
-      - lab2
-      - lab2_autotests*
+      - lab3*
 
 jobs:
   pipeline:
@@ -32,7 +30,7 @@ jobs:
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          sleep 4
 
       - name: Run tests
         env:

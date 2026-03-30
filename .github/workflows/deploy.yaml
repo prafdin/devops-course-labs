@@ -12,17 +12,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        playwright install --with-deps chromium
-    
     - name: Get release commit hash
       run: |
         TAG=${{ github.event.release.tag_name }}
@@ -34,16 +23,6 @@ jobs:
         echo "Deploying release: $TAG"
         echo "From branch: $BRANCH"
         echo "Commit hash: $HASH"
-    
-    - name: Start app
-      run: |
-        nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-        sleep 5
-    
-    - name: Run tests
-      env:
-        PYTHONPATH: ${{ github.workspace }}
-      run: pytest
     
     - name: Setup SSH Agent
       uses: webfactory/ssh-agent@v0.7.0

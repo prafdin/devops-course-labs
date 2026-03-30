@@ -17,7 +17,7 @@ DEPLOY_DIR="/home/ct/catty-reminders-app"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
 echo "User: $DEPLOY_USER"
-#echo "Release hash: $RELEASE_HASH"
+echo "Release hash: $RELEASE_HASH"
 echo "Release branch: $RELEASE_BRANCH"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
