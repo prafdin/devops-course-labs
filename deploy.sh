@@ -35,7 +35,7 @@ fi
 echo ">Running tests..."
 
 # Если тесты упадут, скрипт прервется здесь из-за 'set -e'
-python3 -m pytest
+python3 -m pytest -v
 echo ">Tests passed successfully!"
 
 echo ">Restarting app..."
