@@ -19,6 +19,9 @@ jobs:
 
       - name: Run tests before deploy
         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           chmod +x ./webhooks_handler/test.sh
           ./webhooks_handler/test.sh
 
@@ -28,7 +31,7 @@ jobs:
           host: ${{ vars.SSH_HOST }}
           username: ${{ vars.SSH_USER }}
           port: ${{ vars.SSH_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/id_rsa
           script: |
             set -e
             cd /home/alex/3kurs/dev-ops/catty-reminders-app
