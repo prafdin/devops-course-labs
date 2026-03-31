@@ -1,4 +1,4 @@
-- name: Debug SSH key (safe)
+name: Debug SSH key (safe)
   run: |
     echo "=== CHECK KEY PRESENCE ==="
 
