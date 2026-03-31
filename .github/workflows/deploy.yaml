@@ -1,38 +1,20 @@
-name: Deploy
+- name: Debug SSH key (safe)
+  run: |
+    echo "=== CHECK KEY PRESENCE ==="
 
-on:
-  release:
-    types: [published]
+    if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+      echo "KEY IS EMPTY"
+      exit 1
+    fi
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    echo "KEY EXISTS"
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    echo "=== KEY STATS ==="
+    echo "${{ secrets.SSH_PRIVATE_KEY }}" | wc -c
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+    echo "=== KEY START ==="
+    echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -c 40
+    echo ""
 
-      - name: Run tests
-        run: |
-          chmod +x ./webhooks_handler/test.sh
-          ./webhooks_handler/test.sh
-
-      - name: Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USER }}
-          port: ${{ vars.SSH_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd /home/alex/3kurs/dev-ops/catty-reminders-app
-            git fetch --all --tags
-            git checkout --detach ${{ github.event.release.target_commitish }}
-            chmod +x ./webhooks_handler/deploy.sh
-            ./webhooks_handler/deploy.sh
+    echo "=== KEY END ==="
+    echo "${{ secrets.SSH_PRIVATE_KEY }}" | tail -c 40
