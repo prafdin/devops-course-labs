@@ -11,9 +11,8 @@ cd "$REPO_DIR"
 echo ">Directory changed to $REPO_DIR"
 
 git fetch origin
-git checkout "$BRANCH"
-echo ">Pull $BRANCH branch"
-git pull origin "$BRANCH"
+git checkout -f "$BRANCH"
+echo ">Checked out to $BRANCH branch"
 
 DEPLOY_REF=$(git rev-parse HEAD)
 echo "DEPLOY_REF=$DEPLOY_REF" > "$REPO_DIR/.env"
