@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8
+    container_name: catty-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: catty
+      MYSQL_USER: catty
+      MYSQL_PASSWORD: catty
+    volumes:
+      - db_data:/var/lib/mysql
+
+  app:
+    image: ghcr.io/artem362a/catty-reminders-app:${IMAGE_TAG:-lab4}
+    container_name: catty-app
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8181:8181"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: catty
+      DB_USER: catty
+      DB_PASSWORD: catty
+      DEPLOY_REF: ${DEPLOY_REF:-NA}
+
+volumes:
+  db_data:

@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy container to VM
+      - name: Deploy via docker-compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -22,18 +22,10 @@ jobs:
             cd ~/dev/catty-reminders-app
 
             DEPLOY_SHA="${{ github.sha }}"
-            printf "DEPLOY_REF=%s\n" "$DEPLOY_SHA" > .env
 
-            sudo -n /usr/bin/docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
+            printf "IMAGE_TAG=%s\nDEPLOY_REF=%s\n" "$DEPLOY_SHA" "$DEPLOY_SHA" > .env
 
-            sudo -n /usr/bin/docker stop catty || true
-            sudo -n /usr/bin/docker rm catty || true
+            sudo -n docker-compose pull
+            sudo -n docker-compose up -d
 
-            sudo -n /usr/bin/docker run -d \
-              --name catty \
-              --restart always \
-              --env-file .env \
-              -p 8181:8181 \
-              ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
-
-            sudo -n /usr/bin/docker ps
+            sudo -n docker-compose ps
