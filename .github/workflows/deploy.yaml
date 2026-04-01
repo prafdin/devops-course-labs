@@ -44,4 +44,4 @@ jobs:
           script: |
             cd /home/yui1337/my_project
             chmod +x deploy.sh
-            ./deploy.sh ${{ github.ref_name }}
+            ./deploy.sh ${{ github.event.release.target_commitish }}
