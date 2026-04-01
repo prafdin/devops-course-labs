@@ -11,7 +11,7 @@ cd "$REPO_DIR"
 echo ">Directory changed to $REPO_DIR"
 
 git fetch origin
-git checkout -B "$BRANCH" "origin/$BRANCH"
+git checkout "$BRANCH"
 echo ">Pull $BRANCH branch"
 git pull origin "$BRANCH"
 
