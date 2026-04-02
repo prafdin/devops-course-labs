@@ -35,6 +35,7 @@ jobs:
               --name $CONTAINER_NAME \
               --restart always \
               -p 8181:8181 \
+              -e DEPLOY_REF=${{ github.sha }} \
               $IMAGE_NAME
 
             sleep 3
