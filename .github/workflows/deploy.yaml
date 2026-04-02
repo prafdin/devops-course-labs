@@ -7,11 +7,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-  
+
     steps:
-    
-      - name: Deploy application
-        uses: appleboy/ssh-action@v1
+      - name: Deploy app via Docker
+        uses: appleboy/ssh=action@v1
         with:
           host: course.prafdin.ru
           port: 3169
@@ -19,32 +18,33 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            APP_DIR="/home/mappy/Desktop/catty-reminders-app"
-            ENV_FILE="$APP_DIR/.env"
-            COMMIT_SHA="${{ github.sha }}"
-            LOG_FILE="/home/mappy/webhook/deploy.log"
-            
-            log() {
-              echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOG_FILE
-            }
-            
-            log "НАЧАЛО ДЕПЛОЯ (GitHub Actions CD)"
-            log "Коммит релиза: $COMMIT_SHA"
 
-            cd $APP_DIR
+            IMAGE_NAME="ghcr.io/mappy12/catty-reminders-app:lab3"
+            CONTAINER_NAME="catty-app"
 
-            log "Обновление кода..."
-            git fetch origin
-            git checkout --detach $COMMIT_SHA
-            git reset --hard $COMMIT_SHA
+            echo "=== Деплой через Docker контейнер ==="
 
-            DEPLOY_REF=$(git rev-parse HEAD)
-            log "SHA коммита: $DEPLOY_REF"
-          
-            echo "DEPLOY_REF=$DEPLOY_REF" > $ENV_FILE
-      
-            log "Перезапуск приложения..."
-            sudo systemctl restart app
-              
-            log "=== ДЕПЛОЙ ДЛЯ КОММИТА $COMMIT_SHA УСПЕШНО ЗАВЕРШЕН ==="
+            echo "${{ secrets.DOCKER_PAT }}" | docker login ghcr.io -u mappy12 --password-stdin
 
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
+            docker pull $IMAGE_NAME
+
+            docker run -d \
+              --name $CONTAINER_NAME \
+              --restart always \
+              -p 8181:8181 \
+              $IMAGE_NAME
+
+            sleep 3
+            if docker ps | grep -q $CONTAINER_NAME; then
+              echo "Контейнер успешно запущен"
+
+            else
+              echo "Ошибка: контейнер не запустился"
+              docker logs $CONTAINER_NAME || true
+              exit 1
+            fi
+
+            echo "=== Деплой успешно завершен ==="
