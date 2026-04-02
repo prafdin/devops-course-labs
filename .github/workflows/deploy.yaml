@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Deploy app via Docker
-        uses: appleboy/ssh=action@v1
+        uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
           port: 3169
