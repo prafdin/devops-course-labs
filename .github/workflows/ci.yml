@@ -25,15 +25,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt uvicorn pytest-playwright
+          playwright install chromium --with-deps
 
       - name: Start server
         run: |
-          nohup uvicorn app.main:app --port 8080 --host 127.0.0.1 &
-          sleep 2
+          nohup uvicorn main:app --port 8181 --host 127.0.0.1 &
+          sleep 5
+
       - name: Test suite
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml || true
+        run: pytest
 
       - name: Archive test report
         if: always()
