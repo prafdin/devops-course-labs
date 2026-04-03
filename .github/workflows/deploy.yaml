@@ -32,7 +32,5 @@ jobs:
           script: |
             set -e
             cd /home/alex/3kurs/dev-ops/catty-reminders-app
-            git fetch --all --tags
-            git checkout --detach ${{ github.event.release.target_commitish }}
             chmod +x ./webhooks_handler/deploy.sh
-            ./webhooks_handler/deploy.sh
+            ./webhooks_handler/deploy.sh ${{ github.sha }}
