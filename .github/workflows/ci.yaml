@@ -61,6 +61,10 @@ jobs:
             echo "All tests passed!"
           fi
 
+      - name: Get commit hash
+        id: vars
+        run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
@@ -68,21 +72,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_PAT }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/mappy12/catty-reminders-app
-          tags: |
-            type=sha,prefix=,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-            type=ref,event=pr
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/mappy12/catty-reminders-app:lab3
+            ghcr.io/mappy12/catty-reminders-app:${{ steps.vars.outputs.commit_hash }}
           labels: ${{ steps.meta.outputs.labels }}
