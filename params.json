@@ -152,7 +152,22 @@
     },
     {
       "login": "only-hell",
-      "id": "ladygin", 
+      "id": "ladygin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Barnaeva",
+      "id": "barnaeva",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "IvanDelibaltov",
+      "id": "delibaltov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "kilopevt",
+      "id": "meshkov",
       "app": "catty-reminders-app"
     }
   ]
