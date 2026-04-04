@@ -1,12 +1,11 @@
 [Unit]
-Description=Webhook Handler for GitHub
+Description=Webhook Handler
 After=network.target
 
 [Service]
-Type=simple
 User=vano
 WorkingDirectory=/home/vano/catty-reminders-app
-ExecStart=/home/vano/catty-reminders-app/venv/bin/python /home/vano/catty-reminders-app/webhook_handler.py
+ExecStart=/usr/bin/python3 /home/vano/catty-reminders-app/webhook_handler.py
 Restart=always
 
 [Install]
