@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
 
-cd /home/ct/catty-reminders-app/devops/lab1/webhook || exit 1
+cd /home/ct/catty-reminders-app || exit 1
 
 git fetch origin
-git reset --hard origin/main
-source ../.venv/bin/activate
+git reset --hard origin/lab1  
+
+source .venv/bin/activate 
 pip install -r requirements.txt
 
 DEPLOY_REF=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$DEPLOY_REF" > ../.env
+echo "DEPLOY_REF=$DEPLOY_REF" > .env
 
 sudo systemctl daemon-reload
 sudo systemctl restart app.service
