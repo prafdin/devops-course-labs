@@ -8,7 +8,7 @@ echo "🚀 Deploying Catty..."
 
 cd "$APP_DIR"
 
-git pull origin lab1
+git pull origin lab2
 
 if [ ! -d .venv ]; then
   python3 -m venv .venv
