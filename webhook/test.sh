@@ -44,7 +44,7 @@ fi
 echo "=== запуск приложения $BRANCH   !==="
 sudo systemctl stop app.service
 set -a
-source "$APP_DIR/.env.deploy"
+source "$APP_DIR/.env"
 set +a
 nohup "$APP_DIR/venv/bin/uvicorn" app.main:app --reload --host 0.0.0.0 --port 8181 > /dev/null 2>&1 &
 APP_PID=$!
