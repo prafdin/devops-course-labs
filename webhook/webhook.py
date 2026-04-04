@@ -150,7 +150,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 # Только если тесты прошли - запускаем деплой
                 print(f"      - Запуск деплоя...")
                 subprocess.run(
-                    ["./deploy.sh"],
+                    ["./deploy.sh", branch], 
                     cwd=tmpdir,
                     check=True
                 )
