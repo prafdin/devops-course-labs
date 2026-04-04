@@ -1,27 +1,17 @@
 #!/bin/bash
 set -e
 
-REPO_DIR="/home/ct/catty-reminders-app"
-BRANCH=${1:-lab1} 
-
-cd "$REPO_DIR"
+cd /home/ct/catty-reminders-app/devops/lab1/webhook || exit 1
 
 git fetch origin
-git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH"
+git reset --hard origin/main
+source ../.venv/bin/activate
+pip install -r requirements.txt
 
 DEPLOY_REF=$(git rev-parse HEAD)
-sed -i '/DEPLOY_REF/d' .env 2>/dev/null || true
-echo "DEPLOY_REF=$DEPLOY_REF" >> .env
-echo ">Deploy ref: $DEPLOY_REF"
-
-if [ ! -d ".venv" ]; then
-    python3 -m venv .venv
-fi
-
-source .venv/bin/activate
-pip install -r requirements.txt
+echo "DEPLOY_REF=$DEPLOY_REF" > ../.env
 
 sudo systemctl daemon-reload
 sudo systemctl restart app.service
-sudo systemctl status app.service --no-pager
+
+echo "Deployment done. Current DEPLOY_REF: $DEPLOY_REF"
