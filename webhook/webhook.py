@@ -138,7 +138,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"      - Запуск тестов...")
             try:
                 result = subprocess.run(
-                    ["./test.sh"],
+                    ["/home/artem/dev/catty-reminders-app/webhook/test.sh"],
                     cwd=tmpdir,
                     check=True,
                     capture_output=True,
@@ -150,7 +150,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 # Только если тесты прошли - запускаем деплой
                 print(f"      - Запуск деплоя...")
                 subprocess.run(
-                    ["./deploy.sh", branch], 
+                    ["/home/artem/dev/catty-reminders-app/webhook/deploy.sh", branch], 
                     cwd=tmpdir,
                     check=True
                 )
