@@ -20,32 +20,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e 
-            
-            echo "Старт деплоя версии ${{ github.sha }}"
-            
+            set -e
             cd /home/kirill/desktop/devops
-            
-            git fetch origin
-            git checkout lab2
-            git reset --hard origin/lab2
-
-            if [ -f requirements.txt ]; then
-              echo "Installing dependencies..."
-              pip install -r requirements.txt -q
-            fi
-            
-            echo "Restarting application..."
-            pkill -f "uvicorn app.main:app" || true
-            sleep 1
-            nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
-            
-            sleep 2
-            if curl -s http://127.0.0.1:8181/login > /dev/null; then
-              echo "✅ App is healthy and running on port 8181"
-            else
-              echo "⚠️ Warning: App may not be responding"
-              exit 1
-            fi
-            
-            echo "Деплой завершён!"
+            chmod +x deploy.sh
+            ./deploy.sh
