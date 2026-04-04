@@ -12,7 +12,7 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 git pull origin "$BRANCH"
 
 DEPLOY_REF=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/ct/catty-reminders-app/.env.deploy
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/ct/catty-reminders-app/.env
 
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv/
