@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - lab2
-      - lab2_autotests
+      - lab2_autotests*
   pull_request:
     branches:
       - lab2
-      - lab2_autotests
+      - lab2_autotests*
 
 jobs:
   test:
