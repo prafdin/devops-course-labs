@@ -2,6 +2,7 @@ name: Deploy
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,3 +15,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3103
           script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
+          debug: true
