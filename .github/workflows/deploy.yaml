@@ -2,10 +2,6 @@ name: Deploy
 on:
   release:
     types: [published]
-<<<<<<< HEAD
-
-=======
->>>>>>> 5a02727 (test4 commit)
 jobs:
   deploy:
     runs-on: ubuntu-latest
