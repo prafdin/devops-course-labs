@@ -25,8 +25,8 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Start Database (MySQL)
-        # Поднимаем только базу, чтобы тесты на хосте могли к ней зайти
         run: |
+          # Запускаем MySQL контейнер
           docker run -d --name db \
             -p 3306:3306 \
             -e MYSQL_ROOT_PASSWORD=password \
@@ -34,22 +34,25 @@ jobs:
             -e MYSQL_USER=user \
             -e MYSQL_PASSWORD=password \
             mysql:8.0
-          sleep 20
+          # MySQL 8.0 инициализируется долго (создает системные таблицы), ждем 30 сек
+          sleep 30
 
       - name: Start App (Background)
         env:
-          # Указываем приложению на localhost (так как база проброшена на 3306)
+          # Приложение на хосте подключается к Docker-базе через 127.0.0.1:3306
           DATABASE_URL: mysql+mysqlconnector://user:password@127.0.0.1:3306/reminders
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          # Запускаем uvicorn и пишем логи в файл для отладки ошибок 500
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_log.txt 2>&1 &
+          sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        # Запускаем pytest прямо в системе, он точно увидит папку tests
-        run: pytest --junitxml=test_result.xml
+        run: |
+          # Если pytest упадет, выводим логи приложения, чтобы увидеть причину ошибки 500
+          pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
 
       - name: Upload results
         if: always()
@@ -71,7 +74,7 @@ jobs:
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
