@@ -1,23 +1,26 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: mysql:8.0
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: reminders
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: reminders
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     volumes:
-      - catty_db_data:/var/lib/postgresql/data
+      - catty_db_data:/var/lib/mysql
     networks:
       - catty-network
 
   app:
+    build: .
     image: ghcr.io/impulse-lab-crypto/catty-reminders-app:latest
     restart: always
     ports:
       - "8181:8181"
     environment:
-      DATABASE_URL: postgresql://user:password@db:5432/reminders
+      # Настройка подключения к MySQL
+      DATABASE_URL: mysql+mysqlconnector://user:password@db/reminders
       DEPLOY_REF: ${GITHUB_SHA:-local}
     depends_on:
       - db
