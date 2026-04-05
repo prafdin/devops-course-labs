@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # База данных PostgreSQL
   db:
     image: postgres:15-alpine
     restart: always
@@ -9,16 +10,19 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: reminders
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # Персистентный слой (данные не пропадут после удаления контейнера)
+      - catty_db_data:/var/lib/postgresql/data
     networks:
       - catty-network
 
+  # приложение
   app:
     image: ghcr.io/impulse-lab-crypto/catty-reminders-app:latest
     restart: always
     ports:
       - "8181:8181"
     environment:
+      # Приложение ищет базу по имени сервиса 'db'
       DATABASE_URL: postgresql://user:password@db:5432/reminders
       DEPLOY_REF: ${GITHUB_SHA:-local}
     depends_on:
@@ -31,4 +35,4 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
+  catty_db_data:
