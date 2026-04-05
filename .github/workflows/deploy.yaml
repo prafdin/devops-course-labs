@@ -7,26 +7,35 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      - name: Remote Deploy via Compose
+
+      - name: Remote Deploy via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
+          envs: GITHUB_SHA
           script: |
             cd ~/catty-reminders-app
-            # Обновляем файл docker-compose.yml из гита
+
+            # Обновляем локальный docker-compose.yml из ветки lab4
             git fetch origin lab4
             git checkout origin/lab4 -- docker-compose.yml
 
-            # Обновляем образы и перезапускаем стек
+            # Авторизация в реестре
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            # Обновление и перезапуск стека
+            export GITHUB_SHA=$GITHUB_SHA
             docker compose pull
             docker compose up -d
+
+            # Очистка старых образов
             docker image prune -f

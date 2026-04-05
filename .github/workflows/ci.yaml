@@ -2,22 +2,32 @@ name: CI
 on:
   push:
     branches: [ lab4* ]
+  pull_request:
+    branches: [ lab4* ]
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Build and start stack
         run: |
           docker compose up -d --build
-          sleep 10 # Время на запуск базы данных
+          sleep 15
 
-      - name: Run tests
+      - name: Run tests inside container
         run: |
-          # Запускаем pytest внутри контейнера приложения
-          docker compose exec -T app pytest
+          # Запускаем pytest через shell внутри контейнера, чтобы прокинуть PYTHONPATH
+          docker compose exec -T app sh -c "PYTHONPATH=. pytest --junitxml=test_result.xml"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_result.xml
 
   build-and-push:
     needs: tests
@@ -27,17 +37,21 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      - name: Login to GHCR
+
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
