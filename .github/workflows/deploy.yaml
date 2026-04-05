@@ -29,19 +29,19 @@ jobs:
             CONTAINER_NAME="catty-container"
 
             echo "Logging in to GHCR..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             echo "Pulling image: $IMAGE"
-            sudo docker pull $IMAGE
+            docker pull $IMAGE
 
-            sudo docker stop $CONTAINER_NAME || true
-            sudo docker rm $CONTAINER_NAME || true
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
 
-            sudo docker run -d \
+            docker run -d \
               --name $CONTAINER_NAME \
               -p 8181:8181 \
               --restart unless-stopped \
               -e DEPLOY_REF=${{ github.sha }} \
               $IMAGE
 
-            sudo docker image prune -f
+            docker image prune -f
