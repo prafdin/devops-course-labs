@@ -3,7 +3,7 @@
 STATE=$1
 DESCRIPTION=$2
 
-REPO_DIR="/home/ct/catty-reminders-app"
+REPO_DIR="/home/vboxuser/catty-reminders-app"
 OWNER="Vadimkadkdoofjf"
 REPO="catty-reminders-app"
 

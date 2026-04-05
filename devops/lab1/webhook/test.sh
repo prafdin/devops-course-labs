@@ -2,7 +2,7 @@
 
 set -e
 
-REPO_DIR="/home/ct/catty-reminders-app"
+REPO_DIR="/home/vboxuser/catty-reminders-app"
 BRANCH=$1
 
 cd "$REPO_DIR"
