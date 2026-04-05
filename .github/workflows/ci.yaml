@@ -26,24 +26,25 @@ jobs:
 
       - name: Start Database (MySQL)
         run: |
-          # Запускаем MySQL контейнер
+          # Запускаем MySQL с разрешением для root подключаться с любого хоста
           docker run -d --name db \
             -p 3306:3306 \
             -e MYSQL_ROOT_PASSWORD=password \
             -e MYSQL_DATABASE=reminders \
-            -e MYSQL_USER=user \
-            -e MYSQL_PASSWORD=password \
-            mysql:8.0
-          # MySQL 8.0 инициализируется долго (создает системные таблицы), ждем 30 сек
+            mysql:8.0 --lower-case-table-names=1
+
+          # Ждем инициализацию
           sleep 30
+
+          # Принудительно разрешаем root доступ с любого IP (на случай ограничений MySQL 8)
+          docker exec db mysql -uroot -ppassword -e "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password'; FLUSH PRIVILEGES;"
 
       - name: Start App (Background)
         env:
-          # Приложение на хосте подключается к Docker-базе через 127.0.0.1:3306
-          DATABASE_URL: mysql+mysqlconnector://user:password@127.0.0.1:3306/reminders
+          # Используем root, так как приложение ломится под ним
+          DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Запускаем uvicorn и пишем логи в файл для отладки ошибок 500
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_log.txt 2>&1 &
           sleep 10
 
@@ -51,7 +52,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Если pytest упадет, выводим логи приложения, чтобы увидеть причину ошибки 500
+          # Запускаем тесты. Если упадут - увидим логи
           pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
 
       - name: Upload results
