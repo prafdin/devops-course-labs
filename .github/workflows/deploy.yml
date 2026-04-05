@@ -1,0 +1,21 @@
+name: Deploy
+# Сценарий активируется только при публикации нового релиза
+on:
+  release:
+    types: [published]
+
+jobs:
+# Название задачи для отображения в интерфейсе GitHub Actions
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: ilya
+          # Приватный ключ из Secrets
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3117
+          # Вызываем скрипт и передаем SHA коммита
+          script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
