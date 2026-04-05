@@ -27,5 +27,5 @@ jobs:
           script: |
             set -e
             cd /home/alex/3kurs/dev-ops/catty-reminders-app
-            chmod +x ./webhooks_handler/deploy.sh
+            chmod +x ./deploy.sh
             ./deploy.sh ${{ github.sha }}
