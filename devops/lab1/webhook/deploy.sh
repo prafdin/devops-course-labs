@@ -32,8 +32,13 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
+echo "> Deploy ref updated in .env: $DEPLOY_REF"
+
+sudo chown vboxuser:vboxuser "$REPO_DIR/.env"
+chmod 644 "$REPO_DIR/.env"
+
 echo "> Restarting app..."
-sudo systemctl daemon-reload
+sudo systemctl daemon-reload 
 sudo systemctl restart app.service
 
 echo "> Done"
