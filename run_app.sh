@@ -1,44 +1,29 @@
 #!/bin/bash
-
-# 1. Используем переменные, чтобы не дублировать пути
-APP_DIR="/home/ilya/catty-reminders-app"
-VENV_PYTHON="$APP_DIR/venv/bin/python"
-SERVICE_NAME="catty-app"
-
-# Проверяем, передан ли SHA коммита
-if [ -z "$1" ]; then
-    echo "ERROR: No commit SHA provided"
-    exit 1
-fi
+# 1. Заходим в папку проекта
+cd /home/ilya/catty-reminders-app || exit 1
 
 SHA=$1
-echo "--- Starting Deployment of SHA: ${SHA:0:7} ---"
+echo "Deploying SHA: $SHA"
 
-# 2. Безопасный переход в директорию
-cd "$APP_DIR" || { echo "Directory $APP_DIR not found"; exit 1; }
-
-# 3. Обновление исходного кода
-echo "Fetching updates from origin..."
-git fetch --all --quiet
+# 2. Обновляем код из GitHub
+git fetch --all
 git reset --hard "$SHA"
 
-# 4. Обновление зависимостей через venv
-echo "Installing dependencies..."
-$VENV_PYTHON -m pip install -q -r requirements.txt
+# 3. Обновляем зависимости
+/home/ilya/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
 
-# 5. Сохранение метаданных деплоя
-# Используем > /dev/null, чтобы не дублировать вывод в консоль
-echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env > /dev/null
+# 4. Сохраняем DEPLOY_REF для отображения на сайте
+echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
 
-# 6. Рестарт сервиса
-echo "Restarting $SERVICE_NAME..."
-sudo systemctl restart "$SERVICE_NAME"
+# 5. Перезапускаем само приложение
+sudo systemctl restart catty-app
 
-# 7. Расширенная проверка
-sleep 5
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-    echo "✅ SUCCESS: App is running (SHA: $SHA)"
+# 6. Проверка
+sleep 3
+if systemctl is-active --quiet catty-app; then
+    echo "SUCCESS: Deployed $SHA"
 else
-    echo "❌ ERROR: $SERVICE_NAME failed to start. Check logs: journalctl -u $SERVICE_NAME"
+    echo "ERROR: App failed"
     exit 1
 fi
+
