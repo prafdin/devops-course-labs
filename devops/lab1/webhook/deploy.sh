@@ -1,18 +1,39 @@
 #!/bin/bash
+
 set -e
 
-cd /home/ct/catty-reminders-app || exit 1
+REPO_DIR="/home/ct/catty-reminders-app"
+COMMIT_SHA=$1
+
+echo "> Deploying commit $COMMIT_SHA"
+
+cd "$REPO_DIR"
+echo "> Directory changed to $REPO_DIR"
 
 git fetch origin
-git reset --hard origin/lab1  
 
-source .venv/bin/activate 
-pip install -r requirements.txt
+git reset --hard "$COMMIT_SHA"
+echo "> Switched to commit $COMMIT_SHA"
 
 DEPLOY_REF=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$DEPLOY_REF" > .env
+echo "DEPLOY_REF=$DEPLOY_REF" > "$REPO_DIR/.env"
+echo "> Deploy ref: $DEPLOY_REF"
 
+if [ ! -d ".venv" ]; then
+	echo "> Virtual environment not found, creating..."
+	python3 -m venv .venv/
+fi
+
+source .venv/bin/activate
+echo "> Virtual environment activated"
+
+if [ -f "requirements.txt" ]; then
+	echo "> Installing/Updating requirements"
+	pip install -r requirements.txt
+fi
+
+echo "> Restarting app..."
 sudo systemctl daemon-reload
 sudo systemctl restart app.service
 
-echo "Deployment done. Current DEPLOY_REF: $DEPLOY_REF"
+echo "> Done"
