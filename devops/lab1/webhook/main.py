@@ -106,7 +106,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         try:
            
             subprocess.run(
-                ["/home/ct/catty-reminders-app/devops/lab1/webhook/test.sh", branch],
+                ["/home/vboxuser/catty-reminders-app/devops/lab1/webhook/test.sh", branch],
                 check=True,
                 capture_output=True,
                 text=True
@@ -115,14 +115,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
            
             subprocess.run(
-                ["/home/ct/catty-reminders-app/devops/lab1/webhook/deploy.sh", commit_sha],
+                ["/home/vboxuser/catty-reminders-app/devops/lab1/webhook/deploy.sh", commit_sha],
                 check=True
             )
 
            
             subprocess.run(
                 [
-                    "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
+                    "/home/vboxuser/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
                     "success",
                     f"Deployment of {commit_sha} successful"
                 ]
@@ -133,7 +133,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(e.output if hasattr(e, 'output') else str(e))
             subprocess.run(
                 [
-                    "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
+                    "/home/vboxuser/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
                     "failure",
                     f"Deployment of {commit_sha} failed"
                 ]
