@@ -7,6 +7,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+
       - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -15,17 +24,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
           script: |
-            # Переменные
-            IMAGE="ghcr.io/${{ github.repository }}:latest"
+            # snova используем имя в нижнем регистре
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
             CONTAINER_NAME="catty-container"
 
             echo "Logging in to GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            echo "Pulling latest image..."
+            echo "Pulling image: $IMAGE"
             sudo docker pull $IMAGE
 
-            echo "Restarting container..."
             sudo docker stop $CONTAINER_NAME || true
             sudo docker rm $CONTAINER_NAME || true
 
