@@ -97,26 +97,27 @@ class WebhookHandler(BaseHTTPRequestHandler):
     
     def _handle_push_event(self, payload):
         """Обработка push события - запуск деплоя"""
-        
+    
         branch = payload.get('ref', '').replace('refs/heads/', '')
         pusher = payload.get('pusher', {}).get('name', 'unknown')
         commits = payload.get('commits', [])
-        
+        commit_sha = payload.get('after')  
+    
         if commits:
             last_commit = commits[-1].get('id', 'unknown')[:8]
         else:
             last_commit = "unknown"
-        
+    
         print(f"\nPush в ветку: {branch}")
         print(f"Автор: {pusher}")
         print(f"Коммитов: {len(commits)}")
         print(f"Последний коммит: {last_commit}")
+        print(f"Полный SHA: {commit_sha}")
         print(f"Запуск автоматического деплоя...")
-        
+    
         try:
-            # Запускаем деплой в фоне
             process = subprocess.Popen(
-                [DEPLOY_SCRIPT],
+                [DEPLOY_SCRIPT, commit_sha],  
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True
