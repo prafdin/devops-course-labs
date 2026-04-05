@@ -12,17 +12,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build and start stack
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
         run: |
-          # Флаг --build гарантирует, что папка tests попадет в контейнер
-          docker compose up -d --build
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-playwright uvicorn
+          playwright install --with-deps chromium
+
+      - name: Start Database (MySQL)
+        # Поднимаем только базу, чтобы тесты на хосте могли к ней зайти
+        run: |
+          docker run -d --name db \
+            -p 3306:3306 \
+            -e MYSQL_ROOT_PASSWORD=password \
+            -e MYSQL_DATABASE=reminders \
+            -e MYSQL_USER=user \
+            -e MYSQL_PASSWORD=password \
+            mysql:8.0
           sleep 20
 
-      - name: Run tests
+      - name: Start App (Background)
+        env:
+          # Указываем приложению на localhost (так как база проброшена на 3306)
+          DATABASE_URL: mysql+mysqlconnector://user:password@127.0.0.1:3306/reminders
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          docker compose exec -T app sh -c "PYTHONPATH=. pytest --junitxml=test_result.xml"
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 5
 
-      - name: Upload test results
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        # Запускаем pytest прямо в системе, он точно увидит папку tests
+        run: pytest --junitxml=test_result.xml
+
+      - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -39,18 +68,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
