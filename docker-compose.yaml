@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: reminders
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - catty-network
+
+  app:
+    image: ghcr.io/impulse-lab-crypto/catty-reminders-app:latest
+    restart: always
+    ports:
+      - "8181:8181"
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/reminders
+      DEPLOY_REF: ${GITHUB_SHA:-local}
+    depends_on:
+      - db
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
