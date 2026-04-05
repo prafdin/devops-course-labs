@@ -98,6 +98,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         commits = payload.get('commits', [])
         branch = payload.get('ref', '').replace('refs/heads/', '')
         pusher = payload.get('pusher', {}).get('name', 'unknown')
+	commit_sha = payload.get('after')
 
         print(f"   📝 Push в ветку: {branch}")
         print(f"   👤 Автор: {pusher}")
@@ -114,15 +115,15 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print("✅ Tests passed")
 
             subprocess.run(
-                ["/home/ct/catty-reminders-app/devops/lab1/webhook/deploy.sh", branch],
+                ["/home/ct/catty-reminders-app/devops/lab1/webhook/deploy.sh", commit_sha],
                 check=True
             )
 
             subprocess.run(
                 [
-                    "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
-                    "success",
-                    "Deployment successful"
+               		 "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
+			 "success",
+               		 f"Deployment of {commit_sha} successful"
                 ]
             )
 
