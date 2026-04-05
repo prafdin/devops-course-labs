@@ -4,15 +4,10 @@
 Показывает как Git события могут запускать автоматические процессы
 """
 
-import tempfile
 import subprocess
-import os
 import json
-import hashlib
-import hmac
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import sys
 
 # Конфигурация
 PORT = 8080
@@ -44,7 +39,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
 
-        html = """
+        html = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -62,16 +57,15 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 <h1>🚀 DevOps Webhook Demo Server</h1>
                 <div class="info">
                     <p><strong>Статус:</strong> Сервер активен и ожидает webhook события от GitHub</p>
-                    <p><strong>Время запуска:</strong> {time}</p>
-                    <p><strong>Порт:</strong> {port}</p>
+                    <p><strong>Время запуска:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+                    <p><strong>Порт:</strong> {PORT}</p>
                 </div>
                 <p>Этот сервер демонстрирует как Git события могут автоматически запускать процессы.</p>
                 <p>Каждый push, pull request или release будет логироваться в консоли сервера.</p>
             </div>
         </body>
         </html>
-        """.format(time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"), port=PORT)
-
+        """
         self.wfile.write(html.encode('utf-8'))
 
     def _process_webhook(self, payload):
@@ -98,41 +92,50 @@ class WebhookHandler(BaseHTTPRequestHandler):
         commits = payload.get('commits', [])
         branch = payload.get('ref', '').replace('refs/heads/', '')
         pusher = payload.get('pusher', {}).get('name', 'unknown')
-	commit_sha = payload.get('after')
+        commit_sha = payload.get('after') 
 
         print(f"   📝 Push в ветку: {branch}")
         print(f"   👤 Автор: {pusher}")
-        print(f"   📊 Коммитов: {len(commits)}")
+        print(f"   📊 Коммитов в payload: {len(commits)}")
+        print(f"   🆕 SHA последнего коммита: {commit_sha}")
+
+        if not commit_sha:
+            print("❌ Не удалось получить SHA коммита, пропуск deploy")
+            return
 
         try:
-            result = subprocess.run(
+           
+            subprocess.run(
                 ["/home/ct/catty-reminders-app/devops/lab1/webhook/test.sh", branch],
                 check=True,
                 capture_output=True,
                 text=True
             )
-
             print("✅ Tests passed")
 
+           
             subprocess.run(
                 ["/home/ct/catty-reminders-app/devops/lab1/webhook/deploy.sh", commit_sha],
                 check=True
             )
 
+           
             subprocess.run(
                 [
-               		 "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
-			 "success",
-               		 f"Deployment of {commit_sha} successful"
+                    "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
+                    "success",
+                    f"Deployment of {commit_sha} successful"
                 ]
             )
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            print("❌ Ошибка при тестах или деплое")
+            print(e.output if hasattr(e, 'output') else str(e))
             subprocess.run(
                 [
                     "/home/ct/catty-reminders-app/devops/lab1/webhook/commit_status.sh",
                     "failure",
-                    "Deployment failed"
+                    f"Deployment of {commit_sha} failed"
                 ]
             )
 
@@ -152,6 +155,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
         print(f"   🏷️  Release {tag_name}: {action}")
 
+
 def main():
     """Запуск webhook сервера"""
     print(f"🚀 Запуск DevOps Webhook Demo Server")
@@ -167,6 +171,7 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         print(f"\n🛑 Сервер остановлен")
+
 
 if __name__ == '__main__':
     main()
