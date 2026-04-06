@@ -3,46 +3,44 @@ name: CI
 on:
   push:
     branches:
-      - '**lab2**'
-      - '**lab2_autotests**'
+      - lab2
+      - lab2_autotests*
   pull_request:
     branches:
-      - '**lab2**'
-      - '**lab2_autotests**'
+      - lab2
+      - lab2_autotests*
 
 jobs:
-  test-runner:
+  pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Get source code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python environment
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install project dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install uvicorn pytest-playwright
-          python -m playwright install chromium --with-deps
+          playwright install --with-deps chromium
 
-      - name: Run application server
+      - name: Start app
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
 
-      - name: Run automated tests
+      - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: |
-          pytest --junitxml=results.xml || exit 0
+        run: pytest --junitxml=test_result.xml || true
 
-      - name: Save test output
-        if: ${{ always() }}
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: results.xml
+          name: test_result
+          path: test_result.xml
