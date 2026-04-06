@@ -26,25 +26,23 @@ jobs:
 
       - name: Start Database (MySQL)
         run: |
-          # Запускаем MySQL с разрешением для root подключаться с любого хоста
+          # Используем версию 5.7, она "доверчивая" и идеально подходит для тестов
           docker run -d --name db \
             -p 3306:3306 \
             -e MYSQL_ROOT_PASSWORD=password \
             -e MYSQL_DATABASE=reminders \
-            mysql:8.0 --lower-case-table-names=1
+            mysql:5.7
 
-          # Ждем инициализацию
-          sleep 30
-
-          # Принудительно разрешаем root доступ с любого IP (на случай ограничений MySQL 8)
-          docker exec db mysql -uroot -ppassword -e "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password'; FLUSH PRIVILEGES;"
+          # Даем базе время проснуться
+          sleep 20
 
       - name: Start App (Background)
         env:
-          # Используем root, так как приложение ломится под ним
+          # Прокидываем те же данные, что и в docker run выше
           DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
           PYTHONPATH: ${{ github.workspace }}
         run: |
+          # Запускаем приложение
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_log.txt 2>&1 &
           sleep 10
 
@@ -52,7 +50,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Запускаем тесты. Если упадут - увидим логи
+          # Запускаем pytest как во 2 лабе
           pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
 
       - name: Upload results
