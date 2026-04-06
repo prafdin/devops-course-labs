@@ -26,20 +26,24 @@ jobs:
 
       - name: Start Database (MySQL)
         run: |
-          # Используем версию 5.7, она "доверчивая" и идеально подходит для тестов
+          # Запускаем MySQL 5.7 и ПРИНУДИТЕЛЬНО разрешаем пустые пароли для root
+          # Это уберет (пожалуйста)  ошибку 1045 Access Denied
           docker run -d --name db \
             -p 3306:3306 \
-            -e MYSQL_ROOT_PASSWORD=password \
+            -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
             -e MYSQL_DATABASE=reminders \
             mysql:5.7
 
-          # Даем базе время проснуться
+          # Ждем инициализацию
           sleep 20
+
+          # На всякий случай явно разрешаем root подключаться без пароля с любого IP
+          docker exec db mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
       - name: Start App (Background)
         env:
-          # Прокидываем те же данные, что и в docker run выше
-          DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
+          # Теперь подключаемся без пароля, так как мы его разрешили выше
+          DATABASE_URL: mysql+mysqlconnector://root@127.0.0.1:3306/reminders
           PYTHONPATH: ${{ github.workspace }}
         run: |
           # Запускаем приложение
@@ -50,7 +54,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Запускаем pytest как во 2 лабе
+          # Запускаем pytest
           pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
 
       - name: Upload results
