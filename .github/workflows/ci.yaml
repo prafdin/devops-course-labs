@@ -1,0 +1,48 @@
+name: Testing Pipeline
+
+on:
+  push:
+    branches:
+      - '**lab2**'
+      - '**lab2_autotests**'
+  pull_request:
+    branches:
+      - '**lab2**'
+      - '**lab2_autotests**'
+
+jobs:
+  ci-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch repository
+        uses: actions/checkout@v4
+
+      - name: Configure Python runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install uvicorn pytest
+          playwright install chromium
+
+      - name: Launch web service
+        run: |
+          uvicorn app.main:app --host localhost --port 8080 &
+          sleep 2
+
+      - name: Execute test suite
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest --junitxml=output.xml
+
+      - name: Archive test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_output
+          path: output.xml
