@@ -26,27 +26,22 @@ jobs:
 
       - name: Start Database (MySQL)
         run: |
-          # Запускаем MySQL 5.7 и ПРИНУДИТЕЛЬНО разрешаем пустые пароли для root
-          # Это уберет (пожалуйста)  ошибку 1045 Access Denied
+          # Запускаем MySQL 5.7 без пароля для root. 
+          # Это позволит приложению подключиться, используя данные из своих конфигов.
           docker run -d --name db \
             -p 3306:3306 \
             -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
             -e MYSQL_DATABASE=reminders \
             mysql:5.7
-
-          # Ждем инициализацию
+          # Ждем, пока база полностью загрузится
           sleep 20
-
-          # На всякий случай явно разрешаем root подключаться без пароля с любого IP
-          docker exec db mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
       - name: Start App (Background)
         env:
-          # Теперь подключаемся без пароля, так как мы его разрешили выше
-          DATABASE_URL: mysql+mysqlconnector://root@127.0.0.1:3306/reminders
+          # Мы НЕ переопределяем DATABASE_URL. 
+          # Приложение само прочитает inputs.json / config.json и найдет базу на 127.0.0.1:3306
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Запускаем приложение
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_log.txt 2>&1 &
           sleep 10
 
@@ -54,7 +49,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Запускаем pytest
+          # Запускаем pytest. Если упадет - глянем в логи.
           pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
 
       - name: Upload results
