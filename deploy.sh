@@ -27,5 +27,3 @@ docker run -d \
     --restart unless-stopped \
     -e DEPLOY_REF=$DEPLOY_REF \
     $IMAGE
-    
-    sleep 4
