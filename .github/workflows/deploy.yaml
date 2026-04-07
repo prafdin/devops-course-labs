@@ -20,9 +20,10 @@ jobs:
           port: ${{ vars.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash
-            set -e
-            cd /home/alex/3kurs/dev-ops/catty-reminders-app
-            chmod +x ./deploy.sh
-            OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-            ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
+            bash -c '
+              set -e
+              cd /home/alex/3kurs/dev-ops/catty-reminders-app
+              chmod +x ./deploy.sh
+              OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+              ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
+            '  
