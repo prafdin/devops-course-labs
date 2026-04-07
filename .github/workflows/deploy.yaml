@@ -12,11 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -25,7 +20,9 @@ jobs:
           port: ${{ vars.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            bash
             set -e
             cd /home/alex/3kurs/dev-ops/catty-reminders-app
             chmod +x ./deploy.sh
-            ./deploy.sh ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }} ${{ github.sha }}
+            OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+            ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
