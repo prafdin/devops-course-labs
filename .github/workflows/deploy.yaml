@@ -39,7 +39,7 @@ jobs:
               $IMAGE_NAME
 
             sleep 3
-            if docker ps | grep -q $CONTAINER_NAME; then
+            if docker ps --filter "name=$CONTAINER_NAME" -q | grep -q .; then
               echo "Контейнер успешно запущен"
 
             else
