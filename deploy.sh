@@ -1,40 +1,31 @@
 #!/bin/bash
 set -e
 
-DEPLOY_REF=$1
-REPO_URL="git@github.com:APMorozov/catty-reminders-app"
-APP_DIR="/home/alex/3kurs/dev-ops/catty-reminders-app"
+IMAGE_NAME=$1
+DEPLOY_REF=$2
 
+HOST_PORT=8181
+CONTAINER_PORT=8181
+CONTAINER_NAME="catty-reminders-app"
+IMAGE="$IMAGE_NAME:$DEPLOY_REF"
 
 echo "=== DEPLOY релиза ==="
-
-if [ ! -d "$APP_DIR/.git" ]; then
-    echo "Первый запуск — клонирование"
-    git clone $REPO_URL $APP_DIR
-fi
-
-cd $APP_DIR
-
-echo "=== Подтягиваем обновления ==="
-git fetch --all --tags
-
-echo "=== Переходим на  commit ==="
-git checkout --detach $DEPLOY_REF
-
-
 echo "Текущий SHA релиза: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/alex/3kurs/dev-ops/catty-reminders-app/.env.deploy
 
-if [ -f "requirements.txt" ]; then
-    if [ ! -d "venv" ]; then
-        echo "=== создание виртуального окружения==="
-        python -m venv venv
-    fi
-    echo "=== запуск виртуального окружения ==="
-    source venv/bin/activate
-    echo "=== установка зависимостей ==="
-    pip install -r requirements.txt
-fi
+echo "=== Подтягиваю новый образ ==="
+docker pull $IMAGE
 
-echo "=== запуск приложения ==="
-sudo systemctl restart myapp
+echo "=== Останавливаю старый контейнер ==="
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
+
+
+echo "=== Запускаю новый контейнер ==="
+docker run -d \
+    -p $HOST_PORT:$CONTAINER_PORT \
+    --name $CONTAINER_NAME \
+    --restart unless-stopped \
+    -e DEPLOY_REF=$DEPLOY_REF \
+    $IMAGE
+    
+    sleep 4
