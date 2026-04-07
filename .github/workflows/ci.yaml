@@ -19,6 +19,8 @@ jobs:
           docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
 
   pipeline:
+    needs: docker-lint
+    if: success()
     runs-on: ubuntu-latest
 
     steps:
