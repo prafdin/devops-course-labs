@@ -28,4 +28,4 @@ jobs:
             set -e
             cd /home/alex/3kurs/dev-ops/catty-reminders-app
             chmod +x ./deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            ./deploy.sh ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }} ${{ github.sha }}
