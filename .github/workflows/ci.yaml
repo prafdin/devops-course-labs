@@ -73,6 +73,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
             ghcr.io/mappy12/catty-reminders-app:lab3
             ghcr.io/mappy12/catty-reminders-app:${{ github.sha }}
