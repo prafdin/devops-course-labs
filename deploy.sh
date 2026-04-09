@@ -18,6 +18,7 @@ docker run -d \
     -p 8181:8181 \
     --name $CONTAINER_NAME \
     --restart unless-stopped \
+    -e DEPLOY_REF="$2" \
     $IMAGE_FULL
 
 echo "Готово!"
