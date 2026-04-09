@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -57,7 +61,7 @@ jobs:
           with:
             registry: ghcr.io
             username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+            password: ${{ secrets.DOCKER_PAT }}
 
         - name: Build and push Docker image
           uses: docker/build-push-action@v5
@@ -67,3 +71,5 @@ jobs:
             tags: |
               ghcr.io/andreypreobrazhenskiy/catty-reminders-app/catty-app:${{ github.sha }}
               ghcr.io/andreypreobrazhenskiy/catty-reminders-app/catty-app:latest
+            build-args: |
+              DEPLOY_REF=${{ github.sha }}
