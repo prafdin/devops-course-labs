@@ -1,24 +1,34 @@
 #!/bin/bash
 set -e
 
+# === Параметры ===
+APP_DIR="/home/kirill/desktop/devops"
+ENV_FILE="$APP_DIR/.env.deploy"
 IMAGE_FULL="$1:$2"
 CONTAINER_NAME="catty-reminders-app"
+PORT=8181
 
-echo "Деплой образа: $IMAGE_FULL"
+echo "Deploying: $IMAGE_FULL"
 
-echo "Очистка..."
-docker stop $CONTAINER_NAME || true
-docker rm $CONTAINER_NAME || true
+echo "Cleaning..."
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm "$CONTAINER_NAME" 2>/dev/null || true
 
-echo "Скачиваем..."
-docker pull $IMAGE_FULL
+sudo fuser -k "$PORT/tcp" 2>/dev/null || true
 
-echo "Запуск..."
+echo "Pulling..."
+docker pull "$IMAGE_FULL"
+
+DEPLOY_REF="$2"
+printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
+echo "Saved DEPLOY_REF=$DEPLOY_REF to $ENV_FILE"
+
+echo "tarting container..."
 docker run -d \
-    -p 8181:8181 \
-    --name $CONTAINER_NAME \
+    -p "$PORT":"$PORT" \
+    --name "$CONTAINER_NAME" \
     --restart unless-stopped \
-    -e DEPLOY_REF="$2" \
-    $IMAGE_FULL
+    -e DEPLOY_REF="$DEPLOY_REF" \
+    "$IMAGE_FULL"
 
-echo "Готово!"
+echo "Deploy complete!"
