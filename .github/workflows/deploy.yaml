@@ -7,12 +7,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to VM via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -22,5 +21,11 @@ jobs:
           script: |
             set -e
             cd /home/kirill/desktop/devops
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            chmod +x ./deploy.sh
+
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u kirilldrs --password-stdin
+
+            ./deploy.sh "ghcr.io/kirilldrs/catty-reminders-app" "${{ github.sha }}"
+            
+            sleep 3
+            curl -s -o /dev/null -w "%{http_code}" http://localhost:8181 | grep -q "200\|302" && echo "App is reachable" || echo "Error!"

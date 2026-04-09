@@ -1,46 +1,23 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
-APP_DIR="/home/kirill/desktop/devops"
-ENV_FILE="$APP_DIR/.env.deploy"
+IMAGE_FULL="$1:$2"
+CONTAINER_NAME="catty-reminders-app"
 
-DEPLOY_COMMIT="${1:-}"
+echo "Деплой образа: $IMAGE_FULL"
 
-echo "🚀 Deploying Catty..."
+echo "Очистка..."
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
 
-cd "$APP_DIR"
+echo "Скачиваем..."
+docker pull $IMAGE_FULL
 
-git fetch origin
+echo "Запуск..."
+docker run -d \
+    -p 8181:8181 \
+    --name $CONTAINER_NAME \
+    --restart unless-stopped \
+    $IMAGE_FULL
 
-if [ -n "$DEPLOY_COMMIT" ]; then
-  echo "🎯 Deploying specific commit: $DEPLOY_COMMIT"
-  git checkout "$DEPLOY_COMMIT"
-else
-  echo "🎯 Deploying latest from lab2"
-  git checkout lab2
-  git pull origin lab2
-fi
-
-if [ ! -d .venv ]; then
-  python3 -m venv .venv
-fi
-
-.venv/bin/pip install -r requirements.txt
-
-DEPLOY_REF="$(git rev-parse HEAD)"
-printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
-
-echo "Using DEPLOY_REF=$DEPLOY_REF"
-
-echo "🔄 Restarting catty-app.service..."
-sudo systemctl restart catty-app.service
-sleep 3
-
-if sudo systemctl is-active catty-app.service; then
-    echo "✅ Service restarted successfully"
-else
-    echo "❌ Service failed to restart!"
-    exit 1
-fi
-
-echo "✅ Catty deployed successfully"
+echo "Готово!"
