@@ -1,19 +1,17 @@
 name: CD Pipeline
 
-# Запускаем деплой только ПОСЛЕ успешного завершения сборки (CI Pipeline)
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
     types:
       - completed
+  release:
+    types: [published, created]
 
 jobs:
   deploy:
-    # Указываем, что скрипт должен выполниться прямо на твоей виртуалке
     runs-on: self-hosted
-    
-    # Запускаем только если CI прошел успешно (зеленая галочка)
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Checkout code
