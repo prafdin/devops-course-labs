@@ -20,7 +20,7 @@ jobs:
           script: |
             set -e
 
-            IMAGE_NAME="ghcr.io/andreypreobrazhenskiy/catty-reminders-app/catty-app:${{ github.sha }}"
+            IMAGE_NAME="ghcr.io/andreypreobrazhenskiy/catty-reminders-app:${{ github.sha }}"
             CONTAINER_NAME="catty-app"
 
             echo "=== Docker deployment started ==="
