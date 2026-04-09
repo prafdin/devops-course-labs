@@ -67,5 +67,3 @@ jobs:
             tags: |
               ghcr.io/${{ github.repository }}/catty-app:${{ github.sha }}
               ghcr.io/${{ github.repository }}/catty-app:latest
-            cache-from: type=gha
-            cache-to: type=gha,mode=max
