@@ -8,8 +8,12 @@ echo "=== Running tests on branch: $BRANCH ==="
 
 cd "$REPO_DIR"
 git fetch origin
+
+# Сброс локальных изменений (важно!)
+git reset --hard HEAD
+git clean -fd
+
 git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH"
 
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv/
@@ -21,3 +25,4 @@ pip install -r requirements.txt
 python -m pytest -v
 
 echo "All tests passed!"
+
