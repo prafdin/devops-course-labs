@@ -17,8 +17,6 @@ echo "Cleaning..."
 docker stop "$CONTAINER_NAME" 2>/dev/null || true
 docker rm "$CONTAINER_NAME" 2>/dev/null || true
 
-sudo fuser -k "$PORT/tcp" 2>/dev/null || true
-
 echo "Pulling..."
 docker pull "$IMAGE_FULL"
 
@@ -30,7 +28,6 @@ docker run -d \
     -p "$PORT":"$PORT" \
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
-    -e DEPLOY_REF="$DEPLOY_REF" \
     "$IMAGE_FULL"
 
 echo "Deploy complete!"
