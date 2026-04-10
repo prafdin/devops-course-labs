@@ -18,5 +18,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/dev/catty-reminders-app
-            git pull
-            sudo systemctl restart app
+            git pull origin lab2
+            sudo -n /usr/bin/systemctl restart app
+            sudo -n /usr/bin/systemctl status app --no-pager
