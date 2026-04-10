@@ -2,7 +2,7 @@
 set -e
 
 DEPLOY_REF=$1
-REPO_URL="git@github.com:Rovver52/catty-reminders-app"
+REPO_URL="git@github.com:APMorozov/catty-reminders-app"
 APP_DIR="/home/rover/catty-reminders-app"
 
 echo "=== DEPLOY релиза ==="
@@ -17,22 +17,22 @@ cd $APP_DIR
 echo "=== Подтягиваем обновления ==="
 git fetch --all --tags
 
-echo "=== Переходим на  commit ==="
+echo "=== Переходим на commit ==="
 git checkout --detach $DEPLOY_REF
 
 echo "Текущий SHA релиза: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/rover/catty-reminders-app/.env.deploy
+echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env.deploy
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
-        echo "=== создание виртуального окружения==="
-        python -m venv venv
+        echo "=== Создание виртуального окружения ==="
+        python3 -m venv venv
     fi
-    echo "=== запуск виртуального окружения ==="
+    echo "=== Активация виртуального окружения ==="
     source venv/bin/activate
-    echo "=== установка зависимостей ==="
+    echo "=== Установка зависимостей ==="
     pip install -r requirements.txt
 fi
 
-echo "=== запуск приложения ==="
+echo "=== Перезапуск приложения ==="
 sudo systemctl restart myapp
