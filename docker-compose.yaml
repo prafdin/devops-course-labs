@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     restart: always
     environment:
       POSTGRES_USER: user
@@ -10,7 +10,6 @@ services:
       - db_data:/var/lib/postgresql/data
 
   app:
-    # Заменили плейсхолдер на твой реальный логин
     image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
     restart: always
     ports:

@@ -3,20 +3,20 @@ name: CD Pipeline
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
-    types:
-      - completed
+    types: [completed]
   release:
     types: [published, created]
 
 jobs:
   deploy:
     runs-on: self-hosted
+    # Запускаем только если CI прошел успешно или это релиз
     if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Execute deployment
+      - name: Execute deployment script
         run: |
           chmod +x ./deploy.sh
           ./deploy.sh ${{ github.sha }}
