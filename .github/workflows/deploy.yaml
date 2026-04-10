@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: artem
+          port: 3142
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/dev/catty-reminders-app
+            git pull
+            sudo systemctl restart app
