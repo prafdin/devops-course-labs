@@ -1,34 +1,55 @@
-name: Deploy
+name: CD Pipeline
 
 on:
   release:
     types: [published]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1
         with:
-          python-version: "3.12"
-
-      - name: Make deploy.sh executable
-        run: chmod +x deploy.sh
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USER }}
-          port: ${{ vars.SSH_PORT }}
+          host: course.prafdin.ru
+          port: 2200
+          username: rover
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /home/${{ vars.SSH_USER }}/catty-reminders-app
-            chmod +x ./deploy.sh
-            ./deploy.sh ${{ github.sha }}
+
+            echo "🚀 Starting deployment on VM..."
+
+            DEPLOY_DIR=~/home/rover/catty-reminders-app
+            COMMIT_SHA="${{ github.sha }}"
+
+            mkdir -p $DEPLOY_DIR
+            cd $DEPLOY_DIR
+
+            echo "📦 Deploying commit: $COMMIT_SHA"
+
+            if [ -d ".git" ]; then
+              git fetch origin
+            else
+              git clone git@github.com:Rovver52/catty-reminders-app.git .
+            fi
+
+            git checkout --detach $COMMIT_SHA
+            git reset --hard $COMMIT_SHA
+
+            pip3 install --break-system-packages -r requirements.txt
+
+            echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /tmp/deploy_ref.txt
+
+            sudo systemctl restart catty-app.service
+            sleep 5
+
+            if curl -s http://localhost:8181/login | grep -q "deployref"; then
+              echo "✅ Application is running on port 8181"
+            else
+              echo "❌ Application failed to start"
+              exit 1
+            fi
+
+            echo "✅ Deployment complete!"
