@@ -2,7 +2,7 @@
 set -e
 
 DEPLOY_REF=$1
-REPO_URL="git@github.com:APMorozov/catty-reminders-app"
+REPO_URL="git@github.com:Rovver52/catty-reminders-app"
 APP_DIR="/home/rover/catty-reminders-app"
 
 echo "=== DEPLOY релиза ==="
@@ -21,7 +21,12 @@ echo "=== Переходим на commit ==="
 git checkout --detach $DEPLOY_REF
 
 echo "Текущий SHA релиза: $DEPLOY_REF"
-echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env.deploy
+
+# ⭐ СОЗДАЕМ ФАЙЛ С ПЕРЕМЕННЫМИ ДЛЯ SYSTEMD
+echo "DEPLOY_REF=$DEPLOY_REF" |  tee /etc/catty-app-env
+
+# Также создаем .env файл в проекте (на всякий случай)
+echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env
 
 if [ -f "requirements.txt" ]; then
     if [ ! -d "venv" ]; then
@@ -35,4 +40,5 @@ if [ -f "requirements.txt" ]; then
 fi
 
 echo "=== Перезапуск приложения ==="
-sudo systemctl restart myapp
+sudo systemctl daemon-reload
+sudo systemctl restart catty
