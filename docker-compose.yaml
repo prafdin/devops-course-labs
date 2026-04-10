@@ -11,6 +11,8 @@ services:
       - DEPLOY_REF=${DEPLOY_REF:-development}
     depends_on:
       - db
+    volumes:
+      - ./data/reminder_db.json:/app/reminder_db.json
     restart: always
 
   db:

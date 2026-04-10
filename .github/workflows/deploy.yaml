@@ -23,10 +23,12 @@ jobs:
             cd /home/mappy/Desktop/catty-reminders-app
 
             echo "=== Деплой через Docker Compose ==="
+            
+            mkdir -p data
 
             echo "${{ secrets.DOCKER_PAT }}" | docker login ghcr.io -u mappy12 --password-stdin
 
-            docker compose down || true
+            export DEPLOY_REF=${{ github.sha }}
 
             docker compose pull
             docker compose up -d
