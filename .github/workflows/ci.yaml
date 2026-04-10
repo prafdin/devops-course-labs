@@ -74,9 +74,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-        docker build \
-          --build-arg DEPLOY_REF=${{ github.sha }} \
-          -t ${{ steps.meta.outputs.sha_tag }} .
+          docker build \
+            --build-arg DEPLOY_REF=${{ github.sha }} \
+            -t ${{ steps.meta.outputs.sha_tag }} .
 
       - name: Push Docker image to GHCR
         run: |
