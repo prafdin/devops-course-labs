@@ -21,7 +21,8 @@ jobs:
 
             echo "🚀 Starting deployment on VM..."
 
-            DEPLOY_DIR=~/home/rover/catty-reminders-app
+            # ✅ ИСПРАВЛЕНО: правильный путь (~ уже = /home/rover)
+            DEPLOY_DIR=~/catty-reminders-app
             COMMIT_SHA="${{ github.sha }}"
 
             mkdir -p $DEPLOY_DIR
@@ -32,23 +33,38 @@ jobs:
             if [ -d ".git" ]; then
               git fetch origin
             else
-              git clone git@github.com:Rovver52/catty-reminders-app.git .
+              # ✅ ИСПРАВЛЕНО: HTTPS вместо SSH (нет ключей на ВМ)
+              git clone https://github.com/Rovver52/catty-reminders-app.git .
             fi
 
             git checkout --detach $COMMIT_SHA
             git reset --hard $COMMIT_SHA
 
+            # Установка зависимостей
             pip3 install --break-system-packages -r requirements.txt
 
-            echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /tmp/deploy_ref.txt
+            # ✅ ИСПРАВЛЕНО: запись в файл без sudo
+            echo "DEPLOY_REF=$COMMIT_SHA" > .env.deploy
 
-            sudo systemctl restart catty.service
-            sleep 5
+            # ✅ ИСПРАВЛЕНО: перезапуск приложения без sudo (через pkill + nohup)
+            echo "🔄 Restarting application..."
+            
+            # Останавливаем старый процесс
+            pkill -f "uvicorn.*8181" || true
+            sleep 2
+            
+            # Запускаем новое приложение
+            nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
+            
+            sleep 3
 
+            # Проверка запуска
             if curl -s http://localhost:8181/login | grep -q "deployref"; then
               echo "✅ Application is running on port 8181"
             else
               echo "❌ Application failed to start"
+              echo "=== App log ==="
+              tail -20 app.log || true
               exit 1
             fi
 
