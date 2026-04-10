@@ -14,12 +14,8 @@ echo "Deploying: $IMAGE_FULL"
 echo "DEPLOY_REF: $DEPLOY_REF"
 
 echo "Cleaning..."
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
 docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
-
-if command -v fuser >/dev/null 2>&1; then
-    sudo fuser -k "$PORT/tcp" 2>/dev/null || true
-    sleep 1
-fi
 
 echo "Pulling..."
 docker pull "$IMAGE_FULL"
