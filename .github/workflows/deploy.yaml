@@ -20,49 +20,47 @@ jobs:
 
       - name: 🛰️ Deploy via SSH
         uses: appleboy/ssh-action@v1
-        env:
-          TARGET_DIR: /home/rover/catty-reminders-app
-          SERVICE_NAME: catty-service
         with:
           host: course.prafdin.ru
-          port: 3182  # например, 2215
+          port: 3182  # ⚠️ ЗАМЕНИ на порт из ведомости
           username: rover
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
 
+            # Твои параметры
+            TARGET_DIR="/home/rover/catty-reminders-app"
+            VENV_DIR="/home/rover/catty-reminders-app/venv"
+            SERVICE_NAME="catty-app"
+            GITHUB_SHA="${{ github.sha }}"
+
             echo "🔥 Deployment started at $(date)"
-            echo "📌 Commit: ${{ github.sha }}"
+            echo "📌 Commit: $GITHUB_SHA"
 
-            # Создаём директорию
-            mkdir -p $TARGET_DIR
-            cd $TARGET_DIR
+            cd "$TARGET_DIR"
 
-            # Клонируем или обновляем репо
-            if [ ! -d ".git" ]; then
-              git clone git@github.com:Rovver52/catty-reminders-app.git .
-            else
-              git fetch origin
-            fi
-
-            git checkout ${{ github.sha }}
+            # Сохраняем текущую ветку
+            git fetch origin
+            git checkout "$GITHUB_SHA"
             git reset --hard HEAD
 
-            # Установка зависимостей
-            pip3 install --break-system-packages -r requirements.txt
+            # Активируем venv и устанавливаем зависимости
+            echo "📦 Installing dependencies in virtual environment..."
+            source "$VENV_DIR/bin/activate"
+            pip install -r requirements.txt
 
             # Сохраняем метку деплоя
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt > /dev/null
+            echo "DEPLOY_REF=${GITHUB_SHA}" | sudo tee /tmp/deploy_ref.txt > /dev/null
 
             # Перезапуск сервиса
             echo "♻️ Restarting systemd service..."
             sudo systemctl daemon-reload
-            sudo systemctl restart $SERVICE_NAME
+            sudo systemctl restart "$SERVICE_NAME"
 
             # Health check
             echo "⏳ Waiting for app to be ready..."
             for i in {1..20}; do
-              if curl -sf http://localhost:8181/login | grep -qi "deployref\|login"; then
+              if curl -sf http://localhost:8181/login | grep -qi "login\|catty"; then
                 echo "✅ App is healthy on port 8181"
                 break
               fi
