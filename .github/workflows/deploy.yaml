@@ -42,45 +42,75 @@ jobs:
 
             echo "DEPLOY_REF=$COMMIT_SHA" > .env.deploy
 
-            # ✅ БЕЗОПАСНЫЙ перезапуск приложения
-            echo "🔄 Stopping old application..."
+            # ✅ НАДЕЖНАЯ остановка старого приложения
+            echo "🛑 Stopping old application..."
             
-            # Находим PID процесса и убиваем только его
-            APP_PID=$(lsof -t -i:8181 2>/dev/null || true)
+            # Метод 1: Найти и убить процесс по порту 8181
+            APP_PID=$(sudo lsof -t -i:8181 2>/dev/null || true)
             if [ -n "$APP_PID" ]; then
-              echo "Found app running on PID: $APP_PID"
-              kill $APP_PID || true
+              echo "Found app on PID: $APP_PID, killing..."
+              sudo kill -9 $APP_PID || true
               sleep 2
             fi
             
+            # Метод 2: Убить все процессы uvicorn на порту 8181
+            sudo pkill -9 -f "uvicorn.*8181" || true
+            sleep 2
+            
+            # Метод 3: Проверить, что порт освободился
+            if sudo lsof -i:8181 > /dev/null 2>&1; then
+              echo "❌ Port 8181 is still busy!"
+              sudo lsof -i:8181
+              exit 1
+            fi
+            
+            echo "✅ Port 8181 is free"
+            
+            # ✅ Запуск нового приложения
             echo "🚀 Starting new application..."
             
-            # Запускаем приложение в фоне с перенаправлением вывода
+            # Запускаем в фоне с nohup
             nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
             NEW_PID=$!
             
             echo "Application started with PID: $NEW_PID"
             
-            # Ждем немного и проверяем
+            # Ждем запуска
             sleep 5
             
-            # Проверяем, что процесс еще жив
-            if ps -p $NEW_PID > /dev/null 2>&1; then
-              echo "✅ Application process is running"
-            else
+            # Проверяем, что процесс жив
+            if ! ps -p $NEW_PID > /dev/null 2>&1; then
               echo "❌ Application process died"
               echo "=== App log ==="
               cat app.log
               exit 1
             fi
-
-            # Проверяем доступность приложения
-            if curl -s http://localhost:8181/login | grep -q "deployref"; then
-              echo "✅ Application is responding on port 8181"
-            else
-              echo "⚠️  Application running but /login check failed"
-              echo "Response:"
-              curl -s http://localhost:8181/login || true
+            
+            # Проверяем, что порт слушается
+            if ! sudo lsof -i:8181 > /dev/null 2>&1; then
+              echo "❌ Application is not listening on port 8181"
+              exit 1
             fi
+            
+            echo "✅ Application is running on port 8181"
+            
+            # Финальная проверка HTTP
+            MAX_RETRIES=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              if curl -s http://localhost:8181/login | grep -q "deployref"; then
+                echo "✅ Application is responding correctly!"
+                break
+              fi
+              
+              if [ $i -eq $MAX_RETRIES ]; then
+                echo "❌ Application failed health check after $MAX_RETRIES attempts"
+                echo "=== Last response ==="
+                curl -s http://localhost:8181/login || true
+                exit 1
+              fi
+              
+              echo "Waiting for app to be ready... (attempt $i/$MAX_RETRIES)"
+              sleep 2
+            done
 
             echo "✅ Deployment complete!"
