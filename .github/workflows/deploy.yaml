@@ -1,67 +1,31 @@
-name: 🚀 CD Auto-Deploy
+name: Deploy
 
 on:
   release:
     types: [published]
 
 jobs:
-  deploy-to-vm:
+  deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-      - name: 📦 Fetch source code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🔐 Configure SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          python-version: "3.12"
 
-      - name: 🛰️ Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: course.prafdin.ru
-          port: 3182  # ⚠️ ЗАМЕНИ
-          username: rover
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USER }}
+          port: ${{ vars.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -euo pipefail
-
-            TARGET_DIR="/home/rover/catty-reminders-app"
-            VENV_DIR="/home/rover/catty-reminders-app/venv"
-            SERVICE_NAME="catty"
-            GITHUB_SHA="${{ github.sha }}"
-
-            echo "🔥 Deployment started at $(date)"
-            echo "📌 Commit: $GITHUB_SHA"
-
-            cd "$TARGET_DIR"
-
-            git fetch origin
-            git checkout "$GITHUB_SHA"
-            git reset --hard HEAD
-
-            echo "📦 Installing dependencies..."
-            source "$VENV_DIR/bin/activate"
-            pip install -r requirements.txt
-
-            # ✅ Запись в /tmp без sudo (папка доступна всем)
-            echo "DEPLOY_REF=${GITHUB_SHA}" > /etc/catty-app-env > /dev/null
-
-            # ✅ Перезапуск сервиса (требует sudo — см. настройку выше)
-            echo "♻️ Restarting service..."
-            sudo systemctl daemon-reload
-            sudo systemctl restart "$SERVICE_NAME"
-
-            # Health check
-            echo "⏳ Waiting for app..."
-            for i in {1..20}; do
-              if curl -sf http://localhost:8181/login | grep -qi "login\|catty"; then
-                echo "✅ App is healthy"
-                break
-              fi
-              sleep 3
-            done
-
-            echo "✨ Deployment complete!"
+            set -e
+            cd /home/rover/catty-reminders-app
+            chmod +x ./deploy.sh
+            ./deploy.sh ${{ github.sha }}
