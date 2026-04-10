@@ -21,7 +21,6 @@ jobs:
 
             echo "🚀 Starting deployment on VM..."
 
-            # ✅ ИСПРАВЛЕНО: правильный путь (~ уже = /home/rover)
             DEPLOY_DIR=~/catty-reminders-app
             COMMIT_SHA="${{ github.sha }}"
 
@@ -33,39 +32,55 @@ jobs:
             if [ -d ".git" ]; then
               git fetch origin
             else
-              # ✅ ИСПРАВЛЕНО: HTTPS вместо SSH (нет ключей на ВМ)
               git clone https://github.com/Rovver52/catty-reminders-app.git .
             fi
 
             git checkout --detach $COMMIT_SHA
             git reset --hard $COMMIT_SHA
 
-            # Установка зависимостей
             pip3 install --break-system-packages -r requirements.txt
 
-            # ✅ ИСПРАВЛЕНО: запись в файл без sudo
             echo "DEPLOY_REF=$COMMIT_SHA" > .env.deploy
 
-            # ✅ ИСПРАВЛЕНО: перезапуск приложения без sudo (через pkill + nohup)
-            echo "🔄 Restarting application..."
+            # ✅ БЕЗОПАСНЫЙ перезапуск приложения
+            echo "🔄 Stopping old application..."
             
-            # Останавливаем старый процесс
-            pkill -f "uvicorn.*8181" || true
-            sleep 2
+            # Находим PID процесса и убиваем только его
+            APP_PID=$(lsof -t -i:8181 2>/dev/null || true)
+            if [ -n "$APP_PID" ]; then
+              echo "Found app running on PID: $APP_PID"
+              kill $APP_PID || true
+              sleep 2
+            fi
             
-            # Запускаем новое приложение
+            echo "🚀 Starting new application..."
+            
+            # Запускаем приложение в фоне с перенаправлением вывода
             nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
+            NEW_PID=$!
             
-            sleep 3
-
-            # Проверка запуска
-            if curl -s http://localhost:8181/login | grep -q "deployref"; then
-              echo "✅ Application is running on port 8181"
+            echo "Application started with PID: $NEW_PID"
+            
+            # Ждем немного и проверяем
+            sleep 5
+            
+            # Проверяем, что процесс еще жив
+            if ps -p $NEW_PID > /dev/null 2>&1; then
+              echo "✅ Application process is running"
             else
-              echo "❌ Application failed to start"
+              echo "❌ Application process died"
               echo "=== App log ==="
-              tail -20 app.log || true
+              cat app.log
               exit 1
+            fi
+
+            # Проверяем доступность приложения
+            if curl -s http://localhost:8181/login | grep -q "deployref"; then
+              echo "✅ Application is responding on port 8181"
+            else
+              echo "⚠️  Application running but /login check failed"
+              echo "Response:"
+              curl -s http://localhost:8181/login || true
             fi
 
             echo "✅ Deployment complete!"
