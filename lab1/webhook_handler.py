@@ -96,28 +96,48 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"Событие '{event_type}' игнорируется")
     
     def _handle_push_event(self, payload):
-        """Обработка push события - запуск деплоя"""
-    
+        """Обработка push события - запуск тестов и деплоя"""
+
         branch = payload.get('ref', '').replace('refs/heads/', '')
         pusher = payload.get('pusher', {}).get('name', 'unknown')
         commits = payload.get('commits', [])
-        commit_sha = payload.get('after')  
-    
+        commit_sha = payload.get('after')
+
         if commits:
             last_commit = commits[-1].get('id', 'unknown')[:8]
         else:
             last_commit = "unknown"
-    
+
         print(f"\nPush в ветку: {branch}")
         print(f"Автор: {pusher}")
         print(f"Коммитов: {len(commits)}")
         print(f"Последний коммит: {last_commit}")
         print(f"Полный SHA: {commit_sha}")
+
+        print("Запуск тестов...")
+        try:
+            result = subprocess.run(
+                [f"{APP_DIR}/test.sh", branch],
+                cwd=APP_DIR,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode == 0:
+                print(f"Тесты пройдены:\n{result.stdout}")
+            else:
+                print(f"Тесты упали:\n{result.stdout}\n{result.stderr}")
+                return
+        except subprocess.TimeoutExpired:
+            print("Тесты зависли")
+            return
+        except FileNotFoundError:
+            print("test.sh не найден, пропускаем тесты")
+
         print(f"Запуск автоматического деплоя...")
-    
         try:
             process = subprocess.Popen(
-                [DEPLOY_SCRIPT, commit_sha],  
+                [DEPLOY_SCRIPT, commit_sha],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True
