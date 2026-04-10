@@ -47,7 +47,7 @@ jobs:
             pip install -r requirements.txt
 
             # ✅ Запись в /tmp без sudo (папка доступна всем)
-            echo "DEPLOY_REF=${GITHUB_SHA}" > /tmp/deploy_ref.txt
+            echo "DEPLOY_REF=${GITHUB_SHA}" > /etc/catty-app-env > /dev/null
 
             # ✅ Перезапуск сервиса (требует sudo — см. настройку выше)
             echo "♻️ Restarting service..."
