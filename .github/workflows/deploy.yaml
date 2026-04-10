@@ -1,116 +1,72 @@
-name: CD Pipeline
+name: 🚀 CD Auto-Deploy
 
 on:
   release:
     types: [published]
 
 jobs:
-  build-and-deploy:
+  deploy-to-vm:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
-      - name: Deploy to VM via SSH
+      - name: 📦 Fetch source code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: 🛰️ Deploy via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          TARGET_DIR: /home/rover/catty-reminders-app
+          SERVICE_NAME: catty-service
         with:
           host: course.prafdin.ru
-          port: 2200
+          port: 3182  # например, 2215
           username: rover
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
+            set -euo pipefail
 
-            echo "🚀 Starting deployment on VM..."
+            echo "🔥 Deployment started at $(date)"
+            echo "📌 Commit: ${{ github.sha }}"
 
-            DEPLOY_DIR=~/catty-reminders-app
-            COMMIT_SHA="${{ github.sha }}"
+            # Создаём директорию
+            mkdir -p $TARGET_DIR
+            cd $TARGET_DIR
 
-            mkdir -p $DEPLOY_DIR
-            cd $DEPLOY_DIR
-
-            echo "📦 Deploying commit: $COMMIT_SHA"
-
-            if [ -d ".git" ]; then
-              git fetch origin
+            # Клонируем или обновляем репо
+            if [ ! -d ".git" ]; then
+              git clone git@github.com:Rovver52/catty-reminders-app.git .
             else
-              git clone https://github.com/Rovver52/catty-reminders-app.git .
+              git fetch origin
             fi
 
-            git checkout --detach $COMMIT_SHA
-            git reset --hard $COMMIT_SHA
+            git checkout ${{ github.sha }}
+            git reset --hard HEAD
 
+            # Установка зависимостей
             pip3 install --break-system-packages -r requirements.txt
 
-            echo "DEPLOY_REF=$COMMIT_SHA" > .env.deploy
+            # Сохраняем метку деплоя
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt > /dev/null
 
-            # ✅ НАДЕЖНАЯ остановка старого приложения
-            echo "🛑 Stopping old application..."
-            
-            # Метод 1: Найти и убить процесс по порту 8181
-            APP_PID=$(sudo lsof -t -i:8181 2>/dev/null || true)
-            if [ -n "$APP_PID" ]; then
-              echo "Found app on PID: $APP_PID, killing..."
-              sudo kill -9 $APP_PID || true
-              sleep 2
-            fi
-            
-            # Метод 2: Убить все процессы uvicorn на порту 8181
-            sudo pkill -9 -f "uvicorn.*8181" || true
-            sleep 2
-            
-            # Метод 3: Проверить, что порт освободился
-            if sudo lsof -i:8181 > /dev/null 2>&1; then
-              echo "❌ Port 8181 is still busy!"
-              sudo lsof -i:8181
-              exit 1
-            fi
-            
-            echo "✅ Port 8181 is free"
-            
-            # ✅ Запуск нового приложения
-            echo "🚀 Starting new application..."
-            
-            # Запускаем в фоне с nohup
-            nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
-            NEW_PID=$!
-            
-            echo "Application started with PID: $NEW_PID"
-            
-            # Ждем запуска
-            sleep 5
-            
-            # Проверяем, что процесс жив
-            if ! ps -p $NEW_PID > /dev/null 2>&1; then
-              echo "❌ Application process died"
-              echo "=== App log ==="
-              cat app.log
-              exit 1
-            fi
-            
-            # Проверяем, что порт слушается
-            if ! sudo lsof -i:8181 > /dev/null 2>&1; then
-              echo "❌ Application is not listening on port 8181"
-              exit 1
-            fi
-            
-            echo "✅ Application is running on port 8181"
-            
-            # Финальная проверка HTTP
-            MAX_RETRIES=10
-            for i in $(seq 1 $MAX_RETRIES); do
-              if curl -s http://localhost:8181/login | grep -q "deployref"; then
-                echo "✅ Application is responding correctly!"
+            # Перезапуск сервиса
+            echo "♻️ Restarting systemd service..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart $SERVICE_NAME
+
+            # Health check
+            echo "⏳ Waiting for app to be ready..."
+            for i in {1..20}; do
+              if curl -sf http://localhost:8181/login | grep -qi "deployref\|login"; then
+                echo "✅ App is healthy on port 8181"
                 break
               fi
-              
-              if [ $i -eq $MAX_RETRIES ]; then
-                echo "❌ Application failed health check after $MAX_RETRIES attempts"
-                echo "=== Last response ==="
-                curl -s http://localhost:8181/login || true
-                exit 1
-              fi
-              
-              echo "Waiting for app to be ready... (attempt $i/$MAX_RETRIES)"
-              sleep 2
+              sleep 3
             done
 
-            echo "✅ Deployment complete!"
+            echo "✨ Deployment finished successfully!"
