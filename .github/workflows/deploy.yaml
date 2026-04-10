@@ -26,6 +26,8 @@ jobs:
 
             echo "${{ secrets.DOCKER_PAT }}" | docker login ghcr.io -u mappy12 --password-stdin
 
+            docker compose down || true
+
             docker compose pull
             docker compose up -d
 
