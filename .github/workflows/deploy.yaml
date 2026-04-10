@@ -42,7 +42,7 @@ jobs:
 
             echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /tmp/deploy_ref.txt
 
-            sudo systemctl restart catty-app.service
+            sudo systemctl restart catty.service
             sleep 5
 
             if curl -s http://localhost:8181/login | grep -q "deployref"; then
