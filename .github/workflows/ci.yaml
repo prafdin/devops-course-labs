@@ -73,7 +73,6 @@ jobs:
       - name: Generate image tags
         id: meta
         run: |
-          OWNER_LOWER="${{ github.repository_owner@L }}"
           echo "sha_tag=ghcr.io/${GITHUB_REPOSITORY@L}:${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
