@@ -30,6 +30,12 @@ jobs:
       - name: 🌐 Install Playwright browsers
         run: playwright install --with-deps
 
+      - name: 🔧 Create deploy ref file
+        run: |
+          # Создаем файл с текущим SHA коммита
+          echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt > /dev/null
+          echo "Created deploy_ref.txt with SHA: ${{ github.sha }}"
+
       - name: 🚀 Launch FastAPI in background
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > server.log 2>&1 &
