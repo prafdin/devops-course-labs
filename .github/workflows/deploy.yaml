@@ -17,7 +17,17 @@ jobs:
           port: 3142
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
+
             cd ~/dev/catty-reminders-app
-            git pull origin lab2
+
+            git fetch origin
+            git fetch --tags origin
+
+            git checkout "${{ github.event.release.tag_name }}"
+
+            DEPLOY_SHA=$(git rev-parse HEAD)
+            printf "DEPLOY_REF=%s\n" "$DEPLOY_SHA" > .env
+
             sudo -n /usr/bin/systemctl restart app
             sudo -n /usr/bin/systemctl status app --no-pager
