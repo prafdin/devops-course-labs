@@ -19,25 +19,23 @@ jobs:
           timeout: 30m
           script: |
             set -e
-
+			
             cd /home/mappy/Desktop/catty-reminders-app
-
-            echo "=== Деплой через Docker контейнер ==="
-
+			
+            echo "=== Деплой через Docker Compose ==="
+			
             echo "${{ secrets.DOCKER_PAT }}" | docker login ghcr.io -u mappy12 --password-stdin
-            
+			
             docker compose pull
-            
             docker compose up -d
-            
+			
             sleep 3
+			
             if docker compose ps | grep -q "Up"; then
-            	echo "Стек успешно запущен"
-        
+              echo "Стек успешно запущен"
             else
-                echo "❌ Ошибка: стек не запустился"
-                docker compose logs
-                exit 1
-            fi	
-		
-            echo "=== Деплой успешно завершен ==="
+              echo "Ошибка: стек не запустился"
+              docker compose logs
+              exit 1
+            fi
+            echo "=== Деплой успешно завершён ==="
