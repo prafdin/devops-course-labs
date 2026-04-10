@@ -22,16 +22,15 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
-          port: 3182  # ⚠️ ЗАМЕНИ на порт из ведомости
+          port: 3182  # ⚠️ ЗАМЕНИ
           username: rover
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
 
-            # Твои параметры
             TARGET_DIR="/home/rover/catty-reminders-app"
             VENV_DIR="/home/rover/catty-reminders-app/venv"
-            SERVICE_NAME="catty-app"
+            SERVICE_NAME="catty"
             GITHUB_SHA="${{ github.sha }}"
 
             echo "🔥 Deployment started at $(date)"
@@ -39,32 +38,30 @@ jobs:
 
             cd "$TARGET_DIR"
 
-            # Сохраняем текущую ветку
             git fetch origin
             git checkout "$GITHUB_SHA"
             git reset --hard HEAD
 
-            # Активируем venv и устанавливаем зависимости
-            echo "📦 Installing dependencies in virtual environment..."
+            echo "📦 Installing dependencies..."
             source "$VENV_DIR/bin/activate"
             pip install -r requirements.txt
 
-            # Сохраняем метку деплоя
-            echo "DEPLOY_REF=${GITHUB_SHA}" | sudo tee /tmp/deploy_ref.txt > /dev/null
+            # ✅ Запись в /tmp без sudo (папка доступна всем)
+            echo "DEPLOY_REF=${GITHUB_SHA}" > /tmp/deploy_ref.txt
 
-            # Перезапуск сервиса
-            echo "♻️ Restarting systemd service..."
+            # ✅ Перезапуск сервиса (требует sudo — см. настройку выше)
+            echo "♻️ Restarting service..."
             sudo systemctl daemon-reload
             sudo systemctl restart "$SERVICE_NAME"
 
             # Health check
-            echo "⏳ Waiting for app to be ready..."
+            echo "⏳ Waiting for app..."
             for i in {1..20}; do
               if curl -sf http://localhost:8181/login | grep -qi "login\|catty"; then
-                echo "✅ App is healthy on port 8181"
+                echo "✅ App is healthy"
                 break
               fi
               sleep 3
             done
 
-            echo "✨ Deployment finished successfully!"
+            echo "✨ Deployment complete!"
