@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy app via Docker
+      - name: Deploy app via Docker Compose
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
@@ -20,32 +20,24 @@ jobs:
           script: |
             set -e
 
-            IMAGE_NAME="ghcr.io/mappy12/catty-reminders-app:lab3"
-            CONTAINER_NAME="catty-app"
+            cd /home/mappy/Desktop/catty-reminders-app
 
             echo "=== Деплой через Docker контейнер ==="
 
             echo "${{ secrets.DOCKER_PAT }}" | docker login ghcr.io -u mappy12 --password-stdin
-
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-
-            docker pull $IMAGE_NAME
-
-            docker run -d \
-              --name $CONTAINER_NAME \
-              --restart always \
-              -p 8181:8181 \
-              $IMAGE_NAME
-
+            
+            docker compose pull
+            
+            docker compose up -d
+            
             sleep 3
-            if docker ps --filter "name=$CONTAINER_NAME" -q | grep -q .; then
-              echo "Контейнер успешно запущен"
-
+            if docker compose ps | grep -q "Up"; then
+            	echo "Стек успешно запущен"
+        
             else
-              echo "Ошибка: контейнер не запустился"
-              docker logs $CONTAINER_NAME || true
-              exit 1
-            fi
-
+                echo "❌ Ошибка: стек не запустился"
+                docker compose logs
+                exit 1
+            fi	
+		
             echo "=== Деплой успешно завершен ==="
