@@ -5,39 +5,41 @@ DEPLOY_REF=$1
 REPO_URL="git@github.com:Rovver52/catty-reminders-app"
 APP_DIR="/home/${USER}/catty-reminders-app"
 
-echo "=== 🚀 DEPLOY релиза ==="
+echo "=== DEPLOY ==="
 echo "Commit SHA: $DEPLOY_REF"
-echo "APP_DIR: $APP_DIR"
 
 if [ ! -d "$APP_DIR/.git" ]; then
-    echo "📦 Первый запуск — клонирование репозитория"
+    echo "First deploy - cloning repository"
     mkdir -p "$APP_DIR"
     git clone "$REPO_URL" "$APP_DIR"
 fi
 
 cd "$APP_DIR"
 
-echo "🔄 Подтягиваем обновления..."
+echo "Fetching updates..."
 git fetch --all --tags
 
-echo "🔖 Переходим на коммит: $DEPLOY_REF"
-git "c…здаём виртуальное окружение..."
+echo "Checking out commit: $DEPLOY_REF"
+git checkout --detach "$DEPLOY_REF"
+
+echo "DEPLOY_REF=$DEPLOY_…! -d "venv" ]; then
+        echo "Creating virtual environment..."
         python3 -m venv venv
     fi
-    echo "✅ Активируем venv и устанавливаем зависимости..."
+    echo "Installing dependencies..."
     source venv/bin/activate
     pip install --upgrade pip
     pip install -r requirements.txt
 fi
 
-echo "🔁 Перезапускаем сервис myapp..."
+echo "Restarting myapp service..."
 sudo systemctl restart catty
 
 sleep 3
 if sudo systemctl is-active --quiet catty; then
-    echo "✅ Деплой завершён успешно!"
+    echo "Deploy successful!"
 else
-    echo "❌ Ошибка: сервис myapp не запустился"
+    echo "Error: myapp service failed to start"
     sudo systemctl status catty --no-pager
     exit 1
 fi
