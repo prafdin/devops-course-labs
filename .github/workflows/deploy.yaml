@@ -1,4 +1,4 @@
-name: CD - Deploy to Server
+name: CD - Deploy to Server (Docker)
 
 on:
   release:
@@ -11,17 +11,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy application files via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.PROXY_HOST }}
-          port: ${{ vars.SSH_PORT }}
-          username: ${{ vars.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/opt/catty-reminders/"
-          strip_components: 0
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -30,17 +19,26 @@ jobs:
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/catty-reminders
-            if [ -d "venv" ]; then source venv/bin/activate; fi
-            pip install -r requirements.txt
-            echo "DEPLOY_REF=${{ github.sha }}" | tee .deploy_ref
-            sudo systemctl restart catty-reminders
+            set -e
+
+            IMAGE_NAME="ghcr.io/${{ github.repository }}:latest"
+            CONTAINER_NAME="catty-app"
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
+            docker pull $IMAGE_NAME
+
+            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart always $IMAGE_NAME
+
             sleep 3
             if curl -s --fail http://localhost:8181/login; then
-              echo "✅ Application restarted successfully"
+              echo "✅ Docker container started successfully"
             else
               echo "❌ Application failed to start"
-              sudo journalctl -u catty-reminders -n 20 --no-pager
+              docker logs $CONTAINER_NAME
               exit 1
             fi
 
