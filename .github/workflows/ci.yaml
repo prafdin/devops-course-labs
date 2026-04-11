@@ -1,11 +1,14 @@
-name: 🧪 Python CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [ main, lab2 ]
+    branches:
+      - lab2
+      - lab2_autotests*
   pull_request:
-    branches: [ main ]
-
+    branches:
+      - lab2
+      - lab2_autotests*
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
