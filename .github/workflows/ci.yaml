@@ -29,11 +29,11 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium
       
-      # 4. Запускаем только unit тесты (без UI, так как нет браузера в CI)
+      # 4. Запускаем unit тесты с выводом в консоль
       - name: Run tests
         run: |
-          python -m pytest tests/test_unit.py -v --tb=short > test_result.txt 2>&1
-          cat test_result.txt
+          python -m pytest tests/test_unit.py -v --tb=short 2>&1 | tee test_result.txt
+          exit ${PIPESTATUS[0]}
       
       # 5. Загружаем файл с результатами тестов
       - name: Upload test results
