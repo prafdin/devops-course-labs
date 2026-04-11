@@ -1,0 +1,37 @@
+name: CD
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy files
+        uses: appleboy/scp-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          port: 2200
+          source: "."
+          target: "~/app"
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          port: 2200
+          script: |
+            cd ~/app
+            docker-compose down
+            docker-compose up -d --build
