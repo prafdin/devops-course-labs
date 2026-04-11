@@ -28,6 +28,12 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-playwright
           playwright install chromium
+
+      - name: Setup test environment
+        run: |
+          sudo mkdir -p /opt/catty-reminders
+          sudo cp config.json /opt/catty-reminders/
+          sudo cp inputs.json /opt/catty-reminders/
       
       # 4. Запускаем unit тесты с выводом в консоль
       - name: Run tests
