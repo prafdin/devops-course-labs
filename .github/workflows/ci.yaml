@@ -73,5 +73,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/timurmif/catty-reminders-app:latest
+            ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}
