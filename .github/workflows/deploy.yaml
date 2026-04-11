@@ -30,9 +30,9 @@ jobs:
         run: |
           ssh -p 3132 nyanya@course.prafdin.ru << 'EOF'
             cd /opt/catty-reminders
-            git pull origin lab2
-            source venv/bin/activate
-            pip install -r requirements.txt
+            git fetch origin
+            git reset --hard origin/lab2
+            /opt/catty-reminders/venv/bin/pip install -r requirements.txt            
             sudo systemctl restart catty-reminders
             echo "Deployment completed successfully!"
           EOF
