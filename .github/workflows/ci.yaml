@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, lab1, lab2 ]
+  pull_request:
+    branches: [ main, lab1, lab2 ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # 2. Устанавливаем Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      # 3. Устанавливаем зависимости
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      # 4. Запускаем тесты и сохраняем результат в файл
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short > test_result.txt 2>&1
+          cat test_result.txt
+      
+      # 5. Загружаем файл с результатами тестов (artifact)
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_result.txt
