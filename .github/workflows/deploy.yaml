@@ -9,9 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -23,7 +20,8 @@ jobs:
             bash -c '
               set -e
               cd /home/alex/3kurs/dev-ops/catty-reminders-app
-              chmod +x ./deploy.sh
               OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-              ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
+              export DEPLOY_REF=${{ github.sha }}
+              export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}
+              docker compose up -d --pull always --remove-orphans --force-recreate 
             '  
