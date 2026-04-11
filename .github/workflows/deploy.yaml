@@ -11,32 +11,45 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
-    - name: Get release commit hash
+
+    - name: Create .env file
       run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-list -n 1 $TAG)
-        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-        echo "Deploying release: $TAG"
-        echo "Commit hash: $HASH"
-        echo "Image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$COMMIT_HASH"
+        # app env vars
+        echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
+        echo "DEPLOY_REF=${{ github.sha }}" >> .env
+        echo "APP_PORT=8181" >> .env
+        echo "APP_CONTAINER_NAME=catty-app" >> .env
+        # database env vars
+        echo "DB_CONTAINER_NAME=catty_db" >> .env
+        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD}}" >> .env
+        echo "MYSQL_USER=ct" >> .env
+        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD}}" >> .env
+        echo "MYSQL_DATABASE=catty_reminders" >> .env
+        echo "DB_PORT=3306" >> .env
     
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.7.0
+    - name: Copy file to server
+      uses: appleboy/scp-action@master
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: |
+          ./docker-compose.yaml
+          ./.env
+          ./config.json
+        target: /opt/catty-reminders-app/
+
     - name: Deploy to server
-      env:
-        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-        GITHUB_ACTOR: ${{ github.actor }}
-      run: |
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -x
+          cd /opt/catty-reminders-app
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker compose up -d --pull always --remove-orphans --force-recreate
         

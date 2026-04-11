@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - lab3*
+      - lab4*
   pull_request:
     branches:
-      - lab3*
+      - lab4*
 
 jobs:
   pipeline:
