@@ -23,20 +23,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest pytest-cov
       
       - name: Setup test environment
         run: |
           sudo mkdir -p /opt/catty-reminders
-          sudo cp config.json /opt/catty-reminders/
-          sudo cp inputs.json /opt/catty-reminders/
+          sudo cp config.json /opt/catty-reminders/ 2>/dev/null || true
+          sudo cp inputs.json /opt/catty-reminders/ 2>/dev/null || true
       
-      - name: Run tests
+      - name: Run tests with JUnit report
         run: |
-          python -m pytest tests/ -v --tb=short 2>&1 | tee test_result.txt
-          echo "PASSED" >> test_result.txt
+          pytest tests/ -v --junitxml=test_results.xml --tb=short
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_result.txt
+          path: test_results.xml
