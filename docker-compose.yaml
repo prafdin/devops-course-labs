@@ -1,13 +1,13 @@
 services:
   db:
-    image: mysql:latest
+    image: mariadb:11
     container_name: ${DB_CONTAINER_NAME}
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - MYSQL_USER=${MARIADB_USER}
-      - MYSQL_PASSWORD=${MARIADB_PASSWORD}
-      - MYSQL_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
     ports:
       - "${HOST_DB_PORT}:${CONTEINER_DB_PORT}"
     volumes:
@@ -23,6 +23,9 @@ services:
       - DEPLOY_REF=${DEPLOY_REF}
     ports: 
       - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
+
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
       - db
     networks:
