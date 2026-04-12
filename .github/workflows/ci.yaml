@@ -56,6 +56,14 @@ jobs:
           with:
             dockerfile: Dockerfile
           continue-on-error: true 
+        - name: Debug Secret Visibility
+              run: |
+                if [ -z "${{ secrets.DOCKER_PAT }}" ]; then
+          	    echo "ОШИБКА: Секрет DOCKER_PAT пуст или не найден!"
+          	    exit 1
+        	else
+          	    echo "Секрет найден, всё в порядке."
+        	fi
 
         - name: Log in to GitHub Container Registry
           uses: docker/login-action@v4
