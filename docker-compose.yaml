@@ -1,13 +1,13 @@
 services:
   db:
-    image: mariadb:11.8.6-ubi9
+    image: mysql:latest
     container_name: ${DB_CONTAINER_NAME}
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - MARIADB_USER=${MARIADB_USER}
-      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
-      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_USER=${MARIADB_USER}
+      - MYSQL_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_DATABASE=${MARIADB_DATABASE}
     ports:
       - "${HOST_DB_PORT}:${CONTEINER_DB_PORT}"
     volumes:
