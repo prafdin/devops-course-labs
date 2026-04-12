@@ -16,9 +16,14 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            IMAGE_TAG="sha-$SHORT_SHA"
+            
+            echo "> Trying to pull: ghcr.io/yui1337/catty-reminders-app:$IMAGE_TAG"
+            
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
             
-            docker pull ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
+            docker pull ghcr.io/yui1337/catty-reminders-app:$IMAGE_TAG
             
             docker stop catty-app || true
             docker rm catty-app || true
@@ -26,7 +31,8 @@ jobs:
             docker run -d \
               --name catty-app \
               -p 8181:8181 \
+              --restart-always \
               -e DEPLOY_REF=${{ github.sha }} \
-             ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
+             ghcr.io/yui1337/catty-reminders-app:$IMAGE_TAG
             
-            echo "> Success!"
+            echo "> Deploy of $IMAGE_TAG successful!"
