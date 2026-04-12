@@ -17,6 +17,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 3132 course.prafdin.ru >> ~/.ssh/known_hosts
+      
       - name: Deploy on server
         run: |
           ssh -p 3132 nyanya@course.prafdin.ru << 'EOF'
