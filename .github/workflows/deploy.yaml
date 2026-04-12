@@ -16,18 +16,16 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            IMAGE_TAG=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
+	    IMAGE_TAG=sha-${{ github.sha }}
             REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
             
             echo "> Deploying branch: $IMAGE_TAG"
+            
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
             
             docker pull ghcr.io/$REPO_LOWER:$IMAGE_TAG
             
             docker stop catty-app || true
             docker rm catty-app || true
             
-            docker run -d \
-              --name catty-app \
-              -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
-              ghcr.io/$REPO_LOWER:$IMAGE_TAG
+            docker run -d --name catty-app -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} ghcr.io/$REPO_LOWER:$IMAGE_TAG
