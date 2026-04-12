@@ -11,6 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +21,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Устанавливаем зависимости для тестов
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -45,50 +45,40 @@ jobs:
           name: test_result
           path: test_result.xml
 
-  build-and-push-docker:
-    needs: [test] # Сборка начнется только если тесты прошли успешно
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  build-and-push-docker: 
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
 
-      - name: Run Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: Dockerfile
-        continue-on-error: true
+        - name: Run Hadolint
+          uses: hadolint/hadolint-action@v3.1.0
+          with:
+            dockerfile: Dockerfile
+          continue-on-error: true 
 
-      - name: Debug Secret Visibility
-        run: |
-          if [ -z "${{ secrets.DOCKER_PAT }}" ]; then
-            echo "ОШИБКА: Секрет DOCKER_PAT пуст или не найден!"
-            exit 1
-          else
-            echo "Секрет найден, всё в порядке."
-          fi
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v4
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }} 
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PAT }}
+        - name: Extract metadata for Docker
+          id: meta
+          uses: docker/metadata-action@v5
+          with:
+            images: ghcr.io/yui1337/catty-reminders-app
+            tags: |
+              type=ref,event=branch
+              type=sha
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=sha
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v6
+          with:
+            context: .
+            push: true
+            tags: |
+              ${{ steps.meta.outputs.tags }}
+              ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
+            labels: ${{ steps.meta.outputs.labels }}
