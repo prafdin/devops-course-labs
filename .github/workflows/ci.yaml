@@ -41,7 +41,7 @@ jobs:
 
       - name: Start app
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          docker compose up -d --pull always --remove-orphans --force-recreate
           sleep 5
 
       - name: Run tests
