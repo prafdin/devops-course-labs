@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ main, lab2 ]
+    branches:
+      - '**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - '**'
 
 jobs:
   test:

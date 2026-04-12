@@ -23,8 +23,8 @@ jobs:
             cd /home/vano/catty-app
             git fetch origin
             git reset --hard origin/main
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" > /home/vano/catty-app/.env
             source venv/bin/activate
             pip install -r requirements.txt
-            echo "DEPLOY_REF=$(git rev-parse HEAD)" > /home/vano/catty-app/.env
             sudo systemctl restart catty
           EOF
