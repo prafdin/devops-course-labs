@@ -33,10 +33,6 @@ jobs:
             docker pull $IMAGE_NAME
 
             docker run -d \
-              --name $CONTAINER_NAME \
-              --restart always \
-              -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
               $IMAGE_NAME
 
             echo "⏳ Waiting for application..."
