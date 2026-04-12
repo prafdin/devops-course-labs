@@ -3,13 +3,13 @@ cd /home/vano/catty-app || exit 1
 SHA=$1
 echo "Deploying SHA: $SHA"
 
+# Сбрасываем на конкретный коммит
 git fetch --all
 git reset --hard "$SHA"
 
-source venv/bin/activate
-pip install -r requirements.txt
+pip3 install --break-system-packages -r requirements.txt
 
-echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
+echo "DEPLOY_REF=$SHA" > /etc/catty-app-env
 
 sudo systemctl restart catty
 
