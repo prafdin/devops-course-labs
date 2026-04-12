@@ -33,7 +33,6 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest tests/ -v --tb=short 2>&1 | tee test_result.txt
-          echo "" >> test_result.txt
           echo "PASSED" >> test_result.txt
       
       - name: Upload test results
