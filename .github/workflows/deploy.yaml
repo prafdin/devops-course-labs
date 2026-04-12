@@ -35,6 +35,7 @@ jobs:
             docker run -d \
               -p 8181:8181 \
               -e DEPLOY_REF=${{ github.sha }} \
+              ghcr.io/andreypreobrazhenskiy/catty-reminders-app:${{ github.sha }}
 
             echo "⏳ Waiting for application..."
             for i in {1..10}; do
