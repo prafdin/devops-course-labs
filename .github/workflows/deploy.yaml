@@ -17,20 +17,14 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
-      - name: Add host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p 3132 course.prafdin.ru >> ~/.ssh/known_hosts
-      
       - name: Deploy on server
         run: |
-          COMMIT_SHA=${{ github.sha }}
           ssh -p 3132 nyanya@course.prafdin.ru << 'EOF'
             cd /opt/catty-reminders
             git fetch origin
-            git reset --hard $COMMIT_SHA
-            echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /opt/catty-reminders/.deploy_ref > /dev/null
-            sudo chmod 644 /opt/catty-reminders/.deploy_ref
-            /opt/catty-reminders/venv/bin/pip install -r requirements.txt
+            git reset --hard ${{ github.sha }}
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee .deploy_ref > /dev/null
+            sudo chmod 644 .deploy_ref
+            ./venv/bin/pip install -r requirements.txt
             sudo systemctl restart catty-reminders
           EOF
