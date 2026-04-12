@@ -22,6 +22,6 @@ jobs:
               cd /home/alex/3kurs/dev-ops/catty-reminders-app
               OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
               export DEPLOY_REF=${{ github.sha }}
-              export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}
+              export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}:${{ github.sha }}
               docker compose up -d --pull always --remove-orphans --force-recreate 
             '  
