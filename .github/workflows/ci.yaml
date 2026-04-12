@@ -78,7 +78,5 @@ jobs:
           with:
             context: .
             push: true
-            tags: |
-              ${{ steps.meta.outputs.tags }}
-              ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
+            tags: ${{ steps.meta.outputs.tags }}
             labels: ${{ steps.meta.outputs.labels }}
