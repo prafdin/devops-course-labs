@@ -13,20 +13,10 @@ with open('/opt/catty-reminders/config.json') as config_json:
     users = config['users']
     db_path = config['db_path']
 
-# DEPLOY_REF - хэш текущего коммита
+# DEPLOY_REF - читаем из файла, который обновляет CD
 try:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd="/opt/catty-reminders",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-        timeout=2
-    )
-    if result.returncode == 0:
-        DEPLOY_REF = result.stdout.strip()
-    else:
-        DEPLOY_REF = "NA"
+    with open('/opt/catty-reminders/deploy_ref.txt', 'r') as f:
+        DEPLOY_REF = f.read().strip()
 except:
     DEPLOY_REF = "NA"
 
