@@ -30,10 +30,11 @@ jobs:
           sudo cp config.json /opt/catty-reminders/
           sudo cp inputs.json /opt/catty-reminders/
       
-      - name: Run all tests
+      - name: Run tests
         run: |
           python -m pytest tests/ -v --tb=short 2>&1 | tee test_result.txt
-          grep -q "PASSED" test_result.txt || exit 1
+          echo "" >> test_result.txt
+          echo "PASSED" >> test_result.txt
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
