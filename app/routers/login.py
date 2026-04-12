@@ -14,7 +14,7 @@ from app.utils.exceptions import UnauthorizedPageException
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from typing import Optional
-
+import os
 
 # --------------------------------------------------------------------------------
 # Router
@@ -41,11 +41,20 @@ async def get_login(
 
   context = {
     'request': request,
-    'deploy_ref': DEPLOY_REF,
+    "deploy_ref": deploy_ref,
     'invalid': invalid,
     'logged_out': logged_out,
     'unauthorized': unauthorized
   }
+  # Чтение deploy_ref
+  deploy_ref = None
+  try:
+      with open('/opt/catty-reminders/.deploy_ref', 'r') as f:
+          content = f.read().strip()
+          if '=' in content:
+              deploy_ref = content.split('=', 1)[1]
+  except:
+      pass
   return templates.TemplateResponse("pages/login.html", context)
 
 
