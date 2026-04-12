@@ -64,9 +64,6 @@ jobs:
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }} 
 
-        - name: Lowercase repo name
-          run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
-
         - name: Extract metadata for Docker
           id: meta
           uses: docker/metadata-action@v6
@@ -74,10 +71,10 @@ jobs:
             images: ghcr.io/yui1337/catty-reminders-app
             tags: |
               type=ref,event=branch
-              type=sha
+              type=raw,value=${{ github.sha }}
               
         - name: Build and push Docker image
-          uses: docker/build-push-action@v7
+          uses: docker/build-push-action@v6
           with:
             context: .
             push: ${{ github.event_name != 'pull_request' }}
