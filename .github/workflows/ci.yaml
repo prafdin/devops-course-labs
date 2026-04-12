@@ -48,6 +48,14 @@ jobs:
           pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
 
+      - name: Wait for DB
+        run: |
+          for i in {1..30}; do
+            nc -z db 3306 && echo "DB is up" && break
+            echo "Waiting for DB..."
+            sleep 2
+          done
+
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
