@@ -21,7 +21,7 @@ jobs:
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-            docker pull ghcr.io/dmitrievsn/catty-reminders-app:${{ github.sha }}
+            docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
 
             docker rm -f catty-app || true
 
@@ -30,4 +30,4 @@ jobs:
               --restart unless-stopped \
               -p 8181:8181 \
               -e DEPLOY_REF=${{ github.sha }} \
-              ghcr.io/dmitrievsn/catty-reminders-app:${{ github.sha }}
+              ghcr.io/${{ github.repository }}:${{ github.sha }}
