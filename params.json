@@ -174,6 +174,11 @@
       "login": "YaroslavFomenko",
       "id": "fomenko",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "ShureevK",
+      "id": "Shureev",
+      "app": "catty-reminders-app"
     }
   ]
 }
