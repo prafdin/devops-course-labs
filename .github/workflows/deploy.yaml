@@ -26,6 +26,5 @@ jobs:
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-            IMAGE_TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker compose down
             IMAGE_TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker compose pull
             IMAGE_TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker compose up -d --force-recreate --remove-orphans
