@@ -68,7 +68,7 @@ jobs:
           id: meta
           uses: docker/metadata-action@v5
           with:
-            images: ghcr.io/yui1337/catty-reminders-app
+            images: ghcr.io/${{ github.repository }}
             tags: |
               type=ref,event=branch
               type=sha
