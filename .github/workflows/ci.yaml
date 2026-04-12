@@ -45,7 +45,8 @@ jobs:
           name: test_result
           path: test_result.xml
 
-  build-and-push-docker: 
+  build-and-push-docker:
+      if: github.event_name == 'push' 
       runs-on: ubuntu-latest
       steps:
         - name: Checkout repository
@@ -64,11 +65,14 @@ jobs:
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }} 
 
+        - name: Lowercase repo name
+          run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
         - name: Extract metadata for Docker
           id: meta
           uses: docker/metadata-action@v5
           with:
-            images: ghcr.io/yui1337/catty-reminders-app
+            images: ghcr.io/${{ env.IMAGE_NAME }}
             tags: |
               type=ref,event=branch
               type=sha
