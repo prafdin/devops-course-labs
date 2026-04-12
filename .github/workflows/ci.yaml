@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -43,11 +47,6 @@ jobs:
 
   build-and-push-docker: 
       runs-on: ubuntu-latest
-    
-      permissions:
-        contents: read
-        packages: write 
-
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4
@@ -69,15 +68,17 @@ jobs:
           id: meta
           uses: docker/metadata-action@v5
           with:
-            images: ghcr.io/${{ github.repository }}
+            images: ghcr.io/yui1337/catty-reminders-app
             tags: |
               type=ref,event=branch
               type=sha
 
         - name: Build and push Docker image
-          uses: docker/build-push-action@v5
+          uses: docker/build-push-action@v6
           with:
             context: .
             push: true
-            tags: ${{ steps.meta.outputs.tags }}
+            tags: |
+              ${{ steps.meta.outputs.tags }}
+              ghcr.io/yui1337/catty-reminders-app:${{ github.sha }}
             labels: ${{ steps.meta.outputs.labels }}
