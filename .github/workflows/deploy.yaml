@@ -24,13 +24,12 @@ jobs:
       
       - name: Deploy on server
         run: |
-          ssh -p 3132 nyanya@course.prafdin.ru << 'EOF'
+          COMMIT_SHA=${{ github.event.release.target_commitish }}
+          ssh -p 3132 nyanya@course.prafdin.ru << EOF
             cd /opt/catty-reminders
             git fetch origin
-            git reset --hard origin/lab2
-            COMMIT_HASH=$(git rev-parse HEAD)
-            echo "Deployed commit: $COMMIT_HASH"
-            echo "$COMMIT_HASH" > /opt/catty-reminders/deploy_ref.txt
+            git reset --hard $COMMIT_SHA
+            echo "$COMMIT_SHA" > /opt/catty-reminders/deploy_ref.txt
             /opt/catty-reminders/venv/bin/pip install -r requirements.txt
             sudo systemctl restart catty-reminders
           EOF
