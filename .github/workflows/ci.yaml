@@ -34,6 +34,7 @@ jobs:
       
       - name: Run tests with JUnit report
         run: |
+          export PYTHONPATH=$PYTHONPATH:$PWD
           pytest tests/ -v --junitxml=test_results.xml --tb=short
       
       - name: Upload test results
