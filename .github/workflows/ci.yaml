@@ -30,7 +30,7 @@ jobs:
           sudo cp config.json /opt/catty-reminders/
           sudo cp inputs.json /opt/catty-reminders/
       
-      - name: Run tests
+      - name: Run all tests
         run: |
           python -m pytest tests/ -v --tb=short 2>&1 | tee test_result.txt
           grep -q "PASSED" test_result.txt || exit 1
