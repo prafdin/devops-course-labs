@@ -31,7 +31,7 @@ jobs:
             docker run -d \
               --name catty-app \
               -p 8181:8181 \
-              --restart-always \
+              --restart always \
               -e DEPLOY_REF=${{ github.sha }} \
              ghcr.io/yui1337/catty-reminders-app:$IMAGE_TAG
             
