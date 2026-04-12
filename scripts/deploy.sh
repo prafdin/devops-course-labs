@@ -28,25 +28,22 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
     
     echo "Logging in to GitHub Container Registry..."
-
     echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-    echo "Pulling image: \$IMAGE"
-    docker pull \$IMAGE
+    echo "Pulling image: $IMAGE"
+    docker pull $IMAGE
     
     echo "Stopping old container..."
-
     docker stop $CONTAINER_NAME || true
     docker rm $CONTAINER_NAME || true
     
     echo "Starting new container..."
-
     docker run -d \
         -p $PORT:$PORT \
         --name $CONTAINER_NAME \
         --restart unless-stopped \
         -e DEPLOY_REF=$RELEASE_HASH \
-        \$IMAGE
+        $IMAGE
     
     sleep 4
     
