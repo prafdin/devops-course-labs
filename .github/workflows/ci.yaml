@@ -51,7 +51,7 @@ jobs:
           python -c "import sys; sys.path.insert(0, '.'); from app.main import app; print('✅ Application imports successfully')"
 
   docker:
-    name: Build and Push Docker Image
+    name: Build and Push Docker Image (ARM64)
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push'
@@ -60,7 +60,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (для эмуляции ARM64)
+      - name: Set up QEMU for multi-arch builds
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -73,12 +73,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image (ARM64)
+      - name: Build and push Docker image for ARM64
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/arm64
           push: true
+          provenance: false
           tags: |
             ghcr.io/timurmif/catty-reminders-app:latest
             ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}
