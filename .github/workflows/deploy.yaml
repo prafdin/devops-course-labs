@@ -1,4 +1,6 @@
 name: Deploy
+
+# Триггер: запуск при публикации нового релиза
 on:
   release:
     types: [published]
@@ -7,13 +9,46 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via script
+      # Клонируем репозиторий (нужно для получения имени репозитория)
+      - uses: actions/checkout@v4
+
+      # Приводим имя репозитория к нижнему регистру (Docker не принимает заглавные буквы)
+      - name: Prepare Image Name
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      # Подключаемся к серверу по SSH и выполняем деплой Docker контейнера
+      - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: course.prafdin.ru
-          username: ilya
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3117
-          # Вызываем скрипт и передаем SHA коммита
-          script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
-
+          host: course.prafdin.ru                    # Хост для подключения (FRP сервер)
+          username: ilya                             # Имя пользователя на ВМ
+          key: ${{ secrets.SSH_PRIVATE_KEY }}        # Приватный ключ из секретов GitHub
+          port: 3117                                 # Порт для SSH (проброшен через FRP)
+          script: |
+            # Формируем полное имя образа в GHCR
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-container"
+            
+            # Логинимся в GitHub Container Registry (используем GITHUB_TOKEN)
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Скачиваем последнюю версию образа
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+            
+            # Останавливаем и удаляем старый контейнер (если есть)
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+            
+            # Запускаем новый контейнер
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \                        # Пробрасываем порт 8181 контейнера на хост
+              --restart unless-stopped \            # Автоматический перезапуск контейнера
+              -e DEPLOY_REF=${{ github.sha }} \     # Передаём SHA коммита как переменную окружения
+              $IMAGE
+            
+            # Удаляем неиспользуемые образы (экономия места)
+            docker image prune -f
