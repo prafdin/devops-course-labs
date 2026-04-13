@@ -43,12 +43,6 @@ jobs:
             docker rm $CONTAINER_NAME || true
             
             # Запускаем новый контейнер
-            docker run -d \
-              --name $CONTAINER_NAME \
-              -p 8181:8181 \                        # Пробрасываем порт 8181 контейнера на хост
-              --restart unless-stopped \            # Автоматический перезапуск контейнера
-              -e DEPLOY_REF=${{ github.sha }} \     # Передаём SHA коммита как переменную окружения
-              $IMAGE
-            
+            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart unless-stopped -e DEPLOY_REF=${{ github.sha }} $IMAGE            
             # Удаляем неиспользуемые образы (экономия места)
             docker image prune -f
