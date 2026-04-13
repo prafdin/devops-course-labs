@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VM via SSH
+      - name: Deploy container to VM
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -21,13 +21,21 @@ jobs:
 
             cd ~/dev/catty-reminders-app
 
-            git fetch origin
-            git fetch --tags origin
-
-            git checkout "${{ github.event.release.tag_name }}"
-
-            DEPLOY_SHA=$(git rev-parse HEAD)
+            DEPLOY_SHA="${{ github.sha }}"
             printf "DEPLOY_REF=%s\n" "$DEPLOY_SHA" > .env
 
-            sudo -n /usr/bin/systemctl restart app
-            sudo -n /usr/bin/systemctl status app --no-pager
+            sudo systemctl stop app || true
+
+            sudo docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.event.release.tag_name }}
+
+            sudo docker stop catty || true
+            sudo docker rm catty || true
+
+            sudo docker run -d \
+              --name catty \
+              --restart always \
+              --env-file .env \
+              -p 8181:8181 \
+              ghcr.io/artem362a/catty-reminders-app:${{ github.event.release.tag_name }}
+
+            sudo docker ps
