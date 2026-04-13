@@ -1,41 +1,36 @@
 version: '3.8'
 
 services:
-  # 1. Сервис Базы Данных
   db:
-    image: postgres:15-alpine
+    image: mariadb:11.8.6-ubi9
     restart: always
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=catty_db
-    # Пункт 3.3 методички: используем volumes для персистентности данных
+      - MARIADB_ROOT_PASSWORD=mypass
+      - MARIADB_DATABASE=catty_reminders
+    ports:
+      - 3306:3306
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
     networks:
       - catty-network
 
-  # 2. Сервис твоего приложения
   app:
-    # Здесь мы используем образ, который собирает твой CI
     image: ghcr.io/yui1337/catty-reminders-app:${IMAGE_TAG}
     restart: always
     ports:
       - "8181:8181"
     environment:
-      # Важно: приложение подключается к БД по имени сервиса "db"
-      - DATABASE_URL=postgresql://user:password@db:5432/catty_db
       - DEPLOY_REF=${IMAGE_TAG}
-    # Ждем, пока база данных запустится, прежде чем стартовать приложение
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
       - db
     networks:
       - catty-network
 
-# Описание ресурсов верхнего уровня (пункт 2.5 методички)
 networks:
   catty-network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  mariadb_data:
