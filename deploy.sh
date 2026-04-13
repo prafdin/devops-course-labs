@@ -1,22 +1,17 @@
-BRANCH=${1:-lab1}
-
-exec > /home/vboxuser/catty-reminders-app/deploy.log 2>&1
-echo "=== Deploy started at $(date) for branch $BRANCH ==="
-
+#!/bin/bash
 cd /home/vboxuser/catty-reminders-app
-git config --global --add safe.directory /home/vboxuser/catty-reminders-app
 
-git fetch origin
+COMMIT_SHA=$1
+if[ -z "$COMMIT_SHA" ]; then
+  COMMIT_SHA=$(git rev-parse HEAD)
+fi
+echo "DEPLOY_REF=$COMMIT_SHA" > .env
 
-git checkout $BRANCH
-git reset --hard origin/$BRANCH
-git pull origin $BRANCH
+# Останавливаем старые версии (на всякий случай)
+sudo systemctl stop catty-app 2>/dev/null || true
+docker stop lab2-app 2>/dev/null || true
+docker rm lab2-app 2>/dev/null || true
 
-NEW_HEAD=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$NEW_HEAD" > .env
-
-./build.sh
-./test.sh
-
-sudo systemctl restart catty-app
-echo "=== Deploy finished successfully ==="
+# Собираем и запускаем
+docker build -t lab2-app-image .
+docker run -d --name lab2-app --restart always -p 8181:8181 --env-file .env lab2-app-image

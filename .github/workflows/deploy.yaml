@@ -1,37 +1,14 @@
 name: CD Pipeline
-
-# Запускать только при создании нового релиза (Release)
 on:
   release:
-    types: [published]
-
+    types: [published, created]
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     steps:
-      # Шаг 1: Скачиваем код на сервер GitHub (Runner)
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Шаг 2: Копируем все новые файлы на твою виртуалку
-      - name: Copy files to VM via SCP
-        uses: appleboy/scp-action@master
-        with:
-          host: course.prafdin.ru
-          port: 2288
-          username: vboxuser
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/home/vboxuser/catty-reminders-app"
-
-      # Шаг 3: Подключаемся по SSH и перезапускаем приложение
-      - name: Restart application via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: course.prafdin.ru
-          port: 2288
-          username: vboxuser
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            sudo systemctl restart catty-app.service
+      - name: Execute deployment script
+        run: |
+          chmod +x ./deploy.sh
+          ./deploy.sh ${{ github.sha }}

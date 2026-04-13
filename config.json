@@ -1,10 +1,9 @@
 {
   "db_path": "reminder_db.json",
-
   "secret_key": "Cats are awesome!",
-  
   "users": {
     "heisenberg": "P@ssw0rd",
-    "tester": "foobar123"
+    "tester": "foobar123",
+    "sa3000udp": "password"
   }
 }
