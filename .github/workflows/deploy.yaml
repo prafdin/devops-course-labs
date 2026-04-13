@@ -26,8 +26,15 @@ jobs:
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-            IMAGE_TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker compose pull
-            IMAGE_TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker compose up -d --force-recreate --remove-orphans
+            IMAGE_NAME=ghcr.io/${{ github.repository }} \
+            IMAGE_TAG=${{ github.sha }} \
+            DEPLOY_REF=${{ github.sha }} \
+            docker compose pull
+
+            IMAGE_NAME=ghcr.io/${{ github.repository }} \
+            IMAGE_TAG=${{ github.sha }} \
+            DEPLOY_REF=${{ github.sha }} \
+            docker compose up -d --force-recreate --remove-orphans
 
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
