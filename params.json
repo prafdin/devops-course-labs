@@ -204,6 +204,11 @@
       "login": "UmarBis",
       "id": "bisultanov",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "SemeenS",
+      "id": "strebelev",
+      "app": "catty-reminders-app"
     }
   ]
 }
