@@ -23,6 +23,7 @@ jobs:
 
             IMAGE_NAME="ghcr.io/timurmif/catty-reminders-app:latest"
             CONTAINER_NAME="catty-app"
+            DEPLOY_REF="${{ github.sha }}"
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -31,7 +32,12 @@ jobs:
 
             docker pull $IMAGE_NAME
 
-            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart always $IMAGE_NAME
+            sudo mkdir -p /opt/catty-reminders
+            echo "DEPLOY_REF=${DEPLOY_REF}" | sudo tee /opt/catty-reminders/.deploy_ref > /dev/null
+
+            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart always \
+              -v /opt/catty-reminders/.deploy_ref:/app/.deploy_ref \
+              $IMAGE_NAME
 
             sleep 3
             if curl -s --fail http://localhost:8181/login; then
