@@ -5,6 +5,8 @@ on:
     branches:
       - lab3
       - 'lab3_autotests*'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - lab3
