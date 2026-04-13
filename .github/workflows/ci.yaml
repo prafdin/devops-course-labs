@@ -34,9 +34,10 @@ jobs:
       - name: Run tests and save results
         run: |
           mkdir -p test_results
-          pytest tests/ -v --tb=short --junit-xml=test_results/junit.xml > test_results/output.txt 2>&1 || true
-          echo $? > test_results/exit_code.txt
-          echo "Test run completed with exit code: $(cat test_results/exit_code.txt)"
+          pytest tests/ -v --tb=short --junit-xml=test_results/junit.xml > test_results/output.txt 2>&1
+          exit_code=$?
+          echo $exit_code > test_results/exit_code.txt
+          echo "Test run completed with exit code: $exit_code"
         continue-on-error: true
 
       - name: Upload test results
