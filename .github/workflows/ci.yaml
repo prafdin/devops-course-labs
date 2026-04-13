@@ -7,6 +7,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root_pass
+          MARIADB_DATABASE: catty_reminders
+          MARIADB_USER: root
+          MARIADB_PASSWORD: mypass
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout code
@@ -28,10 +39,14 @@ jobs:
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          DATABASE_URL: mysql+pymysql://user:password@127.0.0.1:3306/catty_reminders
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
+          DATABASE_URL: mysql+pymysql://user:password@127.0.0.1:3306/catty_reminders
         run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
