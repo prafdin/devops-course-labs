@@ -3,17 +3,29 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: reminders
+        ports:
+          - 3306:3306
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest mysql-connector-python
       - name: Run tests
         run: |
-          pip install -r requirements.txt pytest
-          pytest --junitxml=results.xml || true
+          # Передаем переменные для подключения к тестовой БД
+          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
+          pytest --junitxml=results.xml
       - name: Upload test results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test_result
           path: results.xml
