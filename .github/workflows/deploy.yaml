@@ -27,10 +27,7 @@ jobs:
             export IMAGE_TAG=$IMAGE_TAG
             
             docker compose pull
-            
-            docker stop catty-app || true
-            docker rm catty-app || true
-            
+                        
             docker compose up -d --remove-orphans
             
             echo "> Deploy of $IMAGE_TAG successful!"
