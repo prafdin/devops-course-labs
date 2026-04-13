@@ -1,8 +1,11 @@
 name: CD
 
 on:
+  push:
+    branches:
+      - lab2    
   release:
-    types: [published] 
+    types: [published]
 
 jobs:
   deploy:
@@ -10,7 +13,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v1
@@ -32,20 +34,25 @@ jobs:
           script: |
             cd ~/catty-reminders-app
             
+           
             git fetch origin
-            git checkout ${{ github.sha }}
+            git checkout lab2
+            git pull origin lab2
             
-            echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
+           
+            echo "APP_VERSION=${{ github.sha }}" > .env.deploy
             
-            
+           
             if [ ! -d ".venv" ]; then
                 python3 -m venv .venv/
             fi
             source .venv/bin/activate
             pip install -r requirements.txt
             
-   
+            
+            sudo systemctl daemon-reload
             sudo systemctl restart app.service
+            
             sleep 4
             if sudo systemctl is-active --quiet app.service; then
                 echo "Deployment completed successfully"
@@ -53,5 +60,3 @@ jobs:
                 echo "ERROR: Application failed to start"
                 exit 1
             fi
-
-
