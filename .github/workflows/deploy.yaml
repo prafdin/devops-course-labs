@@ -4,11 +4,21 @@ on:
     types: [published, created]
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Execute deployment script
-        run: |
-          chmod +x ./deploy.sh
-          ./deploy.sh ${{ github.sha }}
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: course.prafdin.ru
+          port: 2288
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vboxuser/catty-reminders-app
+            git fetch --all
+            # Принудительно переключаемся на коммит релиза, который создал бот!
+            git checkout ${{ github.sha }}
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}

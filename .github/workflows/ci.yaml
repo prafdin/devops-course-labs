@@ -1,9 +1,5 @@
 name: CI Pipeline
-on:
-  push:
-    branches: [ "lab2" ]
-  pull_request:
-    branches: [ "lab2" ]
+on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
