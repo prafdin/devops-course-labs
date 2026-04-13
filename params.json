@@ -209,6 +209,16 @@
       "login": "RenTogan",
       "id": "mansurov",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "SemeenS",
+      "id": "strebelev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Demonstinatord",
+      "id": "sergienko",
+      "app": "catty-reminders-app"
     }
   ]
 }
