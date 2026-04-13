@@ -26,7 +26,7 @@ jobs:
 
             sudo systemctl stop app || true
 
-            sudo docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.event.release.tag_name }}
+            sudo docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
 
             sudo docker stop catty || true
             sudo docker rm catty || true
@@ -36,6 +36,6 @@ jobs:
               --restart always \
               --env-file .env \
               -p 8181:8181 \
-              ghcr.io/artem362a/catty-reminders-app:${{ github.event.release.tag_name }}
+              ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
 
             sudo docker ps
