@@ -1,0 +1,36 @@
+name: Deploy Workflow
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            IMAGE_TAG=${{ github.sha }}	
+            
+            cd /home/yui1337/my_project
+            
+            echo "> Trying to pull: ghcr.io/yui1337/catty-reminders-app:$IMAGE_TAG"
+            
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            
+            export IMAGE_TAG=$IMAGE_TAG
+            
+            docker compose pull
+            
+            docker stop catty-app || true
+            docker rm catty-app || true
+            
+            docker compose up -d --remove-orphans
+            
+            echo "> Deploy of $IMAGE_TAG successful!"
