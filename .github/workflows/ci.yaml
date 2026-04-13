@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       db:
-        image: mariadb:10.11
+        image: mariadb:11.8.6-ubi9
         env:
-          MARIADB_ROOT_PASSWORD: root_pass
+          MARIADB_ROOT_PASSWORD: mypass
           MARIADB_DATABASE: catty_reminders
         ports:
           - 3306:3306
@@ -31,7 +31,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install playwright
+          pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
+          
 
       - name: Start Application in background
         run: |
@@ -39,12 +41,10 @@ jobs:
           sleep 5
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DATABASE_URL: mysql+pymysql://user:password@127.0.0.1:3306/catty_reminders
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DATABASE_URL: mysql+pymysql://user:password@127.0.0.1:3306/catty_reminders
         run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
