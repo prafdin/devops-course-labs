@@ -10,9 +10,8 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - mariadb_data:/var/lib/mysql
-    networks:
-      - catty-network
+      - mariadb_data:/var/lib/mysql	
+    network_mode: host
 
   app:
     image: ghcr.io/yui1337/catty-reminders-app:${IMAGE_TAG}
@@ -25,12 +24,7 @@ services:
       - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
       - db
-    networks:
-      - catty-network
-
-networks:
-  catty-network:
-    driver: bridge
+    network_mode: host
 
 volumes:
   mariadb_data:
