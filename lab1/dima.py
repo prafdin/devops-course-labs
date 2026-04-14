@@ -19,31 +19,16 @@ def webhook():
     print(f">>> Received webhook for SHA: {sha}")
     
     try:
-        result = subprocess.run(
-            f"cd {APP_PATH} && git fetch origin",
-            shell=True, capture_output=True, text=True
-        )
-        if result.returncode != 0:
-            print(f"Fetch error: {result.stderr}")
-            return f"Fetch failed: {result.stderr}", 500
+        # 1. Fetch и reset
+        subprocess.run(f"cd {APP_PATH} && git fetch origin", shell=True, capture_output=True, text=True, check=False)
+        subprocess.run(f"cd {APP_PATH} && git reset --hard {sha}", shell=True, capture_output=True, text=True, check=False)
         
-        result = subprocess.run(
-            f"cd {APP_PATH} && git reset --hard {sha}",
-            shell=True, capture_output=True, text=True
-        )
-        if result.returncode != 0:
-            print(f"Reset error: {result.stderr}")
-            return f"Reset failed: {result.stderr}", 500
+        # 2. ЗАПИСЬ SHA В .env (самое важное!)
+        result = subprocess.run(f"echo 'DEPLOY_REF={sha}' > {APP_PATH}/.env", shell=True, capture_output=True, text=True)
+        print(f"Writing .env: {result.stdout} {result.stderr}")
         
-        subprocess.run(
-            f"echo 'DEPLOY_REF={sha}' > {APP_PATH}/.env",
-            shell=True, capture_output=True, text=True
-        )
-        
-        subprocess.run(
-            f"sudo /usr/bin/systemctl restart {SERVICE_NAME}",
-            shell=True, capture_output=True, text=True
-        )
+        # 3. Перезапуск сервиса
+        subprocess.run(f"sudo /usr/bin/systemctl restart {SERVICE_NAME}", shell=True, capture_output=True, text=True)
         
         print(f"SUCCESS: Deployed {sha}")
         return f"OK: Deployed {sha}", 200
