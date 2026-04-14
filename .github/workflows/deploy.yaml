@@ -16,7 +16,6 @@ jobs:
 
       - name: Create .env file
         run: |
-          # попробуем ПЕРЕЗАПИСАТЬ файл, а не дополнить
           echo "APP_IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest" > .env
           echo "DEPLOY_REF=${{ github.sha }}" >> .env
           echo "APP_PORT=8181" >> .env
@@ -49,10 +48,16 @@ jobs:
             cd /home/ilya/catty-compose
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Проверяем, что в .env правильный SHA (глянем логи)
-            grep "DEPLOY_REF" .env
+            # 1. Сначала полностью тушим стек
+            docker compose down
 
-            docker compose -f docker-compose.yaml down --remove-orphans || true
-            docker compose -f docker-compose.yaml pull
-            docker compose -f docker-compose.yaml up -d
+            # 2. Подтягиваем образ
+            docker compose pull
+
+            # 3. Запускаем с ПРИНУДИТЕЛЬНЫМ пересозданием
+            docker compose up -d --force-recreate
+
+            # 4. Контрольный перезапуск для очистки памяти Python
+            docker compose restart catty-app
+
             docker image prune -f
