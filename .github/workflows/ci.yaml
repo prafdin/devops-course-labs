@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo mkdir -p /opt/catty-reminders
           echo '{"secret_key": "test"}' | sudo tee /opt/catty-reminders/config.json
-          echo '{}' | sudo tee /opt/catty-reminders/inputs.json
+          echo '{"users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
       
       - name: Install dependencies
         run: |
@@ -31,21 +31,10 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
       
-      - name: Run only passing tests
+      - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
-          pytest tests/test_unit.py -v --junitxml=test_results.xml --tb=short || true
-          # Если тест упадёт, создаём пустой отчёт с 0 ошибками
-          if [ ! -f test_results.xml ]; then
-            echo '<?xml version="1.0" encoding="utf-8"?><testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0"><testcase classname="test" name="dummy" time="0.001"/></testsuite>' > test_results.xml
-          fi
-      
-      - name: Ensure valid JUnit XML (fix errors/failures)
-        run: |
-          # Если в отчёте есть ошибки или падения, подменяем на успешный
-          if grep -q 'failures="[1-9]"' test_results.xml || grep -q 'errors="[1-9]"' test_results.xml; then
-            echo '<?xml version="1.0" encoding="utf-8"?><testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0"><testcase classname="test" name="all_passed" time="0.001"/></testsuite>' > test_results.xml
-          fi
+          pytest tests/test_unit.py -v --junitxml=test_results.xml --tb=short
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
