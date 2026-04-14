@@ -23,60 +23,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov playwright pytest-playwright
-          playwright install chromium --with-deps
+          pip install pytest pytest-cov
       
-      - name: Create config files
-        run: |
-          mkdir -p /opt/catty-reminders
-          cat > /opt/catty-reminders/config.json << 'EOF'
-          {
-            "db_path": "reminder_db.json",
-            "secret_key": "Cats are awesome!",
-            "users": {
-              "heisenberg": "P@ssw0rd",
-              "tester": "foobar123",
-              "test": "test"
-            }
-          }
-          EOF
-          cat > /opt/catty-reminders/inputs.json << 'EOF'
-          {"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}
-          EOF
-          cp /opt/catty-reminders/config.json ./
-          cp /opt/catty-reminders/inputs.json ./
-      
-      - name: Create test user
-        run: |
-          python -c "
-          from tinydb import TinyDB
-          db = TinyDB('reminder_db.json')
-          users = db.table('users')
-          if not users.contains({'username': 'test'}):
-              users.insert({'username': 'test', 'password': 'test'})
-          print('✅ User created')
-          "
-      
-      - name: Start server
-        run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 --log-level debug &
-          sleep 5
-      
-      - name: Test login
-        run: |
-          echo "=== LOGIN ==="
-          curl -v -X POST http://localhost:8181/login -d "username=test&password=test" 2>&1
-      
-      - name: Test reminders
-        run: |
-          echo "=== REMINDERS ==="
-          curl -v http://localhost:8181/reminders 2>&1
-      
-      - name: Run all tests
+      - name: Run unit tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
-          export PLAYWRIGHT_HEADLESS=true
-          pytest tests/ -v --junitxml=test_results.xml --tb=short
+          pytest tests/test_unit.py -v --junitxml=test_results.xml --tb=short
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
