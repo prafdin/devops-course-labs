@@ -22,7 +22,7 @@ jobs:
       - name: Create config files
         run: |
           sudo mkdir -p /opt/catty-reminders
-          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/config.json
+          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "/opt/catty-reminders/db.json"}' | sudo tee /opt/catty-reminders/config.json
           echo '{"users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
       
       - name: Install dependencies
