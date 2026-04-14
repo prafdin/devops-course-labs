@@ -7,35 +7,40 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      - name: Remote Deploy via Docker Compose
+      - name: Create .env file
+        run: |
+          echo "APP_IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest" > .env
+          echo "DEPLOY_REF=${{ github.sha }}" >> .env
+          echo "APP_PORT=8181" >> .env
+          echo "APP_CONTAINER_NAME=catty-app" >> .env
+          echo "DB_CONTAINER_NAME=catty_db" >> .env
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+          echo "MYSQL_USER=user" >> .env
+          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+          echo "MYSQL_DATABASE=catty_reminders" >> .env
+          echo "DB_PORT=3306" >> .env
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: course.prafdin.ru
+          username: ilya
+          port: 3120
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ".env,docker-compose.yaml,config.json"
+          target: "/home/ilya/catty-compose"
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
           username: ilya
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
-          envs: GITHUB_SHA
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/catty-reminders-app
-
-            # Обновляем локальный docker-compose.yml из ветки lab4
-            git fetch origin lab4
-            git checkout origin/lab4 -- docker-compose.yml
-
-            # Авторизация в реестре
+            cd /home/ilya/catty-compose
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Обновление и перезапуск стека
-            export GITHUB_SHA=$GITHUB_SHA
-            docker compose pull
+            docker compose down || true
             docker compose up -d
-
-            # Очистка старых образов
-            docker image prune -f

@@ -6,67 +6,37 @@ on:
     branches: [ lab4* ]
 
 jobs:
-  tests:
+  pipeline:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-playwright uvicorn
+          pip install -r requirements.txt pytest-playwright uvicorn
           playwright install --with-deps chromium
-
-      - name: Start Database (MySQL)
-        run: |
-          docker run -d --name db \
-            -p 3306:3306 \
-            -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
-            -e MYSQL_DATABASE=reminders \
-            mysql:5.7
-          sleep 20
-          # Разрешаем доступ root отовсюду
-          docker exec db mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
-
-      - name: Initialize Database Schema
-        run: |
-          # Создаем таблицы и тестовых пользователей из inputs.json
-          docker exec db mysql reminders -e "
-          CREATE TABLE IF NOT EXISTS users (
-            username VARCHAR(255) PRIMARY KEY,
-            password VARCHAR(255) NOT NULL
-          );
-          CREATE TABLE IF NOT EXISTS reminders (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            owner VARCHAR(255),
-            name VARCHAR(255),
-            FOREIGN KEY (owner) REFERENCES users(username)
-          );
-          INSERT IGNORE INTO users (username, password) VALUES ('heisenberg', 'P@ssw0rd');
-          INSERT IGNORE INTO users (username, password) VALUES ('tester', 'foobar123');
-          "
-
-      - name: Start App (Background)
+      - name: Start app
         env:
-          DATABASE_URL: mysql+mysqlconnector://root@127.0.0.1:3306/reminders
           PYTHONPATH: ${{ github.workspace }}
+          DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/catty_reminders
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_log.txt 2>&1 &
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
-
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: |
-          pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app_log.txt && exit 1)
-
+        run: pytest --junitxml=test_result.xml
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,20 +44,19 @@ jobs:
           name: test_result
           path: test_result.xml
 
-  build-and-push:
-    needs: tests
+  docker-build:
+    needs: pipeline
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Prepare Image Name
         id: prep
         run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -98,6 +67,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
+          tags: ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest,ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
