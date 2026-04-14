@@ -42,20 +42,19 @@ jobs:
           users = db.table('users')
           if not users.contains({'username': 'test'}):
               users.insert({'username': 'test', 'password': 'test'})
-          print('✅ User created in /opt/catty-reminders/reminder_db.json')
-          print('Users:', users.all())
+          print('✅ User created')
           SCRIPT
       
-      - name: Check where app looks for DB
+      - name: Fix database path (symlink)
         run: |
-          echo "=== Checking database locations ==="
-          ls -la /opt/catty-reminders/reminder_db.json
-          ls -la reminder_db.json 2>/dev/null || echo "No reminder_db.json in current dir"
-          cat /opt/catty-reminders/config.json | grep db_path
+          rm -f reminder_db.json
+          ln -sf /opt/catty-reminders/reminder_db.json reminder_db.json
+          echo "✅ Database linked"
+          ls -la reminder_db.json
       
-      - name: Start server with debug
+      - name: Start server
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 --log-level debug 2>&1 &
+          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           sleep 5
           echo "=== LOGIN RESPONSE ==="
           curl -v -X POST http://localhost:8181/login -d "username=test&password=test" 2>&1
