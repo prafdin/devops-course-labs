@@ -48,16 +48,18 @@ jobs:
             cd /home/ilya/catty-compose
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 1. Сначала полностью тушим стек
-            docker compose down
+            # 1. Останавливаем и УДАЛЯЕМ контейнеры и сеть
+            docker compose down --remove-orphans
 
-            # 2. Подтягиваем образ
+            # 2. ПРИНУДИТЕЛЬНО УДАЛЯЕМ старый образ, чтобы Docker скачал его заново
+            # Мы используем || true, чтобы скрипт не падал, если образа нет
+            docker rmi ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest || true
+
+            # 3. Скачиваем абсолютно чистую версию
             docker compose pull
 
-            # 3. Запускаем с ПРИНУДИТЕЛЬНЫМ пересозданием
-            docker compose up -d --force-recreate
+            # 4. Запускаем
+            docker compose up -d
 
-            # 4. Контрольный перезапуск для очистки памяти Python
-            docker compose restart catty-app
-
+            # Очистка мусора
             docker image prune -f
