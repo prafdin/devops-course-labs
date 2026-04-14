@@ -2,7 +2,7 @@
   "proxy": "course.prafdin.ru",
   "sa_login": "SA3000UDP",
   "sa_mail": "pravdin.web@gmail.com",
-  "timeout": 180,
+  "timeout": 450,
   "poll_interval": 15,
   "users": [
     {
@@ -133,6 +133,91 @@
     {
       "login": "Deemeed",
       "id": "chentsov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "keshacheshek",
+      "id": "golosov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "sofiastepanova",
+      "id": "stepanova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Nika34V",
+      "id": "baranova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "only-hell",
+      "id": "ladygin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Barnaeva",
+      "id": "barnaeva",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "IvanDelibaltov",
+      "id": "delibaltov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "kilopevt",
+      "id": "meshkov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "YaroslavFomenko",
+      "id": "fomenko",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "me1ax",
+      "id": "melnik",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "mzpdqk",
+      "id": "khramov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "ShureevK",
+      "id": "shureeev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "nprkhn",
+      "id": "nepryakhin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "victonaizer",
+      "id": "popov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "UmarBis",
+      "id": "bisultanov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "RenTogan",
+      "id": "mansurov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "SemeenS",
+      "id": "strebelev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Demonstinatord",
+      "id": "sergienko",
       "app": "catty-reminders-app"
     }
   ]
