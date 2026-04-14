@@ -5,10 +5,13 @@ echo "======================================"
 
 APP_DIR="/home/deemeed/catty-reminders-app"
 REPO_DIR=$(pwd) 
-PORT=8181
 SERVICE_NAME="catty-app"
 
-DEPLOY_REF="$(git rev-parse HEAD)"
+if [ -n "$1" ]; then
+    DEPLOY_REF="$1"
+else
+    DEPLOY_REF="$(git rev-parse HEAD)"
+fi
 
 echo "Текущий SHA ветки: $DEPLOY_REF"
 echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
