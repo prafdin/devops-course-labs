@@ -36,37 +36,28 @@ jobs:
           {"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}
           EOF
       
-      - name: Start server
-        run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
-          sleep 5
-      
-      - name: Create test user in database
+      - name: Create test user BEFORE server start
         run: |
           python << 'SCRIPT'
           from tinydb import TinyDB
           import os
           
-          db_path = '/opt/catty-reminders/reminder_db.json'
-          db = TinyDB(db_path)
+          os.makedirs('/opt/catty-reminders', exist_ok=True)
+          db = TinyDB('/opt/catty-reminders/reminder_db.json')
           users = db.table('users')
-          
           if not users.contains({'username': 'test'}):
               users.insert({'username': 'test', 'password': 'test'})
-              print('✅ User test created')
+              print('✅ User test created BEFORE server')
           else:
               print('✅ User test already exists')
-          
-          print('Users in DB:', users.all())
           SCRIPT
       
-      - name: Verify user exists (debug)
+      - name: Start server
         run: |
-          curl -X POST http://localhost:8181/login \
-            -d "username=test&password=test" \
-            -v 2>&1 | grep -E "HTTP|Location"
+          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
+          sleep 5
       
-      - name: Run all tests
+      - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
           export PLAYWRIGHT_HEADLESS=true
