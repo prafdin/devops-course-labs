@@ -16,6 +16,7 @@ jobs:
 
       - name: Create .env file
         run: |
+          # попробуем ПЕРЕЗАПИСАТЬ файл, а не дополнить
           echo "APP_IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest" > .env
           echo "DEPLOY_REF=${{ github.sha }}" >> .env
           echo "APP_PORT=8181" >> .env
@@ -34,7 +35,6 @@ jobs:
           username: ilya
           port: 3120
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Мы копируем именно .yaml
           source: ".env,docker-compose.yaml,config.json"
           target: "/home/ilya/catty-compose"
 
@@ -48,7 +48,10 @@ jobs:
           script: |
             cd /home/ilya/catty-compose
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # Явно указываем файл через -f на случай, если docker ищет .yml
+
+            # Проверяем, что в .env правильный SHA (глянем логи)
+            grep "DEPLOY_REF" .env
+
             docker compose -f docker-compose.yaml down --remove-orphans || true
             docker compose -f docker-compose.yaml pull
             docker compose -f docker-compose.yaml up -d
