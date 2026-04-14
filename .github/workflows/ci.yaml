@@ -34,13 +34,16 @@ jobs:
           pip install pytest pytest-cov playwright pytest-playwright
           playwright install chromium --with-deps
       
-      - name: Start FastAPI server with debug
+      - name: Start FastAPI server
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           sleep 5
-          echo "=== Server response /login ==="
-          curl -v http://localhost:8181/login 2>&1 | head -50
-          echo "=== End of server response ==="
+      
+      - name: Debug server response
+        run: |
+          echo "=== SERVER RESPONSE ==="
+          curl -v http://localhost:8181/login 2>&1
+          echo "=== END SERVER RESPONSE ==="
       
       - name: Run tests
         run: |
