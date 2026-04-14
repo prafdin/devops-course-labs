@@ -21,8 +21,11 @@ jobs:
       
       - name: Create config files
         run: |
-          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "reminder_db.json"}' > config.json
-          echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' > inputs.json
+          sudo mkdir -p /opt/catty-reminders
+          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "/opt/catty-reminders/db.json"}' | sudo tee /opt/catty-reminders/config.json
+          echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
+          cp /opt/catty-reminders/config.json ./
+          cp /opt/catty-reminders/inputs.json ./
       
       - name: Install dependencies
         run: |
@@ -36,7 +39,7 @@ jobs:
           uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           sleep 5
       
-      - name: Run tests with headless browser
+      - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
           export PLAYWRIGHT_HEADLESS=true
