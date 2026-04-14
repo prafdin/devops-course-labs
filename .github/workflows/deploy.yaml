@@ -18,24 +18,50 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
       - name: Deploy application
-        env:
-          DEPLOY_REF: ${{ github.sha }}
         run: |
-          ssh -o StrictHostKeyChecking=no -p 3132 nyanya@course.prafdin.ru << 'EOF'
+          ssh -o StrictHostKeyChecking=no -p 3132 nyanya@course.prafdin.ru << EOF
             set -e
-            echo "Starting deployment..."
+            echo "=== Starting deployment ==="
+            echo "Deploying commit: ${{ github.sha }}"
+            
             cd /opt/catty-reminders || exit 1
-            echo "Pulling latest code..."
-            git fetch origin
-            git reset --hard ${DEPLOY_REF}
+            
+            echo "Current commit: \$(git rev-parse HEAD)"
+            
+            echo "Fetching latest code..."
+            git fetch origin --tags
+            
+            echo "Resetting to commit ${{ github.sha }}..."
+            git reset --hard ${{ github.sha }}
+            
+            echo "New commit: \$(git rev-parse HEAD)"
+            
             echo "Installing dependencies..."
-            if [ -d "venv" ]; then
-              ./venv/bin/pip install -r requirements.txt
-            else
-              python3 -m venv venv
-              ./venv/bin/pip install -r requirements.txt
-            fi
+            ./venv/bin/pip install -r requirements.txt
+            
+            echo "Updating deploy reference..."
+            echo "${{ github.sha }}" | sudo tee .deploy_ref
+            
             echo "Restarting application..."
-            sudo systemctl restart catty-reminders || sudo systemctl start catty-reminders
-            echo "✅ Application deployed!"
+            sudo systemctl daemon-reload
+            sudo systemctl restart catty-reminders
+            
+            sleep 3
+            
+            echo "Checking service status..."
+            if sudo systemctl is-active --quiet catty-reminders; then
+              echo "✅ Service is running"
+            else
+              echo "❌ Service failed to start"
+              sudo journalctl -u catty-reminders -n 20
+              exit 1
+            fi
+            
+            echo "=== Deployment finished successfully ==="
           EOF
+      
+      - name: Verify deployment
+        run: |
+          echo "Waiting for app to be ready..."
+          sleep 5
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://app.yaroslavtsev.course.prafdin.ru || echo "App might not be ready yet"
