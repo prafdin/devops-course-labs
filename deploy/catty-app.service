@@ -6,7 +6,6 @@ After=network.target
 User=vanya
 Group=vanya
 WorkingDirectory=/home/vanya/catty-reminders-app
-# Путь к питону внутри твоего виртуального окружения!
 Environment="PYTHONPATH=/home/vanya/catty-reminders-app"
 EnvironmentFile=/home/vanya/catty-reminders-app/.env
 ExecStart=/home/vanya/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
