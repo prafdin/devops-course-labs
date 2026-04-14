@@ -21,7 +21,6 @@ jobs:
           echo "APP_PORT=8181" >> .env
           echo "APP_CONTAINER_NAME=catty-app" >> .env
           echo "DB_CONTAINER_NAME=catty_db" >> .env
-          # используем пароль mypass, как в config.json
           echo "MYSQL_ROOT_PASSWORD=mypass" >> .env
           echo "MYSQL_USER=user" >> .env
           echo "MYSQL_PASSWORD=mypass" >> .env
@@ -48,8 +47,6 @@ jobs:
           script: |
             cd /home/ilya/catty-compose
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # Принудительно останавливаем всё перед запуском, чтобы очистить порты
-            docker compose down --remove-orphans || true
-            docker compose pull
-            docker compose up -d
+            # убрали pull, чтобы бот не ждал скачивания
+            docker compose up -d --remove-orphans
             docker image prune -f
