@@ -8,36 +8,56 @@ on:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt pytest-playwright uvicorn
           playwright install --with-deps chromium
+
+      - name: Initialize Database Tables
+        run: |
+          # Создаем структуру таблиц и пользователей, которых ждут тесты
+          docker exec ${{ job.services.mysql.id }} mysql -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" catty_reminders -e "
+          CREATE TABLE IF NOT EXISTS reminder_lists (id INT AUTO_INCREMENT PRIMARY KEY, owner VARCHAR(255), name VARCHAR(255));
+          CREATE TABLE IF NOT EXISTS reminder_items (id INT AUTO_INCREMENT PRIMARY KEY, list_id INT, description TEXT, completed BOOLEAN DEFAULT 0, FOREIGN KEY (list_id) REFERENCES reminder_lists(id) ON DELETE CASCADE);
+          CREATE TABLE IF NOT EXISTS selected_lists (owner VARCHAR(255) PRIMARY KEY, list_id INT, FOREIGN KEY (list_id) REFERENCES reminder_lists(id) ON DELETE SET NULL);
+          "
+
       - name: Start app
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/catty_reminders
+          # Соединяем приложение с базой, используя секреты
+          DATABASE_URL: mysql+mysqlconnector://root:${{ secrets.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/catty_reminders
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
+
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
-      - name: Upload results
+
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
