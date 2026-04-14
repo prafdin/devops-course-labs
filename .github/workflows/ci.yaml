@@ -34,16 +34,15 @@ jobs:
           pip install pytest pytest-cov playwright pytest-playwright
           playwright install chromium --with-deps
       
-      - name: Start FastAPI server
+      - name: Start FastAPI server with logging
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
+          uvicorn app.main:app --host 0.0.0.0 --port 8181 2>&1 &
+          SERVER_PID=$!
           sleep 5
-      
-      - name: Debug server response
-        run: |
-          echo "=== SERVER RESPONSE ==="
-          curl -v http://localhost:8181/login 2>&1
-          echo "=== END SERVER RESPONSE ==="
+          echo "=== Server logs ==="
+          kill -0 $SERVER_PID 2>/dev/null && echo "Server is running" || echo "Server died"
+          curl -v http://localhost:8181/login 2>&1 || true
+          echo "=== End server logs ==="
       
       - name: Run tests
         run: |
