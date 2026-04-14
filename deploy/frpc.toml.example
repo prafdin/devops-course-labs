@@ -1,0 +1,16 @@
+serverAddr = "course.prafdin.ru"
+serverPort = 7000
+auth.method = "token"
+auth.token = "PUT_YOUR_TOKEN_HERE"
+
+[[proxies]]
+name = "hook-strebelev"
+type = "http"
+localPort = 8080
+customDomains = ["webhook.strebelev.course.prafdin.ru"]
+
+[[proxies]]
+name = "app-strebelev"
+type = "http"
+localPort = 8181
+customDomains = ["app.strebelev.course.prafdin.ru"]
