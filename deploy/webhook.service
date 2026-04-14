@@ -1,0 +1,13 @@
+[Unit]
+Description=Github Webhook Listener
+After=network.target
+
+[Service]
+User=vanya
+Group=vanya
+WorkingDirectory=/home/vanya/webhook-server
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
