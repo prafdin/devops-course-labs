@@ -13,7 +13,8 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          # Пароль как в config.json
+          MYSQL_ROOT_PASSWORD: mypass
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
@@ -36,26 +37,25 @@ jobs:
 
       - name: Initialize Database Tables
         run: |
-          # Создаем структуру таблиц и пользователей, которых ждут тесты
-          docker exec ${{ job.services.mysql.id }} mysql -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" catty_reminders -e "
-          CREATE TABLE IF NOT EXISTS reminder_lists (id INT AUTO_INCREMENT PRIMARY KEY, owner VARCHAR(255), name VARCHAR(255));
-          CREATE TABLE IF NOT EXISTS reminder_items (id INT AUTO_INCREMENT PRIMARY KEY, list_id INT, description TEXT, completed BOOLEAN DEFAULT 0, FOREIGN KEY (list_id) REFERENCES reminder_lists(id) ON DELETE CASCADE);
-          CREATE TABLE IF NOT EXISTS selected_lists (owner VARCHAR(255) PRIMARY KEY, list_id INT, FOREIGN KEY (list_id) REFERENCES reminder_lists(id) ON DELETE SET NULL);
-          "
+          # Приложение само создает таблицы через MySQLStorage.__init__, 
+          # но мы убедимся, что база reminders существует
+          docker exec ${{ job.services.mysql.id }} mysql -u root -pmypass -e "CREATE DATABASE IF NOT EXISTS catty_reminders;"
 
       - name: Start app
         env:
           PYTHONPATH: ${{ github.workspace }}
-          # Соединяем приложение с базой, используя секреты
-          DATABASE_URL: mysql+mysqlconnector://root:${{ secrets.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/catty_reminders
+          # DATABASE_URL твое приложение игнорирует, оно читает config.json
+          # Но мы оставляем PYTHONPATH, чтобы тесты видели модули
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_debug.log 2>&1 &
           sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml
+        run: |
+          # Запускаем тесты. Если 500 ошибка повторится - выведем реальный лог
+          pytest --junitxml=test_result.xml || (echo "CRITICAL: App Logs below:" && cat app_debug.log && exit 1)
 
       - name: Upload test results
         if: always()
@@ -87,4 +87,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest,ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
+            ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
