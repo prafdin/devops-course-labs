@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 APP_PATH = "/home/vboxuser/Desktop/devops/catty-reminders-app"
 SERVICE_NAME = "catty-app"
-
+ #Проверка
 @app.route('/', methods=['POST'])
 def webhook():
     data = request.get_json()
