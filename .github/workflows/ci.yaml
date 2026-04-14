@@ -17,15 +17,12 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       
       - name: Create config files
         run: |
-          sudo mkdir -p /opt/catty-reminders
-          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "/opt/catty-reminders/db.json"}' | sudo tee /opt/catty-reminders/config.json
-          echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
-          cp /opt/catty-reminders/config.json ./
-          cp /opt/catty-reminders/inputs.json ./
+          echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "reminder_db.json"}' > config.json
+          echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' > inputs.json
       
       - name: Install dependencies
         run: |
@@ -34,23 +31,23 @@ jobs:
           pip install pytest pytest-cov playwright pytest-playwright
           playwright install chromium --with-deps
       
-      - name: Start FastAPI server with logging
+      - name: Start FastAPI server
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 2>&1 &
-          SERVER_PID=$!
+          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           sleep 5
-          echo "=== Server logs ==="
-          kill -0 $SERVER_PID 2>/dev/null && echo "Server is running" || echo "Server died"
-          curl -v http://localhost:8181/login 2>&1 || true
-          echo "=== End server logs ==="
       
-      - name: Run tests
+      - name: Run tests with headless browser
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
-          pytest tests/ -v --ignore=tests/test_ui.py --junitxml=test_results.xml --tb=short
+          export PLAYWRIGHT_HEADLESS=true
+          pytest tests/ -v --junitxml=test_results.xml --cov=. --cov-report=xml --cov-report=html
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_results.xml
+          path: |
+            test_results.xml
+            coverage.xml
+            htmlcov/
+          if-no-files-found: warn
