@@ -21,8 +21,7 @@ jobs:
         env:
           DEPLOY_REF: ${{ github.sha }}
         run: |
-          # Просто используем ssh без keyscan
-          ssh -o StrictHostKeyChecking=no -p 2200 ${{ secrets.SSH_USER }}@course.prafdin.ru << 'EOF'
+          ssh -o StrictHostKeyChecking=no -p 3132 nyanya@course.prafdin.ru << 'EOF'
             set -e
             echo "Starting deployment..."
             cd /opt/catty-reminders || exit 1
