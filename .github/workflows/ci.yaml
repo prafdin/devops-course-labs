@@ -34,16 +34,38 @@ jobs:
       
       - name: Create test user
         run: |
-          python -c "
+          python << 'SCRIPT'
           from tinydb import TinyDB
           db = TinyDB('/opt/catty-reminders/reminder_db.json')
           users = db.table('users')
           if not users.contains({'username': 'test'}):
               users.insert({'username': 'test', 'password': 'test'})
           print('✅ User created')
-          "
+          print('Users in DB:', users.all())
+          SCRIPT
       
-      - name: Start server with debug
+      - name: Debug database content
+        run: |
+          python << 'SCRIPT'
+          import os
+          print("=== DB FILES ===")
+          os.system("ls -la /opt/catty-reminders/")
+          
+          print("\n=== REMINDER_DB.JSON ===")
+          try:
+              with open('/opt/catty-reminders/reminder_db.json', 'r') as f:
+                  print(f.read())
+          except Exception as e:
+              print(f"Error: {e}")
+          
+          from tinydb import TinyDB
+          db = TinyDB('/opt/catty-reminders/reminder_db.json')
+          print(f"\nAll tables: {db.tables()}")
+          for table in db.tables():
+              print(f"Table {table}: {db.table(table).all()}")
+          SCRIPT
+      
+      - name: Start server
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8181 --log-level debug 2>&1 &
           sleep 5
