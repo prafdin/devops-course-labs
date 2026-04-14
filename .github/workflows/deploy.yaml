@@ -17,15 +17,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
-      - name: Add host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p 2200 course.prafdin.ru >> ~/.ssh/known_hosts 2>/dev/null
-      
       - name: Deploy application
         env:
           DEPLOY_REF: ${{ github.sha }}
         run: |
+          # Просто используем ssh без keyscan
           ssh -o StrictHostKeyChecking=no -p 2200 ${{ secrets.SSH_USER }}@course.prafdin.ru << 'EOF'
             set -e
             echo "Starting deployment..."
