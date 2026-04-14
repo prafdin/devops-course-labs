@@ -17,7 +17,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       
       - name: Create config files
         run: |
@@ -29,7 +29,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov playwright
+          playwright install chromium --with-deps
       
       - name: Start FastAPI server
         run: |
@@ -39,7 +40,7 @@ jobs:
       - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
-          pytest tests/test_unit.py tests/test_api.py -v --junitxml=test_results.xml --tb=short
+          pytest tests/ -v --ignore=tests/test_ui.py --junitxml=test_results.xml --tb=short
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
