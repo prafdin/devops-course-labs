@@ -31,8 +31,10 @@ jobs:
           mkdir -p /opt/catty-reminders
           echo '{"secret_key": "test", "users": [{"username": "test", "password": "test"}], "db_path": "/opt/catty-reminders/reminder_db.json"}' > /opt/catty-reminders/config.json
           echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' > /opt/catty-reminders/inputs.json
+          cp /opt/catty-reminders/config.json ./
+          cp /opt/catty-reminders/inputs.json ./
       
-      - name: Create test user
+      - name: Create test user in DB
         run: |
           python << 'SCRIPT'
           from tinydb import TinyDB
@@ -40,32 +42,18 @@ jobs:
           users = db.table('users')
           if not users.contains({'username': 'test'}):
               users.insert({'username': 'test', 'password': 'test'})
-          print('✅ User created')
-          print('Users in DB:', users.all())
+          print('✅ User created in /opt/catty-reminders/reminder_db.json')
+          print('Users:', users.all())
           SCRIPT
       
-      - name: Debug database content
+      - name: Check where app looks for DB
         run: |
-          python << 'SCRIPT'
-          import os
-          print("=== DB FILES ===")
-          os.system("ls -la /opt/catty-reminders/")
-          
-          print("\n=== REMINDER_DB.JSON ===")
-          try:
-              with open('/opt/catty-reminders/reminder_db.json', 'r') as f:
-                  print(f.read())
-          except Exception as e:
-              print(f"Error: {e}")
-          
-          from tinydb import TinyDB
-          db = TinyDB('/opt/catty-reminders/reminder_db.json')
-          print(f"\nAll tables: {db.tables()}")
-          for table in db.tables():
-              print(f"Table {table}: {db.table(table).all()}")
-          SCRIPT
+          echo "=== Checking database locations ==="
+          ls -la /opt/catty-reminders/reminder_db.json
+          ls -la reminder_db.json 2>/dev/null || echo "No reminder_db.json in current dir"
+          cat /opt/catty-reminders/config.json | grep db_path
       
-      - name: Start server
+      - name: Start server with debug
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8181 --log-level debug 2>&1 &
           sleep 5
