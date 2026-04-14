@@ -19,6 +19,24 @@ jobs:
         with:
           python-version: '3.11'
       
+      - name: Create config files
+        run: |
+          mkdir -p /opt/catty-reminders
+          cat > /opt/catty-reminders/config.json << 'EOF'
+          {
+            "db_path": "reminder_db.json",
+            "secret_key": "Cats are awesome!",
+            "users": {
+              "heisenberg": "P@ssw0rd",
+              "tester": "foobar123",
+              "test": "test"
+            }
+          }
+          EOF
+          cat > /opt/catty-reminders/inputs.json << 'EOF'
+          {"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}
+          EOF
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -26,7 +44,7 @@ jobs:
           pip install pytest pytest-cov playwright
           playwright install chromium
       
-      - name: Run unit tests only
+      - name: Run unit tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD
           pytest tests/test_unit.py -v --junitxml=test_results.xml --tb=short
