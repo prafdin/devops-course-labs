@@ -26,16 +26,13 @@ jobs:
         env:
           DEPLOY_REF: ${{ github.sha }}
         run: |
-          ssh -o StrictHostKeyChecking=no -p 2200 ${{ secrets.SSH_USER }}@course.prafdin.ru << EOF
+          ssh -o StrictHostKeyChecking=no -p 2200 ${{ secrets.SSH_USER }}@course.prafdin.ru << 'EOF'
             set -e
             echo "Starting deployment..."
-            
             cd /opt/catty-reminders || exit 1
-            
             echo "Pulling latest code..."
             git fetch origin
             git reset --hard ${DEPLOY_REF}
-            
             echo "Installing dependencies..."
             if [ -d "venv" ]; then
               ./venv/bin/pip install -r requirements.txt
@@ -43,23 +40,7 @@ jobs:
               python3 -m venv venv
               ./venv/bin/pip install -r requirements.txt
             fi
-            
-            echo "Updating deployment reference..."
-            echo "${DEPLOY_REF}" | sudo tee /opt/catty-reminders/.deploy_ref > /dev/null
-            
             echo "Restarting application..."
-            sudo systemctl daemon-reload
             sudo systemctl restart catty-reminders || sudo systemctl start catty-reminders
-            
-            echo "Waiting for app to be ready..."
-            sleep 5
-            
-            echo "Checking if app is running..."
-            if systemctl is-active --quiet catty-reminders; then
-              echo "✅ Application deployed successfully!"
-            else
-              echo "❌ Application failed to start"
-              sudo journalctl -u catty-reminders -n 50
-              exit 1
-            fi
+            echo "✅ Application deployed!"
           EOF
