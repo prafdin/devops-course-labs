@@ -26,6 +26,8 @@ jobs:
           echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
           cp /opt/catty-reminders/config.json ./
           cp /opt/catty-reminders/inputs.json ./
+          cat /opt/catty-reminders/inputs.json
+          cat /opt/catty-reminders/config.json
       
       - name: Install dependencies
         run: |
@@ -34,10 +36,13 @@ jobs:
           pip install pytest pytest-cov playwright pytest-playwright
           playwright install chromium --with-deps
       
-      - name: Start FastAPI server
+      - name: Start FastAPI server with debug
         run: |
           uvicorn app.main:app --host 0.0.0.0 --port 8181 &
           sleep 5
+          echo "=== LOGIN RESPONSE ==="
+          curl -v http://localhost:8181/login 2>&1
+          echo "=== END ==="
       
       - name: Run tests
         run: |
