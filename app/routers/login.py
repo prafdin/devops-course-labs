@@ -1,5 +1,5 @@
 """
-This module provides routes for authentication.
+This module provides routes for authentication..
 """
 
 # --------------------------------------------------------------------------------
