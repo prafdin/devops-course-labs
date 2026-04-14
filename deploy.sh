@@ -19,14 +19,8 @@ echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
 sudo mkdir -p $APP_DIR
 
 echo "Копирование файлов в $APP_DIR..."
-sudo rsync -av --delete \
-    --exclude '.git' \
-    --exclude 'venv' \
-    --exclude '__pycache__' \
-    --exclude '*.pyc' \
-    --exclude '.pytest_cache' \
-    --exclude '.env' \
-    ./ $APP_DIR/
+sudo cp -r . $APP_DIR/
+sudo rm -rf $APP_DIR/.git $APP_DIR/venv $APP_DIR/.env
 
 echo "Перезапуск сервиса..."
 sudo systemctl daemon-reload
