@@ -1,0 +1,13 @@
+[Unit]
+Description=Github Webhook Listener
+After=network.target
+
+[Service]
+User=vboxuser
+Group=vboxuser
+WorkingDirectory=/home/vboxuser/Desktop/devops
+ExecStart=/home/vboxuser/Desktop/devops/venv/bin/python3 /home/vboxuser/Desktop/devops/nikita.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
