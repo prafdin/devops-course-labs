@@ -9,10 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Remote Docker Deploy
+      - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -20,33 +17,24 @@ jobs:
           port: 3120
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
-            cd /home/ilya/catty-reminders-app
+            bash -c '
+              set -e
+              cd /home/ilya/catty-reminders-app
+              OWNER=$(echo ${{ github.repository_owner }} | tr "[:upper:]" "[:lower:]")
+              export DEPLOY_REF=${{ github.sha }}
+              export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}:${{ github.sha }}
 
-            # Определяем переменные БЕЗ кавычек, чтобы избежать &quot;
-            export OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-            export REPO=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
+              # Переменные для БД
+              export DB_CONTAINER_NAME=catty-db
+              export APP_CONTAINER_NAME=catty-app
+              export MARIADB_ROOT_PASSWORD=mypass
+              export MARIADB_USER=ilya
+              export MARIADB_PASSWORD=mypass
+              export MARIADB_DATABASE=catty_reminders
+              export HOST_DB_PORT=3306
+              export CONTEINER_DB_PORT=3306
+              export HOST_APP_PORT=8181
+              export CONTEINER_APP_PORT=8181
 
-            export IMAGE=ghcr.io/$OWNER/$REPO:latest
-            export DEPLOY_REF=${{ github.sha }}
-
-            # Переменные для docker-compose
-            export DB_CONTAINER_NAME=catty-db
-            export APP_CONTAINER_NAME=catty-app
-            export MARIADB_ROOT_PASSWORD=mypass
-            export MARIADB_USER=ilya
-            export MARIADB_PASSWORD=mypass
-            export MARIADB_DATABASE=catty_reminders
-            export HOST_DB_PORT=3306
-            export CONTEINER_DB_PORT=3306
-            export HOST_APP_PORT=8181
-            export CONTEINER_APP_PORT=8181
-
-            # Авторизация
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Обновление только приложения
-            docker compose pull catty-app
-            docker compose up -d --no-deps --force-recreate catty-app
-
-            docker image prune -f
+              docker compose up -d --pull always --remove-orphans --force-recreat 
+            '
