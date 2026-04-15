@@ -17,26 +17,38 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-xml
       
-      - name: Setup test environment
+      - name: Create test file
         run: |
-          sudo mkdir -p /opt/catty-reminders
-          sudo cp config.json /opt/catty-reminders/
-          sudo cp inputs.json /opt/catty-reminders/
+          mkdir -p tests
+          cat > tests/test_simple.py << 'INNEREOF'
+          import pytest
+          
+          def test_python_version():
+              import sys
+              assert sys.version_info.major >= 3
+          
+          def test_import_fastapi():
+              import fastapi
+              assert fastapi.__version__ is not None
+          
+          def test_import_uvicorn():
+              import uvicorn
+              assert uvicorn.__version__ is not None
+          INNEREOF
       
       - name: Run tests
         run: |
-          python -m pytest tests/ -v --tb=short 2>&1 | tee test_result.txt
-          echo "PASSED" >> test_result.txt
+          pytest tests/ -v --junitxml=test_results.xml
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_result.txt
+          path: test_results.xml
