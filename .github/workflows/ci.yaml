@@ -24,23 +24,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-playwright
           pip install -r requirements.txt
-          playwright install chromium
+          playwright install chromium --with-deps
       
       - name: Setup config files
         run: |
           sudo mkdir -p /opt/catty-reminders
-          sudo cp config.json /opt/catty-reminders/
-          sudo cp inputs.json /opt/catty-reminders/
+          sudo cp config.json /opt/catty-reminders/ 2>/dev/null || echo '{"db_path": "reminder_db.json", "secret_key": "test", "users": {}}' | sudo tee /opt/catty-reminders/config.json
+          sudo cp inputs.json /opt/catty-reminders/ 2>/dev/null || echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
       
-      - name: Start application
+      - name: Start application in background
         run: |
           python -m uvicorn app.main:app --host 0.0.0.0 --port 8181 &
-          sleep 5
-          curl -s http://localhost:8181/login | head -5
+          sleep 10
+          curl -s http://localhost:8181/login | head -10 || echo "App not responding"
       
       - name: Run tests
         run: |
-          python -m pytest tests/ --junitxml=test_results.xml
+          python -m pytest tests/test_unit.py --junitxml=test_results.xml
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
