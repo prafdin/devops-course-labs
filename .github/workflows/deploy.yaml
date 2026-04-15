@@ -36,5 +36,5 @@ jobs:
               export HOST_APP_PORT=8181
               export CONTEINER_APP_PORT=8181
 
-              docker compose up -d --pull always --remove-orphans --force-recreat 
+              docker compose up -d --pull always --remove-orphans --force-recreate
             '
