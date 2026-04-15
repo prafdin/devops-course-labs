@@ -1,30 +1,41 @@
 name: CI
+
 on:
   push:
-    branches: [ lab4* ]
+    branches:
+      - lab4*
   pull_request:
-    branches: [ lab4* ]
+    branches:
+      - lab4*
 
 jobs:
+  docker-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hadolint
+        run: |
+          docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
+
   pipeline:
+    needs: docker-lint
+    if: success()
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:5.7
+      db:
+        image: mariadb:11.8.6-ubi9
         env:
-          # Пароль как в config.json
-          MYSQL_ROOT_PASSWORD: mypass
-          MYSQL_DATABASE: catty_reminders
+          MARIADB_ROOT_PASSWORD: mypass
+          MARIADB_DATABASE: catty_reminders
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -32,30 +43,26 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest-playwright uvicorn
+          pip install -r requirements.txt
+          pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
 
-      - name: Initialize Database Tables
+      - name: Patch config for CI
+        # Эта команда меняет "db" на "127.0.0.1", чтобы тесты в GitHub увидели базу
         run: |
-          # Приложение само создает таблицы через MySQLStorage.__init__, 
-          # но мы убедимся, что база reminders существует
-          docker exec ${{ job.services.mysql.id }} mysql -u root -pmypass -e "CREATE DATABASE IF NOT EXISTS catty_reminders;"
+          sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
 
       - name: Start app
         env:
           PYTHONPATH: ${{ github.workspace }}
-          # DATABASE_URL твое приложение игнорирует, оно читает config.json
-          # Но мы оставляем PYTHONPATH, чтобы тесты видели модули
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app_debug.log 2>&1 &
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: |
-          # Запускаем тесты. Если 500 ошибка повторится - выведем реальный лог
-          pytest --junitxml=test_result.xml || (echo "CRITICAL: App Logs below:" && cat app_debug.log && exit 1)
+        run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
         if: always()
@@ -65,28 +72,36 @@ jobs:
           path: test_result.xml
 
   docker-build:
-    needs: pipeline
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    needs: pipeline
+    if: success()
     permissions:
       contents: read
       packages: write
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Prepare Image Name
-        id: prep
-        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
