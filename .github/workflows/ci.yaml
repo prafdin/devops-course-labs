@@ -25,6 +25,20 @@ jobs:
           pip install pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       
+      - name: Setup config files
+        run: |
+          sudo mkdir -p /opt/catty-reminders
+          if [ -f config.json ]; then
+            sudo cp config.json /opt/catty-reminders/
+          else
+            echo '{"db_path": "reminder_db.json", "secret_key": "test", "users": {}}' | sudo tee /opt/catty-reminders/config.json
+          fi
+          if [ -f inputs.json ]; then
+            sudo cp inputs.json /opt/catty-reminders/
+          else
+            echo '{"base_url": "http://localhost:8181", "users": [{"username": "test", "password": "test"}]}' | sudo tee /opt/catty-reminders/inputs.json
+          fi
+      
       - name: Run tests
         run: |
           python -m pytest tests/ --junitxml=test_results.xml
