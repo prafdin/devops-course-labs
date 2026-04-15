@@ -21,17 +21,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            # Переходим в папку проекта
             cd /home/ilya/catty-reminders-app
 
-            # Определяем переменные (без вложенных bash -c)
-            export OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-            export REPO=$(echo "${{ github.event.repository.name }}" | tr "[:upper:]" "[:lower:]")
+            # Определяем переменные БЕЗ кавычек, чтобы избежать &quot;
+            export OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+            export REPO=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
 
-            export IMAGE="ghcr.io/$OWNER/$REPO:latest&quot;
-            export DEPLOY_REF="${{ github.sha }}"
+            export IMAGE=ghcr.io/$OWNER/$REPO:latest
+            export DEPLOY_REF=${{ github.sha }}
 
-            # Переменные окружения для docker-compose
+            # Переменные для docker-compose
             export DB_CONTAINER_NAME=catty-db
             export APP_CONTAINER_NAME=catty-app
             export MARIADB_ROOT_PASSWORD=mypass
@@ -43,17 +42,11 @@ jobs:
             export HOST_APP_PORT=8181
             export CONTEINER_APP_PORT=8181
 
-            # Авторизация в реестре
+            # Авторизация
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # ОБНОВЛЕНИЕ:
-            # 1. Скачиваем только новый образ приложения
+            # Обновление только приложения
             docker compose pull catty-app
-
-            # 2. Перезапускаем только приложение. 
-            # --no-deps не трогает контейнер базы (данные бота сохранятся)
-            # --force-recreate обновляет SHA на странице
             docker compose up -d --no-deps --force-recreate catty-app
 
-            # Очистка мусора
             docker image prune -f
