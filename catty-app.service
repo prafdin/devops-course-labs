@@ -6,9 +6,9 @@ After=network.target
 Type=simple
 User=deemeed
 Group=deemeed
-WorkingDirectory=/opt/catty-reminders-app
-EnvironmentFile=/opt/catty-reminders-app/.env
-ExecStart=/opt/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+WorkingDirectory=/home/deemeed/catty-reminders-app
+EnvironmentFile=/home/deemeed/catty-reminders-app/.env
+ExecStart=/home/deemeed/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 RestartSec=10
 
