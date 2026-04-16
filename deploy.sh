@@ -7,7 +7,7 @@ APP_DIR="/opt/catty-reminders-app"
 REPO_DIR=$(pwd) 
 SERVICE_NAME="catty-app"
 
-DEPLOY_REF="$1"
+DEPLOY_REF=$1
 #DEPLOY_REF="$(git rev-parse HEAD)"
 
 
