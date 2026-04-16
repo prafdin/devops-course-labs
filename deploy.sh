@@ -1,44 +1,28 @@
 #!/bin/bash
 set -e
 
-DEPLOY_REF=$1
-REPO_URL="git@github.com:Rovver52/catty-reminders-app"
-APP_DIR="/home/rover/catty-reminders-app"
+IMAGE_NAME=$1
+DEPLOY_REF=$2
+
+HOST_PORT=8181
+CONTAINER_PORT=8181
+CONTAINER_NAME="catty-reminders-app"
+IMAGE="$IMAGE_NAME:$DEPLOY_REF"
 
 echo "=== DEPLOY релиза ==="
-
-if [ ! -d "$APP_DIR/.git" ]; then
-    echo "Первый запуск — клонирование"
-    git clone $REPO_URL $APP_DIR
-fi
-
-cd $APP_DIR
-
-echo "=== Подтягиваем обновления ==="
-git fetch --all --tags
-
-echo "=== Переходим на commit ==="
-git checkout --detach $DEPLOY_REF
-
 echo "Текущий SHA релиза: $DEPLOY_REF"
 
-# ⭐ СОЗДАЕМ ФАЙЛ С ПЕРЕМЕННЫМИ ДЛЯ SYSTEMD
-echo "DEPLOY_REF=$DEPLOY_REF" |  tee /etc/catty-app-env
+echo "=== Подтягиваю новый образ ==="
+docker pull $IMAGE
 
-# Также создаем .env файл в проекте (на всякий случай)
-echo "DEPLOY_REF=$DEPLOY_REF" > $APP_DIR/.env
+echo "=== Останавливаю старый контейнер ==="
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
 
-if [ -f "requirements.txt" ]; then
-    if [ ! -d "venv" ]; then
-        echo "=== Создание виртуального окружения ==="
-        python3 -m venv venv
-    fi
-    echo "=== Активация виртуального окружения ==="
-    source venv/bin/activate
-    echo "=== Установка зависимостей ==="
-    pip install -r requirements.txt
-fi
-
-echo "=== Перезапуск приложения ==="
-sudo systemctl daemon-reload
-sudo systemctl restart catty
+echo "=== Запускаю новый контейнер ==="
+docker run -d \
+    -p $HOST_PORT:$CONTAINER_PORT \
+    --name $CONTAINER_NAME \
+    --restart unless-stopped \
+    -e DEPLOY_REF=$DEPLOY_REF \
+    $IMAGE
