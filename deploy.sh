@@ -15,6 +15,7 @@ fi
 
 echo "Текущий SHA ветки: $DEPLOY_REF"
 echo "DEPLOY_REF=$DEPLOY_REF" > /home/deemeed/catty-reminders-app/.env
+echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee "$APP_DIR/.env" > /dev/null
 
 cd "$REPO_DIR" || { echo "Ошибка: не удалось зайти в $REPO_DIR"; exit 1; }
 
