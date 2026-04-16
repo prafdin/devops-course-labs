@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [lab2*]
+    branches:
+      - lab2
+      - lab2_autotests*
   pull_request:
-    branches: [lab2*]
+    branches:
+      - lab2
+      - lab2_autotests*
 
 jobs:
   test:
@@ -20,7 +24,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
 
       - name: Start app
