@@ -2,12 +2,14 @@ name: CD Pipeline
 on:
   release:
     types: [published, created]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -16,9 +18,12 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Разрешаем Git работать с этой папкой по SSH (исправляет сбои деплоя)
+            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
-            # Принудительно переключаемся на коммит релиза, который создал бот!
+            git reset --hard
+            git clean -fd
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
