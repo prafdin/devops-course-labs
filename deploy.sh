@@ -20,10 +20,8 @@ docker stop $CONTAINER_NAME || true
 docker rm $CONTAINER_NAME || true
 
 echo "=== Запускаю новый контейнер ==="
-sleep 5
 docker run -d \
     -p $HOST_PORT:$CONTAINER_PORT \
     --name $CONTAINER_NAME \
     --restart unless-stopped \
-    -e DEPLOY_REF=$DEPLOY_REF \
     $IMAGE
