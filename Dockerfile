@@ -1,6 +1,6 @@
 FROM python:3.14-slim
 
-LABEL org.opencontainers.image.source https://github.com/Deemeed/catty-reminders-app
+#LABEL org.opencontainers.image.source https://github.com/Deemeed/catty-reminders-app
 
 WORKDIR /catty-app
 
