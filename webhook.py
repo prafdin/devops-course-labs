@@ -59,7 +59,22 @@ class WebhookHandler(BaseHTTPRequestHandler):
         subprocess.run(['git', 'fetch', '--all'], cwd=REPO_PATH)
         subprocess.run(['git', 'checkout', branch], cwd=REPO_PATH)
         subprocess.run(['git', 'pull', 'origin', branch], cwd=REPO_PATH)
-        
+                # Запуск тестов (требование лабы)
+        print(f"    Запуск тестов...")
+        test_result = subprocess.run(
+            [f'{REPO_PATH}/venv/bin/pytest', 'tests/', '--tb=short', '-q'],
+            cwd=REPO_PATH,
+            capture_output=True,
+            text=True
+        )
+        if test_result.returncode == 0:
+            print(f"    Тесты прошли успешно!")
+        else:
+            print(f"    Тесты упали, но деплой продолжается (по условию лабы)")
+            if test_result.stdout:
+                print(f"   {test_result.stdout[:200]}...")
+
+
         # Устанавливаем зависимости
         print(f"    Проверка зависимостей...")
         subprocess.run([f'{REPO_PATH}/venv/bin/pip', 'install', '-r', 'requirements.txt'], cwd=REPO_PATH)
