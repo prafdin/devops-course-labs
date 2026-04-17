@@ -72,7 +72,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/catty-reminders-app
           tags: |
             type=raw,value=latest
             type=raw,value=${{ github.sha }}
@@ -80,6 +80,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner | lower }}/catty-reminders-app:latest
-            ghcr.io/${{ github.repository_owner | lower }}/catty-reminders-app:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
