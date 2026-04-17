@@ -1,5 +1,7 @@
 name: CD Pipeline
 on:
+  push:
+    branches: [ "lab2" ]
   release:
     types: [published, created]
 
@@ -18,7 +20,6 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Разрешаем Git работать с этой папкой по SSH (исправляет сбои деплоя)
             git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
