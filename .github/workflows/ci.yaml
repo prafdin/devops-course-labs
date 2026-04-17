@@ -37,6 +37,19 @@ jobs:
           sleep 5
         env:
           PYTHONPATH: ${{ github.workspace }}
+          
+      - name: Create correct config.json for tests
+        run: |
+          cat > config.json << 'EOF'
+          {
+              "users": [
+                  {"username": "tester", "password": "foobar123"}
+              ],
+              "db_path": "reminder_db.json",
+              "secret_key": "Cats are awesome!"
+          }
+          EOF
+          cat config.json   
 
       - name: Run tests and save results
         run: |
