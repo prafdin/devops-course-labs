@@ -25,7 +25,11 @@ jobs:
 
             printf "IMAGE_TAG=%s\nDEPLOY_REF=%s\n" "$DEPLOY_SHA" "$DEPLOY_SHA" > .env
 
-            sudo -n docker-compose pull
+            sudo -n docker-compose down --remove-orphans || true
+
+            sudo -n docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
+            sudo -n docker pull mysql:8
+
             sudo -n docker-compose up -d
 
             sudo -n docker-compose ps
