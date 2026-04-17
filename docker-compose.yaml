@@ -10,6 +10,12 @@ services:
       MYSQL_PASSWORD: catty
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   app:
     build: .
@@ -17,12 +23,13 @@ services:
     container_name: catty-app
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8181:8181"
     environment:
       DB_HOST: db
-      DB_PORT: 3306
+      DB_PORT: "3306"
       DB_NAME: catty
       DB_USER: catty
       DB_PASSWORD: catty
@@ -30,3 +37,4 @@ services:
 
 volumes:
   db_data:
+
