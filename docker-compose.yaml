@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: mysql:8
@@ -14,6 +12,7 @@ services:
       - db_data:/var/lib/mysql
 
   app:
+    build: .
     image: ghcr.io/artem362a/catty-reminders-app:${IMAGE_TAG:-lab4}
     container_name: catty-app
     restart: always
