@@ -25,10 +25,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"\n [{timestamp}] Webhook: {event_type} - {repo_name} - {branch}")
             
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+            
             if event_type == 'push':
                 self._deploy(branch)
-            
-            self.send_response(200)
+            return
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(b'{"status": "ok"}')
