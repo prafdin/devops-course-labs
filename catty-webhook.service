@@ -1,0 +1,15 @@
+[Unit]
+Description=Catty Webhook Server
+After=network.target
+
+[Service]
+Type=simple
+User=yaroslav
+WorkingDirectory=/home/yaroslav/devops-lab/catty-reminders-app
+Environment="PATH=/home/yaroslav/devops-lab/catty-reminders-app/venv/bin"
+ExecStart=/home/yaroslav/devops-lab/catty-reminders-app/venv/bin/python3 /home/yaroslav/devops-lab/catty-reminders-app/webhook.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
