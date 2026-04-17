@@ -21,4 +21,4 @@ jobs:
             cd /home/rover/catty-reminders-app
             chmod +x ./deploy.sh
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u rovver52 --password-stdin
-            ./deploy.sh "ghcr.io/rovver52/catty-reminders-app&quot; "${{ github.sha }}"
+            ./deploy.sh "ghcr.io/rovver52/catty-reminders-app" "${{ github.sha }}"
