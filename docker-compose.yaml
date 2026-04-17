@@ -3,7 +3,7 @@ name: catty-reminders
 services:
   app:
     build: .
-    image: ghcr.io/mappy12/catty-reminders-app:latest
+    image: ghcr.io/mappy12/catty-reminders-app:${DEPLOY_REF:-latest}
     container_name: catty-app
     ports:
       - "8181:8181"
