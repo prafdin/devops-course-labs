@@ -77,10 +77,14 @@ jobs:
           tags: |
             type=raw,value=${{ github.sha }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v7
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
+          tags: |
+            ghcr.io/rovver52/catty-reminders-app:lab3
+            ghcr.io/rovver52/catty-reminders-app:${{ github.sha }}
