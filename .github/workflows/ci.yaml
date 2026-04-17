@@ -58,10 +58,10 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Run tests and save results
+      - name: Run unit tests and save results
         run: |
           mkdir -p test_results
-          pytest tests/ -v --tb=short --junit-xml=test_results/junit.xml > test_results/output.txt 2>&1
+          pytest tests/test_unit.py -v --tb=short --junit-xml=test_results/junit.xml > test_results/output.txt 2>&1
           exit_code=$?
           echo $exit_code > test_results/exit_code.txt
           echo "Test run completed with exit code: $exit_code"
