@@ -28,13 +28,9 @@ services:
     ports:
       - "8181:8181"
     environment:
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_NAME: catty
-      DB_USER: catty
-      DB_PASSWORD: catty
       DEPLOY_REF: ${DEPLOY_REF:-NA}
+    volumes:
+      - ./config.json:/app/config.json:ro
 
 volumes:
   db_data:
-
