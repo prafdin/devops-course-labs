@@ -16,8 +16,6 @@ jobs:
           docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
 
   pipeline:
-    needs: docker-lint
-    if: success()
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +54,6 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     needs: pipeline
-    if: success()
     permissions:
       contents: read
       packages: write
