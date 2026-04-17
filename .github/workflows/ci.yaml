@@ -21,27 +21,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
+      - name: Prepare env
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install uvicorn pytest-playwright
-          playwright install --with-deps chromium
+          echo "IMAGE_TAG=lab4" > .env
+          echo "DEPLOY_REF=ci-test" >> .env
 
-      - name: Start app
+      - name: Start app via Docker Compose
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          docker compose up -d --build
+          sleep 15
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
+
+      - name: Show compose logs on failure
+        if: failure()
+        run: docker compose logs
 
       - name: Upload test results
         if: always()
@@ -49,6 +46,10 @@ jobs:
         with:
           name: test_result
           path: test_result.xml
+
+      - name: Stop compose stack
+        if: always()
+        run: docker compose down
 
   docker:
     runs-on: ubuntu-latest
