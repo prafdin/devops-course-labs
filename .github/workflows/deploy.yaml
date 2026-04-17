@@ -24,8 +24,6 @@ jobs:
             DEPLOY_SHA="${{ github.sha }}"
             printf "DEPLOY_REF=%s\n" "$DEPLOY_SHA" > .env
 
-            sudo systemctl stop app || true
-
             sudo docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
 
             sudo docker stop catty || true
