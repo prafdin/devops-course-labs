@@ -17,10 +17,8 @@ jobs:
           port: ${{ vars.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash -c '
-              set -e
-              cd /home/rover/catty-reminders-app
-              chmod +x ./deploy.sh
-              OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-              ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
-            '
+            set -e
+            cd /home/rover/catty-reminders-app
+            chmod +x ./deploy.sh
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u rovver52 --password-stdin
+            ./deploy.sh "ghcr.io/rovver52/catty-reminders-app" "${{ github.sha }}"
