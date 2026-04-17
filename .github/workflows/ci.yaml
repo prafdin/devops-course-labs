@@ -3,15 +3,15 @@ name: CI
 on:
   push:
     branches:
-      - lab3
-      - 'lab3_autotests*'
+      - lab4
+      - 'lab4_autotests*'
     tags:
       - 'v*'
       - 'ci-*'
   pull_request:
     branches:
-      - lab3
-      - 'lab3_autotests*'
+      - lab4
+      - 'lab4_autotests*'
 
 jobs:
   tests:
