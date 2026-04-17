@@ -45,11 +45,17 @@ jobs:
               "users": [
                   {"username": "tester", "password": "foobar123"}
               ],
-              "db_path": "reminder_db.json",
+              "db_config": {
+                  "host": "localhost",
+                  "port": 5432,
+                  "user": "postgres",
+                  "password": "postgres",
+                  "database": "catty"
+              },
               "secret_key": "Cats are awesome!"
           }
           EOF
-          cat config.json   
+          cat config.json 
 
       - name: Run tests and save results
         run: |
