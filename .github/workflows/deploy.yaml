@@ -30,7 +30,9 @@ jobs:
 
             export DEPLOY_REF=${{ github.sha }}
 
-            docker compose up -d --pull always --remove-orphans --force-recreate
+            docker compose down
+            docker compose pull
+            docker compose up -d
 
             sleep 3
 
