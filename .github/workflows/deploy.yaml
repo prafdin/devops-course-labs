@@ -24,16 +24,16 @@ jobs:
             DEPLOY_SHA="${{ github.sha }}"
             printf "DEPLOY_REF=%s\n" "$DEPLOY_SHA" > .env
 
-            sudo docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
+            sudo -n /usr/bin/docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
 
-            sudo docker stop catty || true
-            sudo docker rm catty || true
+            sudo -n /usr/bin/docker stop catty || true
+            sudo -n /usr/bin/docker rm catty || true
 
-            sudo docker run -d \
+            sudo -n /usr/bin/docker run -d \
               --name catty \
               --restart always \
               --env-file .env \
               -p 8181:8181 \
               ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
 
-            sudo docker ps
+            sudo -n /usr/bin/docker ps
