@@ -1,11 +1,11 @@
 services:
   app:
-    image: ghcr.io/andreypreobrazhenskiy/catty-reminders-app:${DEPLOY_REF:-latest}
+    image: ghcr.io/andreypreobrazhenskiy/catty-reminders-app:${DEPLOY_REF}
     ports:
       - "8181:8181"
     environment:
       - DATABASE_URL=postgresql://user:pass@db:5432/cattydb
-      - DEPLOY_REF=${DEPLOY_REF:-latest}
+      - DEPLOY_REF=${DEPLOY_REF}
     depends_on:
       db:
         condition: service_healthy
