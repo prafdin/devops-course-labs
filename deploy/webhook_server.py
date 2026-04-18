@@ -1,0 +1,43 @@
+import os
+import subprocess
+from fastapi import FastAPI, Request, BackgroundTasks
+import uvicorn
+
+app = FastAPI()
+
+def run_deploy_script():
+    """Запускает bash-скрипт развертывания."""
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_path = os.path.join(script_dir, "deploy.sh")
+        
+        # Запускаем скрипт, ожидая его завершения
+        result = subprocess.run(
+            ["bash", script_path], 
+            capture_output=True, 
+            text=True, 
+            check=True
+        )
+        print(f"Deploy success:\n{result.stdout}")
+    except subprocess.CalledProcessError as e:
+        print(f"Deploy failed with exit code {e.returncode}:\n{e.stderr}")
+    except Exception as e:
+        print(f"An error occurred during deploy execution: {e}")
+
+@app.post("/")
+async def github_webhook(request: Request, background_tasks: BackgroundTasks):
+    """
+    Обработчик вебхука.
+    Слушает запросы от GitHub. При событии push отправляет задачу 
+    развертывания в фон.
+    """
+    event = request.headers.get("X-GitHub-Event", "ping")
+    
+    if event == "push":
+        background_tasks.add_task(run_deploy_script)
+        return {"status": "Deployment task has been started"}
+        
+    return {"status": f"Ignored event: {event}"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
