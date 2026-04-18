@@ -1,10 +1,9 @@
 {
   "base_url": "http://localhost:8181",
-
   "users": [
     {
       "username": "heisenberg",
-      "password": "P@ssw0rd"
+      "password": "Passw0rd"
     },
     {
       "username": "tester",
