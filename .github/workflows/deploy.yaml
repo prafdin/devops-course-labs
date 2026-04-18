@@ -2,23 +2,39 @@ name: CD Pipeline
 
 on:
   release:
-    types: [published, created]
+    types: [published]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
+          port: 3167
           username: vano
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3167
           script: |
-            cd /home/vano/catty-reminders-app
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            set -e
+            DEPLOY_DIR=/home/vano/catty-app
+            COMMIT_SHA="${{ github.sha }}"
+            mkdir -p $DEPLOY_DIR
+            cd $DEPLOY_DIR
+            if [ -d ".git" ]; then
+              git fetch origin
+            else
+              git clone git@github.com:IvanDelibaltov/catty-reminders-app.git .
+            fi
+            git checkout --detach $COMMIT_SHA
+            git reset --hard $COMMIT_SHA
+            /home/vano/catty-app/venv/bin/pip install -r requirements.txt
+            echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /tmp/deploy_ref.txt
+            sudo systemctl restart catty
+            sleep 5
+            if curl -s http://localhost:8181/login | grep -q "deployref"; then
+              echo "Deployment complete"
+            else
+              exit 1
+            fi
