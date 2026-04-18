@@ -21,11 +21,13 @@ jobs:
             set -e
             cd ~/Desktop/DevOps_lab1/catty-reminders-app
 
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
+
             docker compose pull
             docker compose up -d
 
             echo "⏳ Waiting for application..."
-            for i in {1..15}; do
+            for i in {1..20}; do
               if curl -s http://localhost:8181/login 2>/dev/null | grep -q "deployref"; then
                 echo "✅ Application is responding"
                 break
