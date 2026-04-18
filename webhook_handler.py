@@ -114,8 +114,9 @@ class CustomWebhookHandler(BaseHTTPRequestHandler):
             
             logger.info(f"Push в ветку {branch} от {sender}, коммитов: {commits}")
             
-            if branch != BRANCH:
-                logger.info(f"Пропускаем деплой для ветки {branch}, ожидаем {BRANCH}")
+            
+            if branch in ['main', 'master']:
+                logger.info(f"Пропускаем деплой для ветки {branch}")
                 return
             
             self.run_deployment(branch)
