@@ -18,19 +18,15 @@ jobs:
           script: |
             cd ~/catty-reminders-app
             
-            # Логинимся в GitHub Container Registry
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Пуллим новый образ
-            docker pull ghcr.io/sofiastepanova/catty-reminders-app:${{ github.sha }}
+            docker pull ghcr.io/sofiastepanova/catty-reminders-app:lab3
             
-            # Останавливаем и удаляем старый контейнер (если есть)
             docker stop catty-app || true
             docker rm catty-app || true
             
-            # Запускаем новый контейнер
             docker run -d \
               --name catty-app \
               --restart always \
               -p 8181:8181 \
-              ghcr.io/sofiastepanova/catty-reminders-app:${{ github.sha }}
+              ghcr.io/sofiastepanova/catty-reminders-app:lab3
