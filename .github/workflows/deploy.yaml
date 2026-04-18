@@ -23,5 +23,5 @@ jobs:
             git fetch origin
             git reset --hard origin/lab2
             NEW_REF=$(git rev-parse HEAD)
-            echo "DEPLOY_REF=$NEW_REF" > /home/vano/catty-app/.env
+            echo "DEPLOY_REF=$NEW_REF" | sudo tee /etc/catty-app-env
             sudo systemctl restart catty
