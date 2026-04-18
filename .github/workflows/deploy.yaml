@@ -1,26 +1,16 @@
-name: CD
+name: CD - Deploy to Debian
 
 on:
   release:
-    types: [published] 
+    types: [published]
+  workflow_dispatch: 
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-
-      - name: Copy files via SCP
-        uses: appleboy/scp-action@v1
-        with:
-          host: course.prafdin.ru
-          username: vboxuser
-          port: 2200
-          key: ${{ secrets.SSH_PRIVATE_KEY }} 
-          source: "."
-          target: "~/catty-reminders-app" 
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Execute remote commands via SSH
         uses: appleboy/ssh-action@v1
@@ -28,30 +18,31 @@ jobs:
           host: course.prafdin.ru
           username: vboxuser
           port: 2200
-          key: ${{ secrets.SSH_PRIVATE_KEY }} 
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/catty-reminders-app
             
             git fetch origin
             git checkout ${{ github.sha }}
-            
-            echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
-            
-            
-            if [ ! -d ".venv" ]; then
-                python3 -m venv .venv/
-            fi
-            source .venv/bin/activate
-            pip install -r requirements.txt
-            
-   
-            sudo systemctl restart app.service
-            sleep 4
-            if sudo systemctl is-active --quiet app.service; then
-                echo "Deployment completed successfully"
+
+            docker build -t catty-app:latest .
+
+            docker stop catty-app-container || true
+            docker rm catty-app-container || true
+
+            sudo fuser -k 8181/tcp || true
+
+            docker run -d \
+              --name catty-app-container \
+              -p 8181:8181 \
+              --restart always \
+              catty-app:latest
+
+            sleep 10
+            if [ "$(docker inspect -f '{{.State.Running}}' catty-app-container)" == "true" ]; then
+              echo "Deployment successful! Container is running."
             else
-                echo "ERROR: Application failed to start"
-                exit 1
+              echo "Deployment failed! Container log output:"
+              docker logs catty-app-container
+              exit 1
             fi
-
-
