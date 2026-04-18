@@ -4,9 +4,11 @@ services:
     ports:
       - "8181:8181"
     environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/cattydb
       - DEPLOY_REF=latest
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     pull_policy: always
@@ -21,6 +23,12 @@ services:
       - db-data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d cattydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   db-data:
