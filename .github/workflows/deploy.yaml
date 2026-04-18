@@ -3,7 +3,7 @@ name: CD - Deploy to Debian
 on:
   release:
     types: [published]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -21,16 +21,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/catty-reminders-app
-            
             git fetch origin
             git checkout ${{ github.sha }}
 
-            docker build -t catty-app:latest .
-
-            docker stop catty-app-container || true
-            docker rm catty-app-container || true
-
             sudo fuser -k 8181/tcp || true
+            docker rm -f catty-app-container || true
+
+            docker build -t catty-app:latest .
 
             docker run -d \
               --name catty-app-container \
@@ -38,11 +35,5 @@ jobs:
               --restart always \
               catty-app:latest
 
-            sleep 10
-            if [ "$(docker inspect -f '{{.State.Running}}' catty-app-container)" == "true" ]; then
-              echo "Deployment successful! Container is running."
-            else
-              echo "Deployment failed! Container log output:"
-              docker logs catty-app-container
-              exit 1
-            fi
+            sleep 5
+            docker ps | grep "catty-app-container"
