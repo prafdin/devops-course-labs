@@ -6,6 +6,6 @@ if [ -z "$COMMIT_SHA" ]; then
 fi
 git fetch --all
 git reset --hard "$COMMIT_SHA"
-echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /etc/catty-app-env
+echo "DEPLOY_REF=$COMMIT_SHA" | tee /tmp/deploy_ref.txt
 sudo systemctl restart catty
 echo "✅ Deployed $COMMIT_SHA"
