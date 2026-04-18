@@ -1,0 +1,46 @@
+name: CD - Deploy to Debian
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Execute remote commands via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          port: 2200
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/catty-reminders-app
+            git fetch origin
+            git checkout ${{ github.sha }}
+
+            sudo fuser -k 8181/tcp || true
+            docker stop catty-app-container || true
+            docker rm -f catty-app-container || true
+
+            docker build --build-arg GITHUB_SHA=${{ github.sha }} -t catty-app:latest .
+
+            docker run -d \
+              --name catty-app-container \
+              -p 8181:8181 \
+              --restart always \
+              catty-app:latest
+
+            sleep 5
+            if docker ps | grep -q "catty-app-container"; then
+              echo "Deployment successful! SHA: ${{ github.sha }}"
+            else
+              echo "Deployment failed! Check docker logs below:"
+              docker logs catty-app-container
+              exit 1
+            fi
