@@ -1,9 +1,8 @@
-name: CD Pipeline
+name: CD
+
 on:
-  push:
-    branches: [ "lab2" ]
   release:
-    types: [published, created]
+    types: [published]
 
 jobs:
   deploy:
@@ -11,16 +10,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3167
           username: vano
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3167
           script: |
             cd /home/vano/catty-app
-            git fetch --all
-            git reset --hard origin/main
+            git fetch origin
+            git reset --hard origin/lab2
             echo "DEPLOY_REF=$(git rev-parse HEAD)" | sudo tee /etc/catty-app-env
             sudo systemctl restart catty
