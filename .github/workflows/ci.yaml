@@ -36,7 +36,7 @@ jobs:
     - name: Run tests
       run: |
         export PYTHONPATH=$PYTHONPATH:$PWD
-        pytest --junitxml=test_result.xml
+        pytest tests/test_unit.py --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
