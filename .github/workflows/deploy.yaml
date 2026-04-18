@@ -1,22 +1,26 @@
-name: CD
-
+name: CD Pipeline
 on:
+  push:
+    branches: [ "lab2" ]
   release:
-    types: [published]
+    types: [published, created]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Deploy via script
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
         with:
           host: course.prafdin.ru
+          port: 3167
           username: vano
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3167
-          script: bash ~/catty-reminders-app/deploy.sh ${{ github.sha }}
+          script: |
+            cd /home/vano/catty-app
+            git fetch --all
+            git reset --hard origin/main
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" | sudo tee /etc/catty-app-env
+            sudo systemctl restart catty
