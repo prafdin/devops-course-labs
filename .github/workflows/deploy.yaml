@@ -25,9 +25,10 @@ jobs:
             git checkout ${{ github.sha }}
 
             sudo fuser -k 8181/tcp || true
+            docker stop catty-app-container || true
             docker rm -f catty-app-container || true
 
-            docker build -t catty-app:latest .
+            docker build --build-arg GITHUB_SHA=${{ github.sha }} -t catty-app:latest .
 
             docker run -d \
               --name catty-app-container \
@@ -36,4 +37,10 @@ jobs:
               catty-app:latest
 
             sleep 5
-            docker ps | grep "catty-app-container"
+            if docker ps | grep -q "catty-app-container"; then
+              echo "Deployment successful! SHA: ${{ github.sha }}"
+            else
+              echo "Deployment failed! Check docker logs below:"
+              docker logs catty-app-container
+              exit 1
+            fi
