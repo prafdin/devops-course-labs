@@ -1,0 +1,13 @@
+[Unit]
+Description=Catty Reminders Application
+After=network.target
+
+[Service]
+User=q
+WorkingDirectory=/home/q/devops/catty-reminders-app
+Environment="PYTHONPATH=/home/q/devops/catty-reminders-app"
+ExecStart=/home/q/devops/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
