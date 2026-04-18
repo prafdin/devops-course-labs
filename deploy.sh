@@ -1,22 +1,11 @@
 #!/bin/bash
-cd /home/vano/catty-app || exit 1
-SHA=$1
-echo "Deploying SHA: $SHA"
-
-# Сбрасываем на конкретный коммит
-git fetch --all
-git reset --hard "$SHA"
-
-pip3 install --break-system-packages -r requirements.txt
-
-echo "DEPLOY_REF=$SHA" > /etc/catty-app-env
-
-sudo systemctl restart catty
-
-sleep 3
-if systemctl is-active --quiet catty; then
-    echo "SUCCESS: Deployed $SHA"
-else
-    echo "ERROR: App failed"
-    exit 1
+cd /home/vano/catty-app
+COMMIT_SHA=$1
+if [ -z "$COMMIT_SHA" ]; then
+  COMMIT_SHA=$(git rev-parse HEAD)
 fi
+git fetch --all
+git reset --hard "$COMMIT_SHA"
+echo "DEPLOY_REF=$COMMIT_SHA" | sudo tee /etc/catty-app-env
+sudo systemctl restart catty
+echo "✅ Deployed $COMMIT_SHA"
