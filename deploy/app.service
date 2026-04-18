@@ -1,0 +1,18 @@
+[Unit]
+Description=Catty Reminders App (Main Server)
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/catty-reminders-app
+Environment="PATH=/opt/catty-reminders-app/venv/bin"
+
+# Запуск основного приложения на порту 8181
+ExecStart=/opt/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+
+# В случае падения процесс будет поднят
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
