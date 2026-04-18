@@ -21,7 +21,7 @@ jobs:
           script: |
             cd /home/vano/catty-app
             git fetch origin
-            git reset --hard ${{ github.sha }}
+            git reset --hard origin/lab2
             NEW_REF=$(git rev-parse HEAD)
             echo "DEPLOY_REF=$NEW_REF" | sudo tee /etc/catty-app-env
             sudo systemctl restart catty
