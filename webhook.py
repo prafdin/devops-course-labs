@@ -61,18 +61,20 @@ class WebhookHandler(BaseHTTPRequestHandler):
     def _deploy(self, branch):
         print(f"   Deploy branch: {branch}")
         
-        print(f"   Stopping app...")
-        subprocess.run(['sudo', 'systemctl', 'stop', 'catty-app'], capture_output=True)
-        
-        time.sleep(3)
-        
         print(f"   Updating code...")
         subprocess.run(['git', 'fetch', '--all'], cwd=REPO_PATH, capture_output=True)
         subprocess.run(['git', 'checkout', branch], cwd=REPO_PATH, capture_output=True)
         subprocess.run(['git', 'pull', 'origin', branch], cwd=REPO_PATH, capture_output=True)
         
-        print(f"   Starting app...")
-        subprocess.run(['sudo', 'systemctl', 'start', 'catty-app'], capture_output=True)
+        print(f"   Restarting app...")
+        subprocess.run(['sudo', 'systemctl', 'restart', 'catty-app'], capture_output=True)
+        time.sleep(2)
+        
+        status = subprocess.run(['sudo', 'systemctl', 'is-active', 'catty-app'], capture_output=True, text=True)
+        if 'active' in status.stdout:
+            print(f"   App restarted successfully!")
+        else:
+            print(f"   WARNING: App may not be running!")
         
         print(f"   Deploy completed!")
     
