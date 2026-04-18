@@ -22,3 +22,4 @@ def test_successful_api_login(catty_api: APIRequestContext, user: User, base_url
   cookie = catty_api.storage_state()['cookies'][0]
   assert cookie['name'] == 'reminders_session'
   assert cookie['value']
+#1
