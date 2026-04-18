@@ -1,0 +1,15 @@
+cat > /home/Roman/.config/systemd/user/catty-app.service << 'EOF'
+[Unit]
+Description=Catty Reminders Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/Roman/Desktop/catty-reminders-app
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
