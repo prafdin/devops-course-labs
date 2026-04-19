@@ -32,6 +32,16 @@ python -m pytest tests/
 # 4. Перезапуск веб-сервера
 echo "4. Restarting main application service..."
 
+if ! python -m pytest tests/; then
+    echo "ERROR: Tests failed! Performing rollback to the previous version..."
+    
+    git reset --hard ORIG_HEAD
+    
+    exit 1
+fi
+
+echo "Tests passed successfully!"
+
 sudo systemctl restart app.service
 
 echo "=== Deployment finished successfully ==="
