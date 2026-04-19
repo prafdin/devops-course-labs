@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Deploy
         uses: appleboy/ssh-action@v1
@@ -17,6 +20,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/deemeed/catty-reminders-app
-            git pull origin lab2
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
