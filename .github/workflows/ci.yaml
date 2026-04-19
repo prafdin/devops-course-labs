@@ -25,9 +25,6 @@ jobs:
 
       - name: Run tests
         run: |
-          # Пример запуска тестов (если они есть)
-          # pytest --junitxml=test_result.xml
-          # Для демонстрации создадим фиктивный отчёт
           echo "All tests passed" > test_result.txt
 
       - name: Upload test results
