@@ -5,37 +5,27 @@ on:
     types: [published]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Deploy to VM via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no vano@course.prafdin.ru -p 3167 "
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3167
+          username: vano
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
             set -e
-            DEPLOY_DIR=/home/vano/catty-app
-            COMMIT_SHA=\"${{ github.sha }}\"
-            mkdir -p \$DEPLOY_DIR
-            cd \$DEPLOY_DIR
-            if [ -d .git ]; then
-              git fetch origin
-            else
-              git clone git@github.com:IvanDelibaltov/catty-reminders-app.git .
-            fi
-            git checkout --detach \$COMMIT_SHA
-            git reset --hard \$COMMIT_SHA
-            /home/vano/catty-app/venv/bin/pip install -r requirements.txt
-            echo \"DEPLOY_REF=\$COMMIT_SHA\" | sudo tee /tmp/deploy_ref.txt
-            sudo systemctl restart catty
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt
+            sudo docker pull ghcr.io/IvanDelibaltov/catty-reminders-app:${{ github.sha }}
+            sudo docker stop catty-app || true
+            sudo docker rm catty-app || true
+            sudo docker run -d --name catty-app -p 8181:8181 --restart always ghcr.io/IvanDelibaltov/catty-reminders-app:${{ github.sha }}
             sleep 5
-            if curl -s http://localhost:8181/login | grep -q deployref; then
-              echo Deployment complete
+            if curl -s http://localhost:8181/login | grep -q "deployref"; then
+              echo "Deployment complete"
             else
               exit 1
             fi
-          "
