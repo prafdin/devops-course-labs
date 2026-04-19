@@ -17,11 +17,11 @@ jobs:
             bash -c '
               set -e
               cd /home/ilya/catty-reminders-app
-              OWNER=$(echo ${{ github.repository_owner }} | tr "[:upper:]" "[:lower:]")
+              OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
               export DEPLOY_REF=${{ github.sha }}
               export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}:${{ github.sha }}
 
-              # Экспортируем остальные переменные, которые требует docker-compose.yaml
+              # Экспортируем переменные
               export APP_IMAGE=$IMAGE
               export DB_CONTAINER_NAME=catty-db
               export APP_CONTAINER_NAME=catty-app
@@ -34,5 +34,9 @@ jobs:
               export HOST_APP_PORT=8181
               export CONTEINER_APP_PORT=8181
 
-              docker compose up -d --pull always --remove-orphans --force-recreate 
+              # ВАЖНО: Добавляем логин, без которого вылетает "denied"
+              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+              # Запуск
+              docker compose up -d --pull always --remove-orphans --force-recreate
             '
