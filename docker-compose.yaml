@@ -1,0 +1,34 @@
+name: catty-reminders
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: catty_reminders
+      MARIADB_USER: catty
+      MARIADB_PASSWORD: cattypass
+      MARIADB_ROOT_PASSWORD: rootpass
+    volumes:
+      - catty-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ${IMAGE_NAME:-ghcr.io/kirilldrs/catty-reminders-app}:${IMAGE_TAG:-lab4}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF:-NA}
+    volumes:
+      - ./config.json:/app/config.json:ro
+
+volumes:
+  catty-db-data:

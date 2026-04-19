@@ -8,21 +8,43 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Deploy via SSH with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
             set -e
+
             cd /home/kirill/desktop/devops
-            chmod +x ./deploy.sh
-
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u kirilldrs --password-stdin
-
-            ./deploy.sh "ghcr.io/kirilldrs/catty-reminders-app" "${{ github.sha }}"
             
-            sleep 3
-            curl -s -o /dev/null -w "%{http_code}" http://localhost:8181 | grep -q "200\|302" && echo "App is reachable" || echo "Error!"
+            git fetch --all --tags
+            git checkout --detach ${{ github.sha }} 2>/dev/null || true
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            IMAGE_NAME=ghcr.io/${{ github.repository }} \
+            IMAGE_TAG=${{ github.sha }} \
+            docker compose pull
+
+            IMAGE_NAME=ghcr.io/${{ github.repository }} \
+            IMAGE_TAG=${{ github.sha }} \
+            docker compose up -d --force-recreate --remove-orphans
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
+                echo "✅ App is healthy"
+                exit 0
+              fi
+              echo "⏳ Waiting for app... ($i/30)"
+              sleep 5
+            done
+
+            echo "❌ App failed to start"
+            docker compose ps
+            docker compose logs app
+            docker compose logs db
+            exit 1
