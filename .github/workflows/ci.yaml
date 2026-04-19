@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - lab3*
+      - lab4*
 
 jobs:
   docker-lint:
@@ -17,6 +17,15 @@ jobs:
 
   pipeline:
     runs-on: ubuntu-latest
+    
+    services:
+      db:
+        image: mariadb:11.8.6-ubi9
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
 
     steps:
       - name: Checkout repository
@@ -85,5 +94,5 @@ jobs:
           build-args: |
             DEPLOY_REF=${{ github.sha }}
           tags: |
-            ghcr.io/rovver52/catty-reminders-app:lab3
+            ghcr.io/rovver52/catty-reminders-app:lab4
             ghcr.io/rovver52/catty-reminders-app:${{ github.sha }}
