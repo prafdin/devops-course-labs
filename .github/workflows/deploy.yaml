@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,10 +19,10 @@ jobs:
           script: |
             set -e
             echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt
-            sudo docker pull ghcr.io/IvanDelibaltov/catty-reminders-app:${{ github.sha }}
+            sudo docker pull ghcr.io/ivandelibaltov/catty-reminders-app:${{ github.sha }}
             sudo docker stop catty-app || true
             sudo docker rm catty-app || true
-            sudo docker run -d --name catty-app -p 8181:8181 --restart always ghcr.io/IvanDelibaltov/catty-reminders-app:${{ github.sha }}
+            sudo docker run -d --name catty-app -p 8181:8181 --restart always ghcr.io/ivandelibaltov/catty-reminders-app:${{ github.sha }}
             sleep 5
             if curl -s http://localhost:8181/login | grep -q "deployref"; then
               echo "Deployment complete"

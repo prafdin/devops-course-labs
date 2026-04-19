@@ -44,7 +44,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: IvanDelibaltov
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -52,5 +52,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/IvanDelibaltov/catty-reminders-app:${{ github.sha }}
-            ghcr.io/IvanDelibaltov/catty-reminders-app:latest
+            ghcr.io/ivandelibaltov/catty-reminders-app:${{ github.sha }}
+            ghcr.io/ivandelibaltov/catty-reminders-app:latest
