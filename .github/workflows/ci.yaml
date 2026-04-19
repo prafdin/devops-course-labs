@@ -34,7 +34,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           # Запускаем только юнит-тесты (не требуют запущенного приложения)
-          # Это соответствует требованиям Лабы 4: интеграционные тесты можно не запускать
           pytest -v --tb=short --junitxml=test_result.xml -k "unit"
 
       - name: Upload test results
@@ -55,7 +54,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner@L }}/${{ github.event.repository.name@L }}
           tags: |
             type=sha
             type=ref,event=branch
@@ -69,5 +68,5 @@ jobs:
             DEPLOY_REF=${{ github.sha }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner@L }}/${{ github.event.repository.name@L }}:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
