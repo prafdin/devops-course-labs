@@ -40,10 +40,11 @@ if [ -f "requirements.txt" ]; then
     fi
     source venv/bin/activate
     
-    pip install --quiet pytest pytest-cov
+    pip install --quiet pytest pytest-cov playwright pytest-playwright
     if [ -f "requirements.txt" ]; then
         pip install --quiet -r requirements.txt
     fi
+    playwright install chromium
 fi
 
 echo -e "${BLUE}Запуск pytest...${NC}"
@@ -61,6 +62,7 @@ if [ "$TEST_COUNT" -eq 0 ]; then
         exit 1
     fi
 else
+    export PYTHONPATH=$PYTHONPATH:.
     pytest tests -v --tb=short --maxfail=1 2>&1 | tee "$TEST_LOG"
     TEST_RESULT=${PIPESTATUS[0]}
     

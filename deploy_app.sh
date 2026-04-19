@@ -41,9 +41,12 @@ cd "$PROJECT_DIR" || exit 1
 check_success "Переход в директорию $PROJECT_DIR"
 
 if [ ! -d "$PROJECT_DIR/.git" ]; then
-    log_message "INFO" "Первый запуск - клонирование репозитория"
-    git clone "$REPO_URL" .
-    check_success "Клонирование репозитория"
+    log_message "INFO" "Первый запуск - инициализация репозитория в существующей папке"
+    git init
+    git remote add origin "$REPO_URL" 2>/dev/null || git remote set-url origin "$REPO_URL"
+    git fetch origin
+    git reset --hard "origin/$BRANCH"
+    check_success "Инициализация и получение данных из репозитория"
 else
     log_message "INFO" "Обновление существующего репозитория"
     git fetch --all --prune
@@ -51,6 +54,7 @@ else
 fi
 
 git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
+git reset --hard "origin/$BRANCH"
 check_success "Переключение на ветку $BRANCH"
 
 git pull origin "$BRANCH"

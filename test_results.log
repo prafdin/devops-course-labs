@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.6.0 -- /home/Roman/Desktop/catty-reminders-app/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/Roman/Desktop/catty-reminders-app
+plugins: anyio-4.13.0, base-url-2.1.0, cov-7.1.0, playwright-0.3.3
+collecting ... collected 3 items
+
+tests/test_api.py::test_successful_api_login PASSED                      [ 33%]
+tests/test_ui.py::test_successful_login[chromium] PASSED                 [ 66%]
+tests/test_unit.py::test_token_serialization PASSED                      [100%]
+
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/fastapi/openapi/models.py:55
+  /home/Roman/Desktop/catty-reminders-app/venv/lib/python3.12/site-packages/fastapi/openapi/models.py:55: DeprecationWarning: `general_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.
+    return general_plain_validator_function(cls._validate)
+
+venv/lib/python3.12/site-packages/pydantic_core/core_schema.py:4434
+  /home/Roman/Desktop/catty-reminders-app/venv/lib/python3.12/site-packages/pydantic_core/core_schema.py:4434: DeprecationWarning: `general_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 3 passed, 2 warnings in 3.61s =========================
