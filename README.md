@@ -1,149 +1,33 @@
-![Catty Logo](static/img/logos/catty-100px.png)
+# Лабораторная работа №4: Оркестрация контейнеров с Docker Compose
 
-# Catty: The Reminders App
+**Автор:** Симонов И.А.
+**Группа:** 6311
+**Дата:** 19 апреля 2026 г.
 
-*Catty* is a small demo web app for tracking reminders.
-It uses:
+## Описание проекта
+В данной работе приложение **catty-reminders-app** было переведено на мультиконтейнерную архитектуру. Основной упор сделан на разделение логики приложения и хранения данных, а также на автоматизацию развёртывания всего стека сервисов.
 
-* [Python](https://www.python.org/) as the main programming language
-* [FastAPI](https://fastapi.tiangolo.com/) for the backend
-* [HTMX](https://htmx.org/) 1.8.6 for handling dynamic interactions (instead of raw JavaScript)
-* [Jinja templates](https://jinja.palletsprojects.com/en/3.1.x/) with HTML and CSS for the frontend
-* [MariaDB](https://wiki.alpinelinux.org/wiki/MariaDB) for the database
-* [Playwright](https://playwright.dev/python/) and [pytest](https://docs.pytest.org/) for testing
+### Основные изменения:
+- **Оркестрация:** Использование **Docker Compose** для управления связкой «Приложение + База данных».
+- **База данных:** Осуществлен переход с локального хранения (TinyDB) на реляционную СУБД **MariaDB**.
+- **Персистентность:** Настроены Docker Volumes для сохранения данных базы при перезапуске или обновлении контейнеров.
+- **CI/CD:** Пайплайн GitHub Actions обновлен для проверки интеграции всего стека и бесшовного деплоя через `docker compose up`.
 
-## Installing dependencies
+## Структура стека (docker-compose.yaml)
+Стек состоит из двух основных сервисов:
+1. **db (mariadb:11):** Хранилище данных пользователей и напоминаний.
+2. **catty-app:** Веб-приложение на FastAPI, подключающееся к базе данных по внутренней сети Docker.
 
-You will need a recent version of Python to run this app.
-To install project dependencies:
+## Как это работает
 
-```
-pip install -r requirements.txt
-```
+### 1. Автоматизация (CI/CD)
+- **CI:** При каждом push запускается временный сервис MariaDB в облаке GitHub, проводятся тесты, проверяется Dockerfile (Hadolint) и собирается образ приложения.
+- **CD:** При создании релиза GitHub Actions подключается к серверу по SSH, передает необходимые переменные окружения (SHA коммита, учетные данные БД) и обновляет стек командой `docker compose up -d --pull always`.
 
-It is recommended to install dependencies into a [virtual environment](https://docs.python.org/3/library/venv.html).
+### 2. Сохранность данных
+Данные MariaDB монтируются в именованный volume `db_data`. Это гарантирует, что даже после полного удаления контейнеров (например, при обновлении версии БД), все созданные пользователями напоминания останутся в сохранности.
 
-
-## Setting up the database
-
-This application requires a MySQL database. The connection details are configured in the `config.json` file.
-
-Example `db_config` in `config.json`:
-```json
-{
-  "db_config": {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "mypass",
-    "database": "catty_reminders"
-  }
-}
-```
-The application will attempt to create the database specified in the configuration if it does not exist. The user specified in the configuration must have the necessary privileges to create a database.
-
-## Running the app
-
-Prepare environment variables from template and export it:
+## Инструкция по запуску (локально)
+Для ручного запуска стека на сервере необходимо наличие файла `.env` с переменными окружения:
 ```bash
-cp .env.example .env
-# Edit the .env file as needed
-set -a; source .env; set +a
-```
-
-Once the database is configured, you can run the app:
-
-```
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8181
-```
-
-Then, open your browser to [`http://127.0.0.1:8181`](http://127.0.0.1:8181) to load the app.
-
-
-
-## Logging into the app
-
-The [`config.json`](config.json) file declares the users for the app.
-You may use any configured user credentials, or change them to your liking.
-
-
-## Using the app
-
-Catty is a reminders app.
-After you log in, you can create reminder lists.
-
-![Catty login](static/img/readme/catty-login.png)
-
-Each reminder list appears on the left,
-and the items in the list appear on the right.
-You may add, delete, or edit lists and items.
-You may also strike out completed items.
-
-![Catty reminders](static/img/readme/catty-reminders.png)
-
-
-## Running tests
-
-The app includes comprehensive tests using pytest and Playwright. Before running tests, make sure the app is running on `http://127.0.0.1:8181`.
-
-First, install test dependencies if you haven't already:
-
-```bash
-pip install -r requirements.txt
-```
-
-Install Playwright browsers for UI testing:
-
-```bash
-playwright install --with-deps chromium
-```
-
-Then configure test settings in `inputs.json`:
-
-```json
-{
-  "base_url": "http://127.0.0.1:8181",
-  "users": [
-    {
-      "username": "heisenberg",
-      "password": "P@ssw0rd"
-    },
-    {
-      "username": "tester", 
-      "password": "foobar123"
-    }
-  ]
-}
-```
-
-Run all tests:
-
-```bash
-python3 -m pytest
-```
-
-Run specific test types:
-
-```bash
-# Unit tests only
-python3 -m pytest tests/test_unit.py
-
-# API tests only  
-python3 -m pytest tests/test_api.py
-
-# UI tests only
-python3 -m pytest -s -v --browser chromium tests/test_ui.py
-```
-
-Run tests with verbose output:
-
-```bash
-python3 -m pytest -v --browser chromium tests
-```
-
-## Reading the docs
-
-To read the API docs, open the following pages:
-
-* [`/docs`](http://127.0.0.1:8181/docs) for classic OpenAPI docs
-* [`/redoc`](http://127.0.0.1:8181/redoc) for more modern ReDoc docs
+docker compose up -d
