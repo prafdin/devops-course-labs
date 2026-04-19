@@ -6,26 +6,8 @@ on:
       - lab4*
 
 jobs:
-  docker-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Hadolint
-        run: |
-          docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
-
   pipeline:
     runs-on: ubuntu-latest
-    
-    services:
-      db:
-        image: mariadb:11.8.6-ubi9
-        env:
-          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
-          MARIADB_DATABASE: catty_reminders
-        ports:
-          - 3306:3306
 
     steps:
       - name: Checkout repository

@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -19,6 +22,5 @@ jobs:
           script: |
             set -e
             cd /home/rover/catty-reminders-app
-            export DEPLOY_REF=${{ github.sha }}
-            export IMAGE=ghcr.io/rovver52/catty-reminders-app:${{ github.sha }}
-            docker compose up -d --pull always --remove-orphans --force-recreate
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u rovver52 --password-stdin
+            ./deploy.sh "ghcr.io/rovver52/catty-reminders-app" "${{ github.sha }}"
