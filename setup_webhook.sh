@@ -65,6 +65,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/Roman/Desktop/catty-reminders-app
+EnvironmentFile=/home/Roman/Desktop/catty-reminders-app/.env
 ExecStart=/usr/bin/python3.13 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 RestartSec=5
