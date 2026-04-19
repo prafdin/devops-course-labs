@@ -13,9 +13,10 @@ services:
     image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
     restart: always
     ports:
-      - "8182:8181"
+      - "8181:8181"
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/reminders
+      - DEPLOY_REF=${IMAGE_TAG}
     depends_on:
       - db
 
