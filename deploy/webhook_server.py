@@ -18,11 +18,11 @@ def run_deploy_script():
             text=True, 
             check=True
         )
-        print(f"Deploy success:\n{result.stdout}")
+        print(f"Deploy success:\n{result.stdout}", flush=True)
     except subprocess.CalledProcessError as e:
-        print(f"Deploy failed with exit code {e.returncode}:\n{e.stderr}")
+        print(f"Deploy failed with exit code {e.returncode}:\n{e.stderr}", flush=True)
     except Exception as e:
-        print(f"An error occurred during deploy execution: {e}")
+        print(f"An error occurred during deploy execution: {e}", flush=True)
 
 @app.post("/")
 async def github_webhook(request: Request, background_tasks: BackgroundTasks):
