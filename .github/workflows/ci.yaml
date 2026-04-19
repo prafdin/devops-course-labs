@@ -2,15 +2,7 @@ name: CI pipeline
 
 on:
   push:
-    branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
   pull_request:
-    branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
 
 env:
   REGISTRY: ghcr.io
