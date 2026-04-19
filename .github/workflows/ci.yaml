@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - lab4*
 
 permissions:
   contents: read
