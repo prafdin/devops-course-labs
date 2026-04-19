@@ -7,7 +7,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Deploy via SSH with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -26,12 +30,11 @@ jobs:
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "kirilldrs" --password-stdin
 
-            IMAGE_NAME=ghcr.io/kirilldrs/catty-reminders-app \
-            IMAGE_TAG=${{ github.sha }} \
+            export IMAGE_NAME=ghcr.io/kirilldrs/catty-reminders-app
+            export IMAGE_TAG=${{ github.sha }}
+            
             docker compose pull
 
-            IMAGE_NAME=ghcr.io/kirilldrs/catty-reminders-app \
-            IMAGE_TAG=${{ github.sha }} \
             docker compose up -d --force-recreate --remove-orphans
 
             for i in $(seq 1 30); do
