@@ -21,12 +21,9 @@ services:
     image: ${IMAGE_NAME:-ghcr.io/kirilldrs/catty-reminders-app}:${IMAGE_TAG:-lab4}
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     ports:
       - "8181:8181"
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF:-NA}
     volumes:
       - ./config.json:/app/config.json:ro
 
