@@ -33,7 +33,9 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest -v --tb=short --junitxml=test_result.xml
+          # Запускаем только юнит-тесты (не требуют запущенного приложения)
+          # Это соответствует требованиям Лабы 4: интеграционные тесты можно не запускать
+          pytest -v --tb=short --junitxml=test_result.xml -k "unit"
 
       - name: Upload test results
         if: always()
