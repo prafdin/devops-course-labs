@@ -4,10 +4,10 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/opt/catty-reminders-app/deploy
-Environment="PATH=/opt/catty-reminders-app/venv/bin"
+WorkingDirectory=/home/killa123/Desktop/devopss/catty-reminders-app/deploy
+Environment="PATH=/home/killa123/Desktop/devopss/catty-reminders-app/venv/bin"
 
-ExecStart=/opt/catty-reminders-app/venv/bin/python webhook_server.py
+ExecStart=/home/killa123/Desktop/devopss/catty-reminders-app/venv/bin/python webhook_server.py
 
 Restart=always
 RestartSec=5
