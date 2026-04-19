@@ -7,6 +7,8 @@ User=root
 WorkingDirectory=/opt/catty-reminders-app
 Environment="PATH=/opt/catty-reminders-app/venv/bin"
 
+EnvironmentFile=-/opt/catty-reminders-app/.env
+
 # Запуск основного приложения на порту 8181
 ExecStart=/opt/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 
