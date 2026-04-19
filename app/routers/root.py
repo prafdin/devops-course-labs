@@ -1,56 +1,29 @@
-"""
-This module provides routes for authentication.
-"""
-
-# --------------------------------------------------------------------------------
-# Imports
-# --------------------------------------------------------------------------------
-
-from app import templates
-from app.utils.auth import AuthCookie, get_auth_cookie
-
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse, RedirectResponse
-from typing import Optional
-
-
-# --------------------------------------------------------------------------------
-# Router
-# --------------------------------------------------------------------------------
+from fastapi import APIRouter
+from fastapi.responses import HTMLResponse
+import os
 
 router = APIRouter()
 
+def get_deploy_ref():
+    ref_file = os.path.join(os.path.dirname(__file__), '..', '..', 'deploy_ref.txt')
+    try:
+        with open(ref_file, 'r') as f:
+            return f.read().strip()
+    except:
+        return "unknown"
 
-# --------------------------------------------------------------------------------
-# Routes
-# --------------------------------------------------------------------------------
-
-@router.get(
-  path="/",
-  summary="Redirects to the login or reminders pages",
-  tags=["Pages"]
-)
-async def read_root(
-  cookie: Optional[AuthCookie] = Depends(get_auth_cookie)
-):
-  path = '/reminders' if cookie else '/login'
-  return RedirectResponse(path, status_code=302)
-
-
-@router.get(
-  path="/favicon.ico",
-  include_in_schema=False
-)
-async def get_favicon():
-  return FileResponse("static/img/favicon.ico")
-
-
-@router.get(
-  path="/not-found",
-  summary="Gets the \"Not Found\" page",
-  tags=["Pages"]
-)
-async def get_not_found(
-  request: Request
-):
-  return templates.TemplateResponse("pages/not-found.html", {'request': request})
+@router.get("/", response_class=HTMLResponse)
+async def read_root():
+    deployref = get_deploy_ref()
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><title>Catty Reminders</title></head>
+    <body>
+        <h1>🐱 Catty Reminders App</h1>
+        <p>Deploy Ref: <strong>{deployref}</strong></p>
+        <p><a href="/login">Login</a> | <a href="/reminders">Reminders</a></p>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
