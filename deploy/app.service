@@ -4,28 +4,14 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/opt/catty-reminders-app
-Environment="PATH=/opt/catty-reminders-app/venv/bin"
 
-EnvironmentFile=-/opt/catty-reminders-app/.env
+WorkingDirectory=/home/killa123/Desktop/devopss/catty-reminders-app
+Environment="PATH=/home/killa123/Desktop/devopss/catty-reminders-app/venv/bin"
 
-if [ ! -d "venv" ]; then
-    echo ">Virtual environment was not found, creating..."
-    python3 -m venv venv
-fi
-
-source venv/bin/activate
-echo ">Virtual environment activated"
-
-if [ -f "requirements.txt" ]; then
-    echo ">Installing/Updating requirements"
-    pip install -r requirements.txt
-fi
-
-echo ">Running tests..."
+EnvironmentFile=-/home/killa123/Desktop/devopss/catty-reminders-app/.env
 
 # Запуск основного приложения на порту 8181
-ExecStart=/opt/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+ExecStart=/home/killa123/Desktop/devopss/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 
 # В случае падения процесс будет поднят
 Restart=always
