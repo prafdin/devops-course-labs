@@ -12,13 +12,13 @@ services:
     volumes:
       - catty-db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
-    image: ${IMAGE_NAME:-ghcr.io/kirilldrs/catty-reminders-app}:${IMAGE_TAG:-lab4}
+    image: ${IMAGE_NAME:-ghcr.io/kirilldrs/catty-reminders-app}:${IMAGE_TAG}
     restart: unless-stopped
     depends_on:
       db:
@@ -26,7 +26,7 @@ services:
     ports:
       - "8181:8181"
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-NA}
+      DEPLOY_REF: ${DEPLOY_REF:-NA}
     volumes:
       - ./config.json:/app/config.json:ro
 

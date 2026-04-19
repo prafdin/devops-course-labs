@@ -7,8 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy via SSH with Docker Compose
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -20,9 +21,6 @@ jobs:
             set -e
 
             cd /home/kirill/desktop/devops
-            
-            git fetch --all --tags
-            git checkout --detach ${{ github.sha }} 2>/dev/null || true
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "kirilldrs" --password-stdin
 
@@ -36,14 +34,12 @@ jobs:
 
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
-                echo "✅ App is healthy"
+                echo "OK"
                 exit 0
               fi
-              echo "⏳ Waiting for app... ($i/30)"
               sleep 5
             done
 
-            echo "❌ App failed to start"
             docker compose ps
             docker compose logs app
             docker compose logs db
