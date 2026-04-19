@@ -6,7 +6,6 @@ After=network.target
 User=root
 
 WorkingDirectory=/home/killa123/Desktop/devopss/catty-reminders-app
-Environment="PATH=/home/killa123/Desktop/devopss/catty-reminders-app/venv/bin"
 
 EnvironmentFile=-/home/killa123/Desktop/devopss/catty-reminders-app/.env
 
