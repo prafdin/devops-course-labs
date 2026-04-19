@@ -30,6 +30,8 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest -v --tb=short --junitxml=test_result.xml
 
