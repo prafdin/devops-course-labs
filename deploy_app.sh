@@ -60,7 +60,7 @@ check_success "Переключение на ветку $BRANCH"
 git pull origin "$BRANCH"
 check_success "Pull последних изменений"
 
-LAST_COMMIT=$(git rev-parse --short HEAD)
+LAST_COMMIT=$(git rev-parse HEAD)
 log_message "INFO" "Последний коммит: $LAST_COMMIT"
 
 if [ -f ".env" ]; then
