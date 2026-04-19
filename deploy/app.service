@@ -9,6 +9,21 @@ Environment="PATH=/opt/catty-reminders-app/venv/bin"
 
 EnvironmentFile=-/opt/catty-reminders-app/.env
 
+if [ ! -d "venv" ]; then
+    echo ">Virtual environment was not found, creating..."
+    python3 -m venv venv
+fi
+
+source venv/bin/activate
+echo ">Virtual environment activated"
+
+if [ -f "requirements.txt" ]; then
+    echo ">Installing/Updating requirements"
+    pip install -r requirements.txt
+fi
+
+echo ">Running tests..."
+
 # Запуск основного приложения на порту 8181
 ExecStart=/opt/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 
