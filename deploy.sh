@@ -4,9 +4,12 @@ echo "Запуск деплоя catty-reminders-app..."
 echo "======================================"
 
 DEPLOY_REF=$1
+TOKEN=$2
 IMAGE_NAME="ghcr.io/deemeed/catty-reminders-app:$DEPLOY_REF"
 
 echo "Текущий SHA ветки: $DEPLOY_REF"
+
+echo "$TOKEN" | docker login ghcr.io -u deemeed --password-stdin
 
 docker pull $IMAGE_NAME
 

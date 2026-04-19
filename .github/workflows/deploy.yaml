@@ -21,4 +21,4 @@ jobs:
           script: |
             cd /home/deemeed/catty-reminders-app
             chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            ./deploy.sh ${{ github.sha }} ${{ secrets.GITHUB_TOKEN }}
