@@ -1,31 +1,26 @@
-name: CD Pipeline
+name: Deploy
 
 on:
   release:
     types: [published]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VM via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3167
           username: vano
+          port: 3167
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /tmp/deploy_ref.txt
-            sudo docker pull ghcr.io/ivandelibaltov/catty-reminders-app:${{ github.sha }}
-            sudo docker stop catty-app || true
-            sudo docker rm catty-app || true
-            sudo docker run -d --name catty-app -p 8181:8181 --restart always ghcr.io/ivandelibaltov/catty-reminders-app:${{ github.sha }}
-            sleep 5
-            if curl -s http://localhost:8181/login | grep -q "deployref"; then
-              echo "Deployment complete"
-            else
-              exit 1
-            fi
+            bash -c '
+              set -e
+              cd /home/vano/catty-reminders-app
+              chmod +x ./deploy.sh
+              OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+              ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
+            '

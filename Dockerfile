@@ -1,12 +1,15 @@
-FROM python:3.12-slim
+FROM python:3.12
 
-WORKDIR /app
+WORKDIR /catty-reminders-app
 
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
+COPY config.json .
 
 EXPOSE 8181
 
