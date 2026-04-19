@@ -42,6 +42,11 @@ fi
 
 echo "Tests passed successfully!"
 
+echo "4. Updating DEPLOY_REF..."
+echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
+
+echo "5. Restarting main application service..."
+
 sudo systemctl restart app.service
 
 echo "=== Deployment finished successfully ==="
