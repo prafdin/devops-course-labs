@@ -9,7 +9,6 @@ git reset --hard "$SHA"
 
 /home/vboxuser/lab2/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
 
-# Принудительно убиваем все процессы на порту 8181
 sudo fuser -k 8181/tcp 2>/dev/null
 sudo pkill -9 -f uvicorn 2>/dev/null
 
