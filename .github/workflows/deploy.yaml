@@ -14,5 +14,4 @@ jobs:
           username: ilya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3120
-          # Вызываем скрипт и передаем SHA коммита
           script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
