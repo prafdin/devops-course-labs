@@ -16,7 +16,7 @@ jobs:
       mysql:
         image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: mypass
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
@@ -42,6 +42,12 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Start app
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: mypass
+          DB_NAME: catty_reminders
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 20
@@ -49,7 +55,11 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-          DB_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: mypass
+          DB_NAME: catty_reminders
         run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
