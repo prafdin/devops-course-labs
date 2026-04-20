@@ -45,16 +45,19 @@ jobs:
 
     - name: Deploy via Docker Compose
       uses: appleboy/ssh-action@master
+      env:
+        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
       with:
         host: ${{ vars.DEPLOY_HOST }}
         username: ${{ vars.DEPLOY_USER }}
         port: ${{ vars.DEPLOY_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        env:
-          DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
+
+        envs: DOCKER_TOKEN,GITHUB_ACTOR
         script: |
           cd ~/catty-app
+          # Теперь $DOCKER_TOKEN и $GITHUB_ACTOR будут работать
           echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           
           docker compose down -v --remove-orphans
