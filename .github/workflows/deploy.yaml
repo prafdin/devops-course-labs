@@ -32,11 +32,20 @@ jobs:
             pip install -r requirements.txt
             echo "Stopping old process..."
             pkill -f "uvicorn.*8181" || true
+            sleep 2
             echo "Starting new process..."
+            source venv/bin/activate
             nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
-            sleep 3
+            echo "Waiting for app to start..."
+            sleep 5
             echo "Checking if process is running..."
-            pgrep -f "uvicorn.*8181" && echo "Process is running" || echo "Process not found"
+            if pgrep -f "uvicorn.*8181" > /dev/null; then
+                echo "Process is running"
+            else
+                echo "Process not found"
+                cat app.log
+                exit 1
+            fi
             echo "Testing local endpoint..."
             curl -s http://localhost:8181 | head -c 200
             echo ""
