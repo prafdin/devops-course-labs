@@ -9,17 +9,19 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
       - name: Deploy to VM
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 2200              # Ваш порт из ведомости
-          username: vboxuser      # Ваш логин на ВМ
+          port: 2200
+          username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vboxuser/lab2/catty-reminders-app
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/lab2
             sudo systemctl restart catty
+            sudo systemctl status catty
+            curl http://localhost:8181
