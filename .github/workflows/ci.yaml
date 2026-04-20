@@ -20,6 +20,11 @@ jobs:
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout repository
@@ -39,11 +44,12 @@ jobs:
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 4
+          sleep 20
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
+          DB_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: pytest --junitxml=test_result.xml
 
       - name: Upload test results

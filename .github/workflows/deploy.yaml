@@ -21,9 +21,9 @@ jobs:
         echo "APP_CONTAINER_NAME=catty-app" >> .env
         # database env vars
         echo "DB_CONTAINER_NAME=catty_db" >> .env
-        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD}}" >> .env
+        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "MYSQL_USER=sergo" >> .env
-        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD}}" >> .env
+        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
         echo "MYSQL_DATABASE=catty_reminders" >> .env
         echo "DB_PORT=3306" >> .env
     
