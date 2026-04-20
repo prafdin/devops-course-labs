@@ -1,27 +1,34 @@
 #!/bin/bash
+# 1. Заходим в папку проекта
 cd /home/vboxuser/lab2/catty-reminders-app || exit 1
 
 SHA=$1
 echo "Deploying SHA: $SHA"
 
+# 2. Обновляем код из GitHub
 git fetch --all
 git reset --hard "$SHA"
 
+# 3. Обновляем зависимости
 /home/vboxuser/lab2/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
 
-sudo fuser -k 8181/tcp 2>/dev/null
-sudo pkill -9 -f uvicorn 2>/dev/null
-
+# 4. Останавливаем старый процесс на порту 8181
+pkill -f "uvicorn.*app.main" || true
 sleep 2
 
-echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
-sudo systemctl restart catty-app
+# 5. Запускаем приложение с переменной окружения (в фоне)
+cd /home/vboxuser/lab2/catty-reminders-app
+export DEPLOY_REF=$SHA
+nohup /home/vboxuser/lab2/catty-reminders-app/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8181 > /tmp/catty-app.log 2>&1 &
 
+# 6. Ждём запуска
 sleep 5
-if systemctl is-active --quiet catty-app; then
+
+# 7. Проверяем, запустилось ли
+if pgrep -f "uvicorn.*app.main" > /dev/null; then
     echo "SUCCESS: Deployed $SHA"
+    exit 0
 else
-    echo "ERROR: App failed"
-    sudo journalctl -u catty-app -n 10 --no-pager
+    echo "ERROR: App failed to start"
     exit 1
 fi
