@@ -36,7 +36,7 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        # Генерируем XML отчет для бота
+       
         run: pytest --junitxml=test_result.xml || true
 
       - name: Upload test results
@@ -44,4 +44,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_result.xml # Файл будет в корне архива
+          path: test_result.xml 
