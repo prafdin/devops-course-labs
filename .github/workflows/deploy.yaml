@@ -1,4 +1,4 @@
-name: CD
+name: Deploy
 
 on:
   release:
@@ -7,46 +7,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Deploy to VM
+      - name: Deploy via script
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 2200
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            echo "=== Starting deployment ==="
-            cd /home/vboxuser/lab2/catty-reminders-app
-            echo "Fetching latest code..."
-            git fetch origin
-            git reset --hard origin/Lab2
-            echo "Current commit: $(git log -1 --oneline)"
-            echo "Installing dependencies..."
-            source venv/bin/activate
-            pip install -r requirements.txt
-            echo "Stopping old process..."
-            pkill -f "uvicorn.*8181" || true
-            sleep 2
-            echo "Starting new process..."
-            source venv/bin/activate
-            nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
-            echo "Waiting for app to start..."
-            sleep 5
-            echo "Checking if process is running..."
-            if pgrep -f "uvicorn.*8181" > /dev/null; then
-                echo "Process is running"
-            else
-                echo "Process not found"
-                cat app.log
-                exit 1
-            fi
-            echo "Testing local endpoint..."
-            curl -s http://localhost:8181 | head -c 200
-            echo ""
-            echo "=== Deployment completed ==="
+          port: 2200
+          script: bash ~/run_app.sh ${{ github.sha }}
