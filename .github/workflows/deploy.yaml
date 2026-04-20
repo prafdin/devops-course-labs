@@ -19,6 +19,7 @@ jobs:
           username: ${{ vars.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cd /home/deemeed/catty-reminders-app
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }} ${{ secrets.GITHUB_TOKEN }}
