@@ -1,0 +1,22 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.PROXY }}
+          port: ${{ vars.SSH_PORT }}
+          username: ${{ vars.USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/mb/catty-reminders-app
+            git pull origin lab2
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}
