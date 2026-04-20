@@ -23,7 +23,6 @@ jobs:
             set -e
             echo "=== Starting deployment ==="
             cd /home/vboxuser/lab2/catty-reminders-app
-            echo "Current directory: $(pwd)"
             echo "Fetching latest code..."
             git fetch origin
             git reset --hard origin/Lab2
@@ -31,11 +30,13 @@ jobs:
             echo "Installing dependencies..."
             source venv/bin/activate
             pip install -r requirements.txt
-            echo "Restarting application..."
-            sudo systemctl restart catty
+            echo "Stopping old process..."
+            pkill -f "uvicorn.*8181" || true
+            echo "Starting new process..."
+            nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
             sleep 3
-            echo "Checking status..."
-            sudo systemctl status catty --no-pager
+            echo "Checking if process is running..."
+            pgrep -f "uvicorn.*8181" && echo "Process is running" || echo "Process not found"
             echo "Testing local endpoint..."
             curl -s http://localhost:8181 | head -c 200
             echo ""
