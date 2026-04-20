@@ -69,5 +69,5 @@ jobs:
           
           echo "Waiting for app to bind ports..."
           sleep 15
-          
+          #
           docker compose ps
