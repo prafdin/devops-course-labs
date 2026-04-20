@@ -1,0 +1,14 @@
+[Unit]
+Description=Catty Reminders Application
+After=network.target
+
+[Service]
+User=vboxuser
+WorkingDirectory=/home/vboxuser/lab2/catty-reminders-app
+Environment="PATH=/home/vboxuser/lab2/catty-reminders-app/venv/bin"
+ExecStart=/home/vboxuser/lab2/catty-reminders-app/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
