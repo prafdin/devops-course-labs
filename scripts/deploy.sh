@@ -2,7 +2,7 @@
 
 set -e
 
-if[ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
+if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
     echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
     exit 1
 fi
