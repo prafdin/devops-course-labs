@@ -11,15 +11,12 @@ services:
       - mariadb_data:/var/lib/mysql
 
   app:
-    # Имя образа и тег будут передаваться через переменные окружения при деплое
     image: ${IMAGE_NAME}:${IMAGE_TAG}
     restart: unless-stopped
     ports:
       - "8181:8181"
     environment:
-      # Это обязательно для автоматических проверок (check_deploy_ref_matches_commit)
       - DEPLOY_REF=${IMAGE_TAG}
-      # Настройки подключения к БД (приложение из ветки преподавателя должно их подхватить)
       - DB_HOST=db
       - DB_USER=root
       - DB_PASSWORD=mypass
@@ -28,5 +25,4 @@ services:
       - db
 
 volumes:
-  # Volume для персистентного хранения данных БД (чтобы при рестарте данные не терялись)
   mariadb_data:

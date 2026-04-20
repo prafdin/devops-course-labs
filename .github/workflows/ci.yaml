@@ -12,7 +12,6 @@ jobs:
   pipeline:
     runs-on: ubuntu-latest
     
-    # Добавляем сервис базы данных для тестов
     services:
       db:
         image: mariadb:10.11
