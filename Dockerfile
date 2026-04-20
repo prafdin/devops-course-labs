@@ -1,13 +1,14 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 WORKDIR /catty
 
-COPY . .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install -r requirements.txt
-
-ARG COMMIT_SHA=manual-test
-ENV DEPLOY_REF=$COMMIT_SHA
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
+COPY config.json .
 
 EXPOSE 8181
 

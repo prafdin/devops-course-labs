@@ -48,13 +48,8 @@ class MySQLStorage:
         self.db_name = db_config['database']
         
         try:
-            # Connect without specifying the database
-            temp_config = self.db_config.copy()
-            temp_config.pop('database', None)
-            self.conn = mysql.connector.connect(**temp_config)
+            self.conn = mysql.connector.connect(**self.db_config)
             self.cursor = self.conn.cursor(dictionary=True)
-            self._create_database()
-            self.conn.database = self.db_name
             self._create_tables()
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:

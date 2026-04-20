@@ -5,3 +5,8 @@ __pycache__/
 .env
 *.log
 .pytest_cache/
+cookies.txt
+nohup.out
+__pycache__/
+*.pyc
+.pytest_cache/

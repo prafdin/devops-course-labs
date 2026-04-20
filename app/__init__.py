@@ -2,15 +2,10 @@
 This module builds shared parts for other modules.
 """
 
-# --------------------------------------------------------------------------------
-# Imports
-# --------------------------------------------------------------------------------
-
 import json
 import os
 
 from fastapi.templating import Jinja2Templates
-
 
 # --------------------------------------------------------------------------------
 # Read Configuration
@@ -21,6 +16,10 @@ with open('config.json') as config_json:
   users = config['users']
   db_config = config['db_config']
 
+# Позволяем переопределить хост БД через переменную окружения
+if os.getenv("DB_HOST"):
+  db_config['host'] = os.getenv("DB_HOST")
+
 DEPLOY_REF = os.getenv("DEPLOY_REF", "NA")
 
 # --------------------------------------------------------------------------------
@@ -28,7 +27,6 @@ DEPLOY_REF = os.getenv("DEPLOY_REF", "NA")
 # --------------------------------------------------------------------------------
 
 secret_key = config['secret_key']
-
 
 # --------------------------------------------------------------------------------
 # Templates

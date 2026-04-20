@@ -1,25 +1,39 @@
 services:
   db:
-    image: postgres:14
+    image: mariadb:11
+    container_name: ${DB_CONTAINER_NAME}
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: reminders
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
-  app:
-    image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
-    restart: always
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
     ports:
-      - "8181:8181"
+      - "${HOST_DB_PORT}:${CONTEINER_DB_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+
+  catty-app:
+    image: ${IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    restart: always
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/reminders
-      - DEPLOY_REF=${IMAGE_TAG}
+      - DEPLOY_REF=${DEPLOY_REF}
+      - DB_HOST=catty-db
+    ports:
+      - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
+    volumes:
+      - ./config.json:/catty/config.json:ro
     depends_on:
       - db
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
 
 volumes:
   db_data:
-# Production-ready compose for Lab 4
