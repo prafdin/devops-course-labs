@@ -7,8 +7,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# Получаем имя ветки из аргументов (по умолчанию main)
-BRANCH="${1:-main}"
+BRANCH="${1:-lab1}"
 
 echo "=== Starting deployment for branch $BRANCH at $(date) ==="
 
@@ -30,16 +29,12 @@ pip install -r requirements.txt
 
 # 3. Запуск тестов
 echo "3. Running tests..."
-set +e 
-python -m pytest tests/test_unit.py tests/test_api.py
-TEST_RESULT=$?
-set -e 
 
-if [ $TEST_RESULT -ne 0 ]; then
+if ! python -m pytest tests/; then
     echo "ERROR: Tests failed! Performing rollback to the previous version..."
-    
     git reset --hard ORIG_HEAD
-    
+    echo "Restarting main application service to apply rollback..."
+    sudo systemctl restart app.service
     exit 1
 fi
 

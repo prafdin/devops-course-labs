@@ -41,9 +41,9 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
             if ref.startswith("refs/heads/"):
                 branch = ref.replace("refs/heads/", "")
             else:
-                branch = "main"
+                branch = "lab1"
         except Exception:
-            branch = "main"
+            branch = "lab1"
 
         background_tasks.add_task(run_deploy_script, branch)
         return {"status": f"Deployment task has been started for {branch}"}
