@@ -8,7 +8,7 @@ if[ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
 fi
 
 DEPLOY_PORT=${DEPLOY_PORT:-22}
-IMAGE_NAME=${IMAGE_NAME,,} # Переводим в нижний регистр для Docker
+IMAGE_NAME=${IMAGE_NAME,,}
 TARGET_DIR="~/catty-app"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
@@ -16,13 +16,10 @@ echo "Image: $IMAGE_NAME:$RELEASE_HASH"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
-# 1. Создаем папку на сервере
 ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p $TARGET_DIR"
 
-# 2. Копируем docker-compose.yaml на сервер
 scp $SSH_OPTIONS docker-compose.yaml "$DEPLOY_USER@$DEPLOY_HOST:$TARGET_DIR/docker-compose.yaml"
 
-# 3. Выполняем деплой через docker compose
 ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
     
