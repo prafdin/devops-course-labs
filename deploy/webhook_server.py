@@ -5,7 +5,7 @@ import uvicorn
 
 app = FastAPI()
 
-def run_deploy_script():
+def run_deploy_script(branch: str = "main"):
     """Запускает bash-скрипт развертывания."""
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +13,7 @@ def run_deploy_script():
         
         # Запускаем скрипт, ожидая его завершения
         result = subprocess.run(
-            ["bash", script_path], 
+            ["bash", script_path, branch], 
             capture_output=True, 
             text=True, 
             check=True
@@ -34,8 +34,19 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     event = request.headers.get("X-GitHub-Event", "ping")
     
     if event == "push":
-        background_tasks.add_task(run_deploy_script)
-        return {"status": "Deployment task has been started"}
+        # Читаем payload чтобы получить ветку
+        try:
+            payload = await request.json()
+            ref = payload.get("ref", "")
+            if ref.startswith("refs/heads/"):
+                branch = ref.replace("refs/heads/", "")
+            else:
+                branch = "main"
+        except Exception:
+            branch = "main"
+
+        background_tasks.add_task(run_deploy_script, branch)
+        return {"status": f"Deployment task has been started for {branch}"}
         
     return {"status": f"Ignored event: {event}"}
 

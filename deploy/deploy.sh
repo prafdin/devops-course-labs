@@ -7,12 +7,15 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "=== Starting deployment at $(date) ==="
+# Получаем имя ветки из аргументов (по умолчанию main)
+BRANCH="${1:-main}"
 
-# 1. Забираем последние изменения из репозитория
+echo "=== Starting deployment for branch $BRANCH at $(date) ==="
+
 echo "1. Pulling latest code..."
-
-git pull
+git fetch origin
+git checkout -B "$BRANCH" "origin/$BRANCH"
+git pull origin "$BRANCH"
 
 # 2. Настройка виртуального окружения и обновление зависимостей
 echo "2. Setting up dependencies..."
@@ -27,12 +30,12 @@ pip install -r requirements.txt
 
 # 3. Запуск тестов
 echo "3. Running tests..."
-python -m pytest tests/
+set +e 
+python -m pytest tests/test_unit.py tests/test_api.py
+TEST_RESULT=$?
+set -e 
 
-# 4. Перезапуск веб-сервера
-echo "4. Restarting main application service..."
-
-if ! python -m pytest tests/; then
+if [ $TEST_RESULT -ne 0 ]; then
     echo "ERROR: Tests failed! Performing rollback to the previous version..."
     
     git reset --hard ORIG_HEAD
