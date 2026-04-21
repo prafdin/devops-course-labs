@@ -17,8 +17,8 @@ jobs:
 
       - name: Execute deployment script
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
+          GHCR_USER: only-hell
         run: |
           chmod +x ./deploy.sh
           ./deploy.sh ${{ github.event.workflow_run.head_sha }}
