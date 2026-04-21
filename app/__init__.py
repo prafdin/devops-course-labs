@@ -18,7 +18,7 @@ with open('config.json') as config_json:
 
 # Позволяем переопределить хост БД через переменную окружения
 if os.getenv("DB_HOST"):
-  db_config['host'] = os.getenv("DB_HOST")
+  db_config["host"] = os.getenv("DB_HOST", db_config["host"])
 
 DEPLOY_REF = os.getenv("DEPLOY_REF", "NA")
 

@@ -25,6 +25,9 @@ jobs:
           docker push $IMAGE
 
       - name: Deploy
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
         run: |
           chmod +x ./deploy.sh
           ./deploy.sh ${{ github.sha }}
