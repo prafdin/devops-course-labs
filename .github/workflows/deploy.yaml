@@ -10,15 +10,10 @@ jobs:
     runs-on: self-hosted
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
       - name: Execute deployment script
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
           GHCR_USER: only-hell
         run: |
-          chmod +x ./deploy.sh
-          ./deploy.sh ${{ github.event.workflow_run.head_sha }}
+          chmod +x ~/catty-reminders-app/deploy.sh
+          ~/catty-reminders-app/deploy.sh ${{ github.event.workflow_run.head_sha }}
