@@ -15,4 +15,4 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3107
-          script: bash ~/lab2/catty-reminders-app/run_app.sh ${{ github.sha }}
+          script: bash /home/vboxuser/lab2/catty-reminders-app/run_app.sh ${{ github.sha }}
