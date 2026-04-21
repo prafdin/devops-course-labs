@@ -8,21 +8,28 @@ services:
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     pull_policy: always
 
   db:
-    image: mysql:latest
+    image: mysql:8.0
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=mypass
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=mypass
-      - MYSQL_DATABASE=catty_reminders
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_USER: user
+      MYSQL_PASSWORD: mypass
+      MYSQL_DATABASE: catty_reminders
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pmypass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
     volumes:
       - db-data:/var/lib/mysql
     networks:
