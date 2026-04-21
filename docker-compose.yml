@@ -15,23 +15,19 @@ services:
     pull_policy: always
 
   db:
-    image: mariadb:11
+    image: mysql:latest
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD: mypass
-      - MARIADB_DATABASE: catty_reminders
-      - MARIADB_USER: user
-      - MARIADB_PASSWORD: mypass
+      - MYSQL_ROOT_PASSWORD=mypass
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=mypass
+      - MYSQL_DATABASE=catty_reminders
+    ports:
+      - "8181:8181"
     volumes:
-      - db-data:/var/lib/mysql
+      - db_data:/var/lib/mysql
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
 
 volumes:
   db-data:
