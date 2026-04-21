@@ -21,5 +21,7 @@ jobs:
           script: |
             set -e
             cd /home/deemeed/catty-reminders-app
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }} ${{ secrets.GITHUB_TOKEN }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export DEPLOY_REF=${{ github.sha }}
+            export IMAGE=ghcr.io/$OWNER/${{ github.event.repository.name }}:${{ github.sha }}
+            docker compose up -d --pull always --remove-orphans --force-recreate 
