@@ -1,7 +1,5 @@
 FROM python:3.14-slim
 
-#LABEL org.opencontainers.image.source https://github.com/Deemeed/catty-reminders-app
-
 WORKDIR /catty-app
 
 COPY requirements.txt .
@@ -11,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY static/ ./static/
 COPY templates/ ./templates/
-COPY config.json .
 
 EXPOSE 8181
 

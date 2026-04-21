@@ -21,6 +21,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: docker-lint
+
+    services:
+      db:
+        image: mariadb:11.8.6-ubi9
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
