@@ -18,14 +18,16 @@ services:
     image: mariadb:11
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: mypass
-      MYSQL_DATABASE: catty_reminders
+      MARIADB_ROOT_PASSWORD: mypass
+      MARIADB_DATABASE: catty_reminders
+      MARIADB_USER: user
+      MARIADB_PASSWORD: mypass
     volumes:
       - db-data:/var/lib/mysql
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pmypass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
