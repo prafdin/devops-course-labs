@@ -1,27 +1,29 @@
 #!/bin/bash
 set -e
 
-SHA=$1
-if [ -z "$SHA" ]; then
-  echo "Usage: $0 <sha>"
+DEPLOY_SHA=$1
+
+if [ -z "$DEPLOY_SHA" ]; then
+  echo "Error: SHA not provided"
   exit 1
 fi
 
-REPO_OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" 2>/dev/null || echo "only-hell")
-IMAGE="ghcr.io/only-hell/catty-reminders-app:${SHA}"
+IMAGE="ghcr.io/only-hell/catty-reminders-app:${DEPLOY_SHA}"
 
-echo "Deploying with SHA: $SHA"
-echo "Image: $IMAGE"
+echo "Deploying with SHA: ${DEPLOY_SHA}"
+echo "Image: ${IMAGE}"
 
-# Логин в ghcr.io если переданы credentials
-if [ -n "$GHCR_TOKEN" ] && [ -n "$GHCR_USER" ]; then
-  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-fi
+cd ~/catty-reminders-app
 
-# Обновляем .env
-sed -i "s|^DEPLOY_REF=.*|DEPLOY_REF=${SHA}|" .env
+# Login to GHCR
+echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+
+# Обновляем IMAGE и DEPLOY_REF в .env
 sed -i "s|^IMAGE=.*|IMAGE=${IMAGE}|" .env
+sed -i "s|^DEPLOY_REF=.*|DEPLOY_REF=${DEPLOY_SHA}|" .env
 
-# Деплой
-docker compose pull
-docker compose up -d --remove-orphans
+# Останавливаем старые контейнеры
+docker compose down --remove-orphans
+
+# Запускаем новые контейнеры
+docker compose up -d --pull always
