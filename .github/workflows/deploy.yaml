@@ -11,29 +11,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies (if needed for build)
-        run: pip install -r requirements.txt
-
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to server
-        uses: appleboy/ssh-action@v1
-        with:
-          host: course.prafdin.ru
-          port: 3113
-          username: hesa
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new -p 3113 hesa@course.prafdin.ru "
             cd /home/hesa/catty-reminders-app
             git fetch --all
             git reset --hard ${{ github.sha }}
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
+            echo 'DEPLOY_REF=${{ github.sha }}' | sudo tee /etc/catty-app-env
             sudo systemctl restart catty
+          "
