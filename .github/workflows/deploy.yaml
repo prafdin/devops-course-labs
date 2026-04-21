@@ -1,27 +1,17 @@
-name: CD
-
-on:
-  release:
-    types: [published]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to server
-        run: |
-          ssh -o StrictHostKeyChecking=accept-new -p 3113 hesa@course.prafdin.ru "
-            cd /home/hesa/catty-reminders-app
-            git fetch --all
-            git reset --hard ${{ github.sha }}
-            echo 'DEPLOY_REF=${{ github.sha }}' | sudo tee /etc/catty-app-env
-            sudo systemctl restart catty
-          "
+- name: Deploy to server
+  uses: appleboy/ssh-action@v1
+  with:
+    host: course.prafdin.ru
+    port: 3113
+    username: hesa
+    key: ${{ secrets.SSH_PRIVATE_KEY }}
+    script: |
+      set -x  # включает режим отладки
+      cd /home/hesa/catty-reminders-app
+      git fetch --all
+      git reset --hard ${{ github.sha }}
+      echo "DEPLOY_REF=${{ github.sha }}" > /tmp/test_env
+      cat /tmp/test_env
+      echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
+      cat /etc/catty-app-env
+      sudo systemctl restart catty
