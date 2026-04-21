@@ -12,8 +12,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Execute deployment script
         run: |
           chmod +x ./deploy.sh
-          ./deploy.sh ${{ github.sha }}
+          ./deploy.sh ${{ github.event.workflow_run.head_sha }}

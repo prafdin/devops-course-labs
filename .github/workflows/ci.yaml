@@ -1,4 +1,4 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
@@ -65,6 +65,7 @@ jobs:
       - name: Start app
         env:
           DEPLOY_REF: ${{ github.sha }}
+          DB_HOST: 127.0.0.1
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
