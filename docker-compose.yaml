@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: ${NAME_DB}
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_DATABASE=${DB_DATABASE}
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+
+  catty-app:
+    image: ${IMAGE}
+    container_name: ${NAME_APP}
+    restart: always
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF}
+    ports: 
+      - "${APP_PORT}:${APP_PORT}"
+
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
+    depends_on:
+      - db
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
