@@ -2,7 +2,7 @@ services:
   db:
     image: mysql:8
     container_name: catty-db
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: catty
@@ -21,7 +21,7 @@ services:
     build: .
     image: ghcr.io/artem362a/catty-reminders-app:${IMAGE_TAG:-lab4}
     container_name: catty-app
-    restart: always
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy

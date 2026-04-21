@@ -30,11 +30,36 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          playwright install --with-deps chromium
 
-      - name: Run unit tests
+      - name: Prepare env
+        run: |
+          printf "IMAGE_TAG=lab4\nDEPLOY_REF=ci-test\n" > .env
+
+      - name: Start app via Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for app
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8181/login > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time"
+          docker compose logs
+          exit 1
+
+      - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest tests/test_unit.py --junitxml=test_result.xml
+        run: pytest --junitxml=test_result.xml
+
+      - name: Show compose logs on failure
+        if: failure()
+        run: docker compose logs
 
       - name: Upload test results
         if: always()
@@ -42,6 +67,10 @@ jobs:
         with:
           name: test_result
           path: test_result.xml
+
+      - name: Stop compose stack
+        if: always()
+        run: docker compose down
 
   docker:
     runs-on: ubuntu-latest
