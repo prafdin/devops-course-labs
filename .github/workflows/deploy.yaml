@@ -23,9 +23,9 @@ jobs:
 
             echo "DEPLOY_REF=${{ github.sha }}" > .env
 
+            docker compose down
             docker compose pull
-            docker compose up -d
-            rm -f .env
+            docker compose up -d --force-recreate
 
             echo "⏳ Waiting for application..."
             for i in {1..20}; do
