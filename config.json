@@ -6,7 +6,7 @@
   },
   "db_config": {
     "host": "db",
-    "port": 3306,
+    "port": 5432,
     "user": "root",
     "password": "mypass",
     "database": "catty_reminders"
