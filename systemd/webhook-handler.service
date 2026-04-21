@@ -1,0 +1,19 @@
+[Service]
+User=hesa
+Environment="HOME=/home/hesa"
+Environment="USER=hesa"
+Environment="SSH_AUTH_SOCK=/run/user/$(id -u hesa)/keyring/ssh"
+
+[Unit]
+Description=Webhook Handler for Catty App
+After=network.target
+
+[Service]
+User=hesa
+WorkingDirectory=/home/hesa/webhook-handler
+ExecStart=/home/hesa/webhook-handler/venv/bin/python /home/hesa/webhook-handler/webhook_listener.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
