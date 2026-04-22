@@ -44,7 +44,8 @@ jobs:
 
       # В CI подменяем хост БД с 'db' на 127.0.0.1 (так как сервис слушает на localhost)
       - name: Patch config for CI
-        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
+        run: |
+          sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
