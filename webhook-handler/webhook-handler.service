@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=yaroslav
+WorkingDirectory=/home/yaroslav/webhook-handler
+ExecStart=/home/yaroslav/webhook-handler/venv/bin/python logic.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
