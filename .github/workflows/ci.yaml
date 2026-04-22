@@ -1,84 +1,81 @@
+# Проверка Dockerfile линтером, запуск тестов с БД, сборка и публикация образа
+
 name: CI
 
-# Триггеры запуска: при пуше в ветки lab3* или создании PR в lab3*
 on:
   push:
-    branches: [ lab3* ]
+    branches: [ lab4* ]
   pull_request:
-    branches: [ lab3* ]
+    branches: [ lab4* ]
 
 jobs:
-  # JOB 1: Запуск тестов
-  tests:
+  # Линтер Dockerfile с помощью hadolint (запускается в контейнере)
+  docker-lint:
     runs-on: ubuntu-latest
     steps:
-      # Клонируем репозиторий
       - uses: actions/checkout@v4
+      - name: Hadolint
+        run: docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
 
-      # Устанавливаем Python 3.12
-      - name: Set up Python 3.12
+  # Основной конвейер: тестирование приложения с временной БД
+  pipeline:
+    needs: docker-lint
+    runs-on: ubuntu-latest
+    services:
+      # Запуск MariaDB как сервиса GitHub Actions для тестов
+      db:
+        image: mariadb:11.8.6-ubi9
+        env:
+          MARIADB_ROOT_PASSWORD: mypass
+          MARIADB_DATABASE: catty_reminders
+        ports: [ 3306:3306 ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+        with: { python-version: "3.12" }
 
-      # Устанавливаем зависимости и Playwright
-      - name: Install deps
+      - name: Install dependencies
         run: |
-          pip install -r requirements.txt pytest-playwright
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt uvicorn pytest-playwright
           playwright install --with-deps chromium
 
-      # Запускаем приложение в фоне
-      - name: Start App
+      # В CI подменяем хост БД с 'db' на 127.0.0.1 (так как сервис слушает на localhost)
+      - name: Patch config for CI
+        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
+
+      - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          sleep 10
 
-      # Запускаем тесты с генерацией XML отчета
       - name: Run tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
+        env: { PYTHONPATH: "${{ github.workspace }}" }
         run: pytest --junitxml=test_result.xml
 
-      # Загружаем отчет о тестах как артефакт (всегда, даже если тесты упали)
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
-        with:
-          name: test_result
-          path: test_result.xml
-
-  # JOB 2: Сборка и пуш Docker образа (зависит от успешных тестов)
-  build-and-push:
-    needs: tests
+        with: { name: test_result, path: test_result.xml }
+    
+  # Сборка Docker-образа и публикация в GHCR (только при пуше, не при PR)
+  docker-build:
     runs-on: ubuntu-latest
-    # Запускаем только при пуше (не при PR)
+    needs: pipeline
     if: github.event_name == 'push'
-    permissions:
-      contents: read
-      packages: write  # Нужно для пуша в GitHub Container Registry
-
+    permissions: { contents: read, packages: write }
     steps:
       - uses: actions/checkout@v4
-
-      # Приводим имя репозитория к нижнему регистру (Docker не принимает заглавные)
-      - name: Prepare Image Name
-        id: prep
-        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      # Логинимся в GitHub Container Registry (GHCR)
       - name: Login to GHCR
         uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Собираем образ и пушим с двумя тегами: latest и SHA коммита
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .                    # Контекст сборки — корень репозитория
-          push: true                   # Пушим в registry
+          context: .
+          push: true
           tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
