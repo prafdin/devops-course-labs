@@ -23,9 +23,6 @@ services:
       - DEPLOY_REF=${DEPLOY_REF}
     ports: 
       - "${APP_PORT}:${APP_PORT}"
-
-    volumes:
-      - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
       - db
     networks:
