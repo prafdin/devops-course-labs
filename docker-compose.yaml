@@ -1,0 +1,44 @@
+# Описывает сервисы базы данных и приложения, сеть и том для данных.
+
+services:
+  # Сервис базы данных MariaDB (хранилище пользователей и напоминаний)
+  db:
+    image: mariadb:11
+    container_name: catty-db
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+    ports:
+      - "${HOST_DB_PORT}:${CONTEINER_DB_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql   # Постоянный том для данных БД
+    networks:
+      - catty-network
+
+  # Основной сервис FastAPI приложения
+  catty-app:
+    image: ${IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    restart: always
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF}
+    ports: 
+      - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro   # Монтируем конфиг только для чтения
+    depends_on:
+      - db                       # Ждём запуска базы данных
+    networks:
+      - catty-network
+
+# Общая сеть bridge для взаимодействия контейнеров
+networks:
+  catty-network:
+    driver: bridge
+
+# Именованный том для сохранения данных БД при перезапуске контейнера
+volumes:
+  db_data:
