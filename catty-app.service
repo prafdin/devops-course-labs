@@ -3,12 +3,11 @@ Description=Catty Reminders App
 After=network.target
 
 [Service]
-Type=simple
 User=yaroslav
 WorkingDirectory=/home/yaroslav/devops-lab/catty-reminders-app
 Environment="PATH=/home/yaroslav/devops-lab/catty-reminders-app/venv/bin"
-EnvironmentFile=/home/yaroslav/devops-lab/catty-reminders-app/.env
-ExecStart=/home/yaroslav/devops-lab/catty-reminders-app/start-app.sh
+EnvironmentFile=/etc/catty-app-env
+ExecStart=/home/yaroslav/devops-lab/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 RestartSec=5
 
