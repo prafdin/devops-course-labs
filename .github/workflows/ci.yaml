@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-lint
 
+
     services:
       db:
         image: mariadb:11.8.6-ubi9
@@ -44,7 +45,9 @@ jobs:
           pip install -r requirements.txt
           pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
-
+      - name: Add record to /etc/hosts
+        run: |
+         echo "127.0.0.1       db" | sudo tee -a /etc/hosts
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
