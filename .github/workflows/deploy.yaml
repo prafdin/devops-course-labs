@@ -8,6 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: course.prafdin.ru
+          username: sergo
+          port: 3163
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yaml,config.json"
+          target: "/home/sergo/catty-reminders-app"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -16,27 +27,24 @@ jobs:
           port: 3163
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash -c '
-              set -e
-              cd /home/sergo/catty-reminders-app
+            set -e
+            cd /home/sergo/catty-reminders-app
 
-              OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-              
-              export DEPLOY_REF=${{ github.sha }}
-              export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
-              
-              export DB_CONTAINER_NAME=catty-db
-              export APP_CONTAINER_NAME=catty-app
-              export MARIADB_ROOT_PASSWORD=mypass
-              export MARIADB_USER=sergo
-              export MARIADB_PASSWORD=mypass
-              export MARIADB_DATABASE=catty_reminders
-              export HOST_DB_PORT=3306
-              export CONTEINER_DB_PORT=3306
-              export HOST_APP_PORT=8181
-              export CONTEINER_APP_PORT=8181
+            OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
+            export DEPLOY_REF=${{ github.sha }}
+            export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
+            
+            export DB_CONTAINER_NAME=catty-db
+            export APP_CONTAINER_NAME=catty-app
+            export MARIADB_ROOT_PASSWORD=mypass
+            export MARIADB_USER=sergo
+            export MARIADB_PASSWORD=mypass
+            export MARIADB_DATABASE=catty_reminders
+            export HOST_DB_PORT=3306
+            export CONTEINER_DB_PORT=3306
+            export HOST_APP_PORT=8181
+            export CONTEINER_APP_PORT=8181
 
-              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-              docker compose up -d --pull always --remove-orphans --force-recreate 
-            '
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            docker compose up -d --pull always --remove-orphans --force-recreate
