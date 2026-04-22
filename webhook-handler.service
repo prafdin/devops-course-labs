@@ -1,0 +1,13 @@
+[Unit]
+Description=Webhook Handler (Flask + Gunicorn)
+After=network.target
+
+[Service]
+User=vboxuser
+WorkingDirectory=/home/vboxuser/webhook-handler
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/vboxuser/webhook-handler/venv/bin/gunicorn -w 1 -b 0.0.0.0:8080 logic:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
