@@ -5,13 +5,10 @@
     port: 3113
     username: hesa
     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    pty: true
     script: |
-      set -x  # включает режим отладки
       cd /home/hesa/catty-reminders-app
       git fetch --all
       git reset --hard ${{ github.sha }}
-      echo "DEPLOY_REF=${{ github.sha }}" > /tmp/test_env
-      cat /tmp/test_env
       echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
-      cat /etc/catty-app-env
-      sudo systemctl restart catty
+      sudo /usr/bin/systemctl restart catty
