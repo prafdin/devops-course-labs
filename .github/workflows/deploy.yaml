@@ -1,6 +1,5 @@
+# Workflow для автоматического развёртывания при создании релиза
 name: Deploy
-
-# Триггер: запуск при публикации нового релиза
 on:
   release:
     types: [published]
@@ -9,40 +8,39 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Клонируем репозиторий (нужно для получения имени репозитория)
       - uses: actions/checkout@v4
-
-      # Приводим имя репозитория к нижнему регистру (Docker не принимает заглавные буквы)
-      - name: Prepare Image Name
-        id: prep
-        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      # Подключаемся к серверу по SSH и выполняем деплой Docker контейнера
-      - name: Remote Docker Deploy
+      # Подключение к серверу по SSH и выполнение команд
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: course.prafdin.ru                    # Хост для подключения (FRP сервер)
-          username: ilya                             # Имя пользователя на ВМ
-          key: ${{ secrets.SSH_PRIVATE_KEY }}        # Приватный ключ из секретов GitHub
-          port: 3117                                 # Порт для SSH (проброшен через FRP)
+          host: course.prafdin.ru
+          username: ilya
+          port: 3117
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Формируем полное имя образа в GHCR
-            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-            CONTAINER_NAME="catty-container"
-            
-            # Логинимся в GitHub Container Registry (используем GITHUB_TOKEN)
-            echo "Logging in to GHCR..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Скачиваем последнюю версию образа
-            echo "Pulling image: $IMAGE"
-            docker pull $IMAGE
-            
-            # Останавливаем и удаляем старый контейнер (если есть)
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-            
-            # Запускаем новый контейнер
-            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart unless-stopped -e DEPLOY_REF=${{ github.sha }} $IMAGE            
-            # Удаляем неиспользуемые образы (экономия места)
-            docker image prune -f
+            bash -c '
+              set -e
+              cd /home/ilya/catty-reminders-app
+              # Приводим имя владельца репозитория к нижнему регистру (для GHCR)
+              OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
+              
+              export DEPLOY_REF=${{ github.sha }}
+              export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
+              
+              # Переменные окружения для базы данных и приложения
+              export DB_CONTAINER_NAME=catty-db
+              export APP_CONTAINER_NAME=catty-app
+              export MARIADB_ROOT_PASSWORD=mypass
+              export MARIADB_USER=ilya
+              export MARIADB_PASSWORD=mypass
+              export MARIADB_DATABASE=catty_reminders
+              export HOST_DB_PORT=3306
+              export CONTEINER_DB_PORT=3306
+              export HOST_APP_PORT=8181
+              export CONTEINER_APP_PORT=8181
+
+              # Логинимся в GitHub Container Registry
+              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              # Запускаем (или обновляем) стек Docker Compose
+              docker compose up -d --pull always --remove-orphans --force-recreate 
+            '
