@@ -6,8 +6,12 @@ import json
 import subprocess
 import os
 import urllib.parse
+import uuid
 
 PORT = 8181
+
+# Простое хранилище сессий (в реальном проекте используйте БД)
+sessions = {}
 
 class AppHandler(BaseHTTPRequestHandler):
     
@@ -46,10 +50,22 @@ class AppHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode())
             
         elif self.path == '/login':
+            # Показываем форму логина для GET запроса (если нужно)
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok", "message": "Login successful"}).encode())
+            html = """
+            <html>
+            <body>
+                <form method="POST">
+                    Username: <input type="text" name="username"><br>
+                    Password: <input type="password" name="password"><br>
+                    <input type="submit" value="Login">
+                </form>
+            </body>
+            </html>
+            """
+            self.wfile.write(html.encode())
             
         elif self.path == '/health':
             self.send_response(200)
@@ -66,18 +82,23 @@ class AppHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
-            # Парсим данные формы или JSON
+            # Парсим данные формы
             try:
-                if 'application/json' in self.headers.get('Content-Type', ''):
-                    data = json.loads(post_data.decode('utf-8'))
-                else:
-                    data = urllib.parse.parse_qs(post_data.decode('utf-8'))
+                data = urllib.parse.parse_qs(post_data.decode('utf-8'))
+                username = data.get('username', [''])[0]
+                password = data.get('password', [''])[0]
                 
-                # Простая валидация (можно любые логин/пароль для тестов)
+                # Создаем сессию (для теста подойдет любой логин/пароль)
+                session_id = str(uuid.uuid4())
+                sessions[session_id] = {'username': username, 'authenticated': True}
+                
+                # Отправляем ответ с cookie
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
+                self.send_header('Set-Cookie', f'session_id={session_id}; Path=/')
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "ok", "message": "Login successful"}).encode())
+                
             except Exception as e:
                 self.send_response(400)
                 self.send_header('Content-type', 'application/json')
@@ -96,7 +117,7 @@ class AppHandler(BaseHTTPRequestHandler):
                     timeout=30
                 )
                 
-                # Перезапуск сервиса (ОБЯЗАТЕЛЬНО для обновления commit hash!)
+                # Перезапуск сервиса
                 subprocess.Popen(
                     ["sudo", "systemctl", "restart", "devops-app"],
                     stdout=subprocess.DEVNULL,
