@@ -34,8 +34,8 @@ jobs:
             cat .env
 
             docker compose down
-            docker compose pull
-            docker compose up -d --force-recreate
+            docker pull ghcr.io/mappy12/catty-reminders-app:${DEPLOY_REF}
+            docker compose up -d
 
             sleep 3
 
