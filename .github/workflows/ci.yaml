@@ -2,59 +2,93 @@ name: CI - Test and Build
 
 on:
   push:
+    branches:
+      - lab4*
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - lab4*
 
 jobs:
-  test:
-    name: Run Python Tests
+  docker-lint:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hadolint
+        run: |
+          docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
+
+  pipeline:
+    needs: docker-lint
+    if: success()
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: mypass
+          MYSQL_DATABASE: catty_reminders
+          MYSQL_USER: catty_user
+          MYSQL_PASSWORD: catty_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -pmypass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
-          pip install playwright
-          playwright install chromium --with-deps
+          pip install uvicorn pytest-playwright pymysql
+          playwright install --with-deps chromium
 
-      - name: Start FastAPI server
+      - name: Patch config for CI
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8181 &
-          sleep 5
+          sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
+          cat config.json   # для отладки
+
+      - name: Start app
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 10
 
       - name: Run tests
-        run: |
-          export PYTHONPATH=$PYTHONPATH:$PWD
-          pytest tests/ -v --junitxml=test_results.xml --cov=. --cov-report=xml --cov-report=html
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest tests/ -v --junitxml=test_result.xml --cov=. --cov-report=xml
 
       - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
           path: |
-            test_results.xml
+            test_result.xml
             coverage.xml
             htmlcov/
           if-no-files-found: warn
 
-      - name: Check application imports
-        run: |
-          python -c "import sys; sys.path.insert(0, '.'); from app.main import app; print('✅ Application imports successfully')"
-
-  docker:
-    name: Build and Push Docker Image
+  docker-build:
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push'
+    needs: pipeline
+    if: success()
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
