@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 import datetime
 
 app = Flask(__name__)
@@ -16,13 +16,17 @@ def hello():
         </body>
     </html>
     """
-@app.route('/login')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        return jsonify({"success": True, "message": "Login successful"}), 200
+    # GET request
     return jsonify({"message": "Login endpoint for testing"}), 200
-    
+
 @app.route('/health')
 def health():
-    return "OK 200", 200
+    return "OK", 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8181)
