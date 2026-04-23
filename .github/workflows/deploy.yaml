@@ -22,8 +22,6 @@ jobs:
 
             cd /home/mappy/Desktop/catty-reminders-app
 
-            sed -i 's/"host": "localhost"/"host": "db"/' config.json
-
             echo "=== Деплой через Docker Compose ==="
             
             mkdir -p data
@@ -37,7 +35,7 @@ jobs:
 
             docker compose down
             docker compose pull
-            docker compose --env-file .env up -d --pull always --force-recreate
+            docker compose up -d
 
             sleep 3
 

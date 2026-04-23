@@ -3,7 +3,7 @@
         {"username": "tester", "password": "foobar123"}
     ],
     "db_config": {
-        "host": "localhost",
+        "host": "db",
         "port": 3306,
         "user": "root",
         "password": "rootpass",
