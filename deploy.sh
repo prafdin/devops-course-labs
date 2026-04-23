@@ -17,7 +17,7 @@ docker stop catty-reminders-app 2>/dev/null || true
 docker rm catty-reminders-app 2>/dev/null || true
 
 docker run -d \
-    --name catty-container \
+    --name catty-reminders-app \
     -p 8181:8181 \
     --restart unless-stopped \
     -e DEPLOY_REF=$DEPLOY_REF \
