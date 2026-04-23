@@ -1,6 +1,6 @@
 services:
   catty-app:
-    image: ghcr.io/timurmif/catty-reminders-app:latest
+    image: ${APP_IMAGE:-ghcr.io/timurmif/catty-reminders-app:latest}
     container_name: catty-app
     restart: unless-stopped
     environment:
