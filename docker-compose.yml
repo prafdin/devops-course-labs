@@ -1,0 +1,43 @@
+services:
+  catty-app:
+    image: ghcr.io/timurmif/catty-reminders-app:latest
+    container_name: catty-app
+    restart: unless-stopped
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF:-NA}
+      - MYSQL_HOST=db
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    ports:
+      - "8181:8181"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - catty-network
+
+  db:
+    image: mysql:8.0
+    container_name: catty-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
