@@ -8,6 +8,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.PROXY_HOST }}
+          port: ${{ vars.SSH_PORT }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "/opt/catty-reminders/"
+          strip_components: 0
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -16,52 +30,39 @@ jobs:
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
             cd /opt/catty-reminders
 
-            # Приводим имя владельца к нижнему регистру (для GHCR)
-            OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-            export DEPLOY_REF=${{ github.sha }}
-            export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
-            export APP_IMAGE=$IMAGE
-            export DB_CONTAINER_NAME=catty-db
-            export APP_CONTAINER_NAME=catty-app
-            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            export MYSQL_USER=${{ secrets.MYSQL_USER }}
-            export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-
-            # Логинимся в GHCR
+            # Логин в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Создаём или обновляем .env на сервере
+            # Создаём .env файл из секретов GitHub
             cat > .env <<EOF
-            MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-            MYSQL_USER=$MYSQL_USER
-            MYSQL_PASSWORD=$MYSQL_PASSWORD
-            MYSQL_DATABASE=$MYSQL_DATABASE
-            DEPLOY_REF=$DEPLOY_REF
-            APP_IMAGE=$APP_IMAGE
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+            DEPLOY_REF=${{ github.sha }}
             EOF
 
-            # Скачиваем новый образ (ждём его готовности до 5 минут)
-            for i in {1..30}; do
-              if docker pull $IMAGE; then
-                echo "✅ Image pulled successfully"
-                break
-              fi
-              echo "⏳ Waiting for image to be built... ($i/30)"
-              sleep 10
-            done
+            # Останавливаем старые контейнеры (если есть) и удаляем их
+            docker compose down --remove-orphans || true
 
-            # Перезапускаем стек
-            docker compose --env-file .env up -d --force-recreate --remove-orphans
+            # Скачиваем свежие образы и запускаем стек
+            docker compose pull
+            docker compose up -d
 
+            # Ждём и проверяем работоспособность
             sleep 5
             if curl -s --fail http://localhost:8181/login; then
-              echo "✅ Deployment successful"
+              echo "✅ Docker Compose stack started successfully"
             else
-              echo "❌ Failed"
+              echo "❌ Application failed to start"
               docker compose logs
               exit 1
             fi
+
+      - name: Verify external access
+        run: |
+          sleep 5
+          curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
+          echo "✅ Application is accessible at http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}"
