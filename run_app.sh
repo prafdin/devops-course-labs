@@ -1,6 +1,6 @@
 #!/bin/bash
 # 1. Заходим в папку проекта
-cd /home/ilya/catty-reminders-app || exit 1
+cd /home/dima/devops/catty-reminders-app || exit 1
 
 SHA=$1
 echo "Deploying SHA: $SHA"
@@ -10,7 +10,7 @@ git fetch --all
 git reset --hard "$SHA"
 
 # 3. Обновляем зависимости
-/home/ilya/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
+/home/dima/devops/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
 
 # 4. Сохраняем DEPLOY_REF для отображения на сайте
 echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env

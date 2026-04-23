@@ -11,8 +11,8 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: ilya
+          username: dima
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3120
+          port: 3105
           # Вызываем скрипт и передаем SHA коммита
-          script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
+          script: bash ~/devops/catty-reminders-app/run_app.sh ${{ github.sha }}
