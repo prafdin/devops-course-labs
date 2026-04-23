@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=vboxuser
+WorkingDirectory=/home/vboxuser/webhook-handler
+ExecStart=/home/vboxuser/webhook-handler/venv/bin/python /home/vboxuser/webhook-handler/webhook_handler.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
