@@ -10,7 +10,7 @@ import uuid
 
 PORT = 8181
 
-# Простое хранилище сессий (в реальном проекте используйте БД)
+# Простое хранилище сессий
 sessions = {}
 
 class AppHandler(BaseHTTPRequestHandler):
@@ -50,7 +50,6 @@ class AppHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode())
             
         elif self.path == '/login':
-            # Показываем форму логина для GET запроса (если нужно)
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -78,21 +77,17 @@ class AppHandler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         if self.path == '/login':
-            # Читаем тело запроса
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
-            # Парсим данные формы
             try:
                 data = urllib.parse.parse_qs(post_data.decode('utf-8'))
                 username = data.get('username', [''])[0]
                 password = data.get('password', [''])[0]
                 
-                # Создаем сессию (для теста подойдет любой логин/пароль)
                 session_id = str(uuid.uuid4())
                 sessions[session_id] = {'username': username, 'authenticated': True}
                 
-                # Отправляем ответ с cookie
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Set-Cookie', f'session_id={session_id}; Path=/')
@@ -106,11 +101,19 @@ class AppHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode())
         
         elif self.path == '/webhook':
-            # Обработка webhook от GitHub
             try:
-                # Pull последних изменений
+                # Fetch последних изменений
+                subprocess.run(
+                    ["git", "fetch", "origin"],
+                    cwd=os.path.dirname(__file__),
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                # Принудительное обновление до последнего коммита из ветки lab1
                 result = subprocess.run(
-                    ["git", "pull"],
+                    ["git", "reset", "--hard", "origin/lab1"],
                     cwd=os.path.dirname(__file__),
                     capture_output=True,
                     text=True,
@@ -142,7 +145,6 @@ class AppHandler(BaseHTTPRequestHandler):
             self.end_headers()
     
     def log_message(self, format, *args):
-        # Уменьшаем шум в логах
         print(f"{datetime.now()} - {format % args}")
 
 def main():
