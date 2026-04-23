@@ -1,0 +1,31 @@
+name: catty-reminders
+
+services:
+  app:
+    build: .
+    image: ghcr.io/mappy12/catty-reminders-app:latest
+    container_name: catty-app
+    ports:
+      - "8181:8181"
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF:-development}
+    depends_on:
+      - db
+    volumes:
+      - ./data:/app/data
+      - ./data/reminder_db.json:/app/reminder_db.json
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: catty-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=catty
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:

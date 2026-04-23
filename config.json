@@ -4,10 +4,10 @@
     ],
     "db_config": {
         "host": "localhost",
-        "port": 5432,
-        "user": "user",
-        "password": "password",
-        "database": "catty"
+        "port": 3306,
+        "user": "root",
+        "password": "rootpass",
+        "database": "catty_reminders"
     },
     "db_path": "reminder_db.json",
     "secret_key": "Cats are awesome!"

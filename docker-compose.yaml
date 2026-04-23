@@ -14,15 +14,14 @@ services:
     restart: always
 
   db:
-    image: postgres:15-alpine
+    image: mysql:8.0
     container_name: catty-db
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=catty
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: catty_reminders
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
     restart: always
 
 volumes:
-  postgres_data:
+  mysql_data:
