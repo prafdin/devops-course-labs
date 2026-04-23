@@ -15,4 +15,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3105
           # Вызываем скрипт и передаем SHA коммита
-          script: bash ~/devops/catty-reminders-app/run_app.sh ${{ github.sha }}
+          script: bash /home/dima/devops/catty-reminders-app/run_app.sh ${{ github.sha }}
