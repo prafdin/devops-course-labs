@@ -17,6 +17,7 @@ services:
     image: mysql:8.0
     container_name: catty-db
     environment:
+      MYSQL_USER: root
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: catty_reminders
     volumes:
