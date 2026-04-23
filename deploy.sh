@@ -4,19 +4,23 @@ echo "======================================"
 echo "Начинаем деплой сервиса..."
 echo "======================================"
 
-SERVICE="catty-app"
-
 DEPLOY_REF=$1
-echo "DEPLOY_REF=$DEPLOY_REF" > /home/mb/catty-reminders-app/.env
+GITHUB_TOKEN=$2
 
-sudo systemctl daemon-reload
-sudo systemctl enable $SERVICE
-sudo systemctl restart $SERVICE
+IMAGE="ghcr.io/barnaeva/catty-reminders-app:$DEPLOY_REF"
 
-sleep 2
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u barnaeva --password-stdin
 
-if systemctl is-active --quiet $SERVICE; then
-    echo "ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН!"
-else
-    echo "ОШИБКА! СЕРВИС НЕ ЗАПУСТИЛСЯ"
-fi
+docker pull $IMAGE
+
+docker stop catty-reminders-app 2>/dev/null || true
+docker rm catty-reminders-app 2>/dev/null || true
+
+docker run -d \
+    --name catty-container \
+    -p 8181:8181 \
+    --restart unless-stopped \
+    -e DEPLOY_REF=$DEPLOY_REF \
+    $IMAGE_NAME
+
+echo "Деплой завершен!"

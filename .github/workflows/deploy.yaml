@@ -17,6 +17,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/mb/catty-reminders-app
-            git pull origin lab2
+            git pull origin lab3
             chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            ./deploy.sh ${{ github.sha }} ${{ secrets.GITHUB_TOKEN }}
