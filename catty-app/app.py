@@ -16,7 +16,10 @@ def hello():
         </body>
     </html>
     """
-
+@app.route('/login')
+def login():
+    return jsonify({"message": "Login endpoint for testing"}), 200
+    
 @app.route('/health')
 def health():
     return "OK 200", 200
