@@ -1,14 +1,14 @@
 {
-  "secret_key": "Cats are awesome!",
-  "users": {
-    "heisenberg": "P@ssw0rd",
-    "tester": "foobar123"
-  },
-  "db_config": {
-    "host": "db",
-    "port": 3306,
-    "user": "root",
-    "password": "rootpass",
-    "database": "catty_reminders"
-  }
+    "users": [
+        {"username": "tester", "password": "foobar123"}
+    ],
+    "db_config": {
+        "host": "db",
+        "port": 3306,
+        "user": "root",
+        "password": "rootpass",
+        "database": "catty_reminders"
+    },
+    "db_path": "reminder_db.json",
+    "secret_key": "Cats are awesome!"
 }
