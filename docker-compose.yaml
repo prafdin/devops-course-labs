@@ -1,30 +1,43 @@
-name: catty-reminders
-
 services:
   app:
-    build: .
-    image: ghcr.io/mappy12/catty-reminders-app:${DEPLOY_REF:-latest}
-    container_name: catty-app
+    image: ghcr.io/mappy12/catty-reminders-app:${DEPLOY_REF}
     ports:
       - "8181:8181"
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-development}
+      - DEPLOY_REF=${DEPLOY_REF}
     volumes:
-      - ./config.json:/app/config.json:ro
+      - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
-      - db
-    restart: always
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    pull_policy: always
 
   db:
     image: mysql:8.0
-    container_name: catty-db
-    environment:
-      MYSQL_USER: user
-      MYSQL_ROOT_PASSWORD: userpass
-      MYSQL_DATABASE: catty_reminders
-    volumes:
-      - mysql_data:/var/lib/mysql
     restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: userpass
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpass
+      MYSQL_DATABASE: catty_reminders
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -puserpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
 
 volumes:
-  mysql_data:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
