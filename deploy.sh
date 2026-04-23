@@ -21,6 +21,6 @@ docker run -d \
     -p 8181:8181 \
     --restart unless-stopped \
     -e DEPLOY_REF=$DEPLOY_REF \
-    $IMAGE_NAME
+    $IMAGE
 
 echo "Деплой завершен!"
