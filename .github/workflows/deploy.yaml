@@ -10,6 +10,7 @@ on:
       - lab4*
   release:
     types: [published]
+  workflow_dispatch:  # для ручного запуска
 
 jobs:
   deploy:
@@ -41,26 +42,48 @@ jobs:
           script: |
             cd /opt/catty-reminders
 
+            # Определяем ветку, которая вызвала workflow
+            BRANCH="${{ github.ref_name }}"
+            echo "Deploying branch: $BRANCH"
+
+            # Если это pull_request, используем base_ref
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BRANCH="${{ github.base_ref }}"
+            fi
+
+            # Если ветка не определена или пуста, пробуем lab4
+            if [ -z "$BRANCH" ]; then
+              BRANCH="lab4"
+            fi
+
+            # Скачиваем последние изменения из этой ветки
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            # Получаем актуальный SHA из ветки
+            ACTUAL_SHA=$(git rev-parse HEAD)
+            echo "Actual SHA from branch: $ACTUAL_SHA"
+
             # Логин в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Создаём .env (БЕЗ APP_IMAGE, будет использоваться :latest)
+            # Создаём .env файл с актуальным SHA
             cat > .env <<EOF
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             MYSQL_USER=${{ secrets.MYSQL_USER }}
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            DEPLOY_REF=${{ github.sha }}
+            DEPLOY_REF=$ACTUAL_SHA
             EOF
 
-            # Останавливаем старые контейнеры и пересоздаём
+            # Пересоздаём стек
             docker compose down --remove-orphans || true
-            docker compose pull catty-app   # тянем только :latest
+            docker compose pull catty-app
             docker compose up -d --force-recreate
 
             sleep 5
             if curl -s --fail http://localhost:8181/login; then
-              echo "✅ Docker Compose stack started successfully"
+              echo "✅ Docker Compose stack started successfully with SHA: $ACTUAL_SHA"
             else
               echo "❌ Application failed to start"
               docker compose logs
