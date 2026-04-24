@@ -18,8 +18,7 @@ services:
       start_period: 10s
 
   app:
-    build: .
-    image: ghcr.io/artem362a/catty-reminders-app:${IMAGE_TAG:-lab4}
+    image: ${IMAGE:-ghcr.io/artem362a/catty-reminders-app:lab4}
     container_name: catty-app
     restart: unless-stopped
     depends_on:

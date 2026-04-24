@@ -2,13 +2,26 @@ name: Deploy
 
 on:
   release:
-    types: [created]
+    types: [published, created]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy compose files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: course.prafdin.ru
+          username: artem
+          port: 3142
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yaml,config.json"
+          target: "/home/artem/dev/catty-reminders-app"
+
       - name: Deploy via docker-compose
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -16,20 +29,18 @@ jobs:
           username: artem
           port: 3142
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m
           script: |
             set -e
 
-            cd ~/dev/catty-reminders-app
+            cd /home/artem/dev/catty-reminders-app
 
+            OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
             DEPLOY_SHA="${{ github.sha }}"
 
-            printf "IMAGE_TAG=%s\nDEPLOY_REF=%s\n" "$DEPLOY_SHA" "$DEPLOY_SHA" > .env
+            printf "IMAGE=ghcr.io/%s/catty-reminders-app:%s\nDEPLOY_REF=%s\n" "$OWNER" "$DEPLOY_SHA" "$DEPLOY_SHA" > .env
 
             sudo -n docker-compose down --remove-orphans || true
-
-            sudo -n docker pull ghcr.io/artem362a/catty-reminders-app:${{ github.sha }}
-            sudo -n docker pull mysql:8
-
+            sudo -n docker-compose pull
             sudo -n docker-compose up -d
-
             sudo -n docker-compose ps
