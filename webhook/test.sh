@@ -1,29 +1,53 @@
 #!/bin/bash
+set -e
 
 BRANCH=$1
-echo "=== test: $BRANCH ==="
-echo "Current directory: $(pwd)"
+APP_DIR="/home/ubuntu/devops/catty-reminders-app"
+VENV="$APP_DIR/venv"
 
-# Простая проверка - просто выводим информацию о проекте
-echo "Checking project structure..."
+echo "=== Запуск тестов проекта ветки $BRANCH ==="
 
-# Проверяем наличие файлов
-if [ -f "README.md" ]; then
-    echo "✅ README.md exists"
-else
-    echo "⚠️  README.md not found (not critical)"
+cd "$APP_DIR"
+
+DEPLOY_REF="$(git rev-parse HEAD)"
+
+echo "Текущий SHA ветки $BRANCH: $DEPLOY_REF"
+echo "DEPLOY_REF=$DEPLOY_REF" > /home/ubuntu/devops/catty-reminders-app/.env
+
+# Проверяем и создаем виртуальное окружение если нужно
+if [ -f "requirements.txt" ]; then
+    if [ ! -d "venv" ]; then
+        echo "=== создание виртуального окружения $BRANCH ==="
+        python3 -m venv venv
+    fi
+    echo "=== активация виртуального окружения $BRANCH ==="
+    source venv/bin/activate
+    echo "=== установка зависимостей $BRANCH ==="
+    pip install -r requirements.txt
 fi
 
-if [ -d ".git" ]; then
-    echo "✅ Git repository detected"
-    echo "Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown')"
-else
-    echo "⚠️  Not a git repository (working with cloned code)"
-fi
+echo "Текущая директория: $(pwd)"
 
-# Считаем количество файлов
-file_count=$(find . -type f -name "*.py" 2>/dev/null | wc -l)
-echo "📊 Python files found: $file_count"
+# Запускаем приложение для тестов
+echo "=== запуск приложения $BRANCH для тестов ==="
+# Останавливаем старый процесс если есть
+pkill -f "uvicorn app.main:app" || true
 
-echo "✅ All tests passed successfully!"
-exit 0
+# Запускаем приложение в фоне
+source venv/bin/activate
+nohup uvicorn app.main:app --reload --host 127.0.0.1 --port 8181 > /tmp/app.log 2>&1 &
+APP_PID=$!
+
+# Ждем запуска приложения
+sleep 5
+
+# Запускаем тесты
+echo "=== Выполняем тесты из папки tests ==="
+export PYTHONPATH=/home/ubuntu/devops/catty-reminders-app:$PYTHONPATH
+PLAYWRIGHT_BROWSERS_PATH=/home/ubuntu/.cache/ms-playwright pytest tests --maxfail=1 --disable-warnings -q
+RESULT=$?
+
+# Останавливаем приложение
+kill $APP_PID 2>/dev/null || true
+
+exit $RESULT
