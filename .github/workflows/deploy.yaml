@@ -18,7 +18,7 @@ jobs:
           script: |
             bash -c '
               set -e
-              cd /home/rovver52/catty-reminders-app
+              cd /home/rover/catty-reminders-app
               OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
               export DEPLOY_REF=${{ github.sha }}
               export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
