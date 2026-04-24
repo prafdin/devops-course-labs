@@ -37,10 +37,15 @@ jobs:
 
             OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
             DEPLOY_SHA="${{ github.sha }}"
+            IMAGE="ghcr.io/$OWNER/catty-reminders-app:$DEPLOY_SHA"
 
-            printf "IMAGE=ghcr.io/%s/catty-reminders-app:%s\nDEPLOY_REF=%s\n" "$OWNER" "$DEPLOY_SHA" "$DEPLOY_SHA" > .env
+            printf "IMAGE=%s\nDEPLOY_REF=%s\n" "$IMAGE" "$DEPLOY_SHA" > .env
+
+            echo "Pulling image: $IMAGE"
+            sudo -n docker pull "$IMAGE"
+            sudo -n docker pull mysql:8
 
             sudo -n docker-compose down --remove-orphans || true
-            sudo -n docker-compose pull
-            sudo -n docker-compose up -d
+            sudo -n docker-compose up -d --force-recreate
+
             sudo -n docker-compose ps
