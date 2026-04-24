@@ -34,6 +34,7 @@ jobs:
               sed -i "s/deployref\" content=\"[^\"]*/deployref\" content=\"$COMMIT/" templates/pages/login.html
             fi
             sudo systemctl restart catty-app
+            sleep 3
             echo "Deployed commit: $COMMIT"
           EOF
       
