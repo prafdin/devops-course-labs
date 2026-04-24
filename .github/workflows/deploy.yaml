@@ -45,9 +45,13 @@ jobs:
             sudo -n docker pull "$IMAGE"
             sudo -n docker pull mysql:8
 
-            sudo -n docker rm -f catty-app catty-db || true
+            echo "Cleaning old catty containers"
+            sudo -n docker ps -aq --filter "name=catty" | xargs -r sudo -n docker rm -f
+
+            echo "Cleaning old compose network"
             sudo -n docker network rm catty-reminders-app_default || true
 
-            sudo -n docker-compose up -d
+            echo "Starting compose stack"
+            sudo -n docker-compose up -d --force-recreate --remove-orphans
 
             sudo -n docker-compose ps
