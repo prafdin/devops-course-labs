@@ -19,11 +19,11 @@ jobs:
       
       - name: Deploy to production server
         run: |
-          ssh -tt -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh -tt -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             set -e
             cd /home/pyshisha/devops-lab/catty-reminders-app
-            git fetch origin --tags
-            git reset --hard origin/lab2
+            git fetch --all --tags
+            git checkout ${{ github.sha }}
             echo "${{ github.sha }}" | tee /home/pyshisha/devops-lab/deploy_ref.txt
             source /home/pyshisha/devops-lab/venv/bin/activate
             pip install -r requirements.txt
@@ -33,7 +33,7 @@ jobs:
             if [ -f templates/pages/login.html ]; then
               sed -i "s/deployref\" content=\"[^\"]*/deployref\" content=\"$COMMIT/" templates/pages/login.html
             fi
-            sudo systemctl restart catty-app &
+            sudo systemctl restart catty-app
             sleep 5
             echo "Deployed commit: $COMMIT"
           EOF
