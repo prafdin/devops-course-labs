@@ -18,7 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Для pull_request берём HEAD коммита PR, иначе используем текущий SHA
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Copy docker-compose.yml to server
@@ -45,22 +44,20 @@ jobs:
             # Логин в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Создаём .env файл с правильным APP_IMAGE и DEPLOY_REF
+            # Создаём .env (БЕЗ APP_IMAGE, будет использоваться :latest)
             cat > .env <<EOF
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             MYSQL_USER=${{ secrets.MYSQL_USER }}
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
             DEPLOY_REF=${{ github.sha }}
-            APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}
             EOF
 
-            # Останавливаем старые контейнеры (если есть) и пересоздаём с новым образом
+            # Останавливаем старые контейнеры и пересоздаём
             docker compose down --remove-orphans || true
-            docker compose pull
+            docker compose pull catty-app   # тянем только :latest
             docker compose up -d --force-recreate
 
-            # Проверка работоспособности
             sleep 5
             if curl -s --fail http://localhost:8181/login; then
               echo "✅ Docker Compose stack started successfully"
@@ -74,4 +71,4 @@ jobs:
         run: |
           sleep 5
           curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
-          echo "✅ Application is accessible at http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}"
+          echo "✅ Application is accessible"
