@@ -6,9 +6,9 @@ from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = 8080
-WORKSPACE = "/home/vboxuser/catty-reminders-app"
-TEST_SCRIPT = f"{WORKSPACE}/devops/lab1/webhook/test.sh"
-DEPLOY_SCRIPT = f"{WORKSPACE}/devops/lab1/webhook/deploy.sh"
+WORKSPACE = "/home/vboxuser/devops-lab/catty-reminders-app"
+TEST_SCRIPT = f"{WORKSPACE}/webhook/test.sh"
+DEPLOY_SCRIPT = f"{WORKSPACE}/webhook/deploy.sh"
 
 class WebhookHandler(BaseHTTPRequestHandler):
 
