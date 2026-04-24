@@ -24,7 +24,7 @@ jobs:
             cd /home/pyshisha/devops-lab/catty-reminders-app
             git fetch origin --tags
             git reset --hard origin/lab2
-            echo "${{ github.sha }}" | sudo tee /home/pyshisha/devops-lab/deploy_ref.txt
+            echo "${{ github.sha }}" | tee /home/pyshisha/devops-lab/deploy_ref.txt
             source /home/pyshisha/devops-lab/venv/bin/activate
             pip install -r requirements.txt
             COMMIT=$(git rev-parse HEAD)
