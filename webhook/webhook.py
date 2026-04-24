@@ -16,7 +16,6 @@ APP_DIR = os.path.dirname(SCRIPT_DIR)
 TEST_SCRIPT = os.path.join(SCRIPT_DIR, "test.sh")
 DEPLOY_SCRIPT = os.path.join(SCRIPT_DIR, "deploy.sh")
 
-# Для отладки - выводим пути при запуске
 print(f"=== Webhook Configuration ===")
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
 print(f"APP_DIR: {APP_DIR}")
@@ -42,13 +41,19 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(b'{"status": "ok"}')
+            try:
+                self.wfile.write(b'{"status": "ok"}')
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # Client closed connection
 
         except Exception as e:
             print(f"Error processing webhook: {e}")
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(b'{"status": "error"}')
+            try:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'{"status": "error"}')
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     def do_GET(self):
         self.send_response(200)
@@ -91,12 +96,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print(f"Clone URL: {clone_url}")
         print("="*50)
 
-        # Проверяем что это push событие
         if event != "push":
             print(f"ℹ️  Skipping event: {event} (not a push event)")
             return
 
-        # Проверяем существование скриптов
         if not os.path.exists(TEST_SCRIPT):
             print(f"❌ ERROR: test.sh not found at {TEST_SCRIPT}")
             return
@@ -105,7 +108,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"❌ ERROR: deploy.sh not found at {DEPLOY_SCRIPT}")
             return
 
-        # Проверяем права на выполнение
         if not os.access(TEST_SCRIPT, os.X_OK):
             print(f"⚠️  test.sh is not executable, fixing...")
             os.chmod(TEST_SCRIPT, 0o755)
@@ -114,12 +116,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"⚠️  deploy.sh is not executable, fixing...")
             os.chmod(DEPLOY_SCRIPT, 0o755)
 
-        # Создаем временную директорию
         tmpdir = tempfile.mkdtemp()
         print(f"📁 Temporary directory: {tmpdir}")
 
         try:
-            # Клонируем репозиторий
             print(f"📦 Cloning repository...")
             result = subprocess.run(
                 ["git", "clone", clone_url, tmpdir],
@@ -131,7 +131,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 return
             print(f"✅ Clone successful")
 
-            # Переключаемся на нужную ветку
             print(f"🌿 Checking out branch: {branch}")
             result = subprocess.run(
                 ["git", "checkout", branch],
@@ -144,7 +143,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 return
             print(f"✅ Checkout successful")
 
-            # Запускаем тесты
             print(f"\n🧪 Running tests...")
             print("-" * 40)
             try:
@@ -159,7 +157,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 if result.stdout:
                     print(f"Test output:\n{result.stdout}")
                 
-                # Запускаем деплой
                 print(f"\n🚀 Deploying...")
                 print("-" * 40)
                 result = subprocess.run(
@@ -185,7 +182,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"❌ Unexpected error: {e}")
         
         finally:
-            # Очищаем временную директорию
             shutil.rmtree(tmpdir, ignore_errors=True)
             print(f"🗑️  Cleaned up temporary directory")
         
@@ -201,17 +197,14 @@ def main():
     print(f"Working directory: {os.getcwd()}")
     print(f"{'='*50}\n")
     
-    # Проверяем что скрипты существуют и executable
     if not os.path.exists(TEST_SCRIPT):
         print(f"⚠️  WARNING: test.sh not found at {TEST_SCRIPT}")
-        print(f"   Please create it with: touch {TEST_SCRIPT} && chmod +x {TEST_SCRIPT}")
     elif not os.access(TEST_SCRIPT, os.X_OK):
         print(f"⚠️  WARNING: test.sh is not executable")
         print(f"   Run: chmod +x {TEST_SCRIPT}")
     
     if not os.path.exists(DEPLOY_SCRIPT):
         print(f"⚠️  WARNING: deploy.sh not found at {DEPLOY_SCRIPT}")
-        print(f"   Please create it with: touch {DEPLOY_SCRIPT} && chmod +x {DEPLOY_SCRIPT}")
     elif not os.access(DEPLOY_SCRIPT, os.X_OK):
         print(f"⚠️  WARNING: deploy.sh is not executable")
         print(f"   Run: chmod +x {DEPLOY_SCRIPT}")
