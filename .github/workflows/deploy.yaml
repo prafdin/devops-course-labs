@@ -1,6 +1,10 @@
 name: CD - Deploy with Docker Compose
 
 on:
+  push:
+    branches:
+      - lab4
+      - lab4_autotests*
   release:
     types: [published]
 
