@@ -1,6 +1,13 @@
 name: CD - Deploy with Docker Compose
 
 on:
+  push:
+    branches:
+      - lab4*
+      - lab4_autotests*
+  pull_request:
+    branches:
+      - lab4*
   release:
     types: [published]
 
@@ -10,6 +17,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Для pull_request берём HEAD коммита PR, иначе используем текущий SHA
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.7
@@ -35,23 +45,22 @@ jobs:
             # Логин в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Создаём .env файл из секретов GitHub
+            # Создаём .env файл с правильным APP_IMAGE и DEPLOY_REF
             cat > .env <<EOF
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             MYSQL_USER=${{ secrets.MYSQL_USER }}
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
             DEPLOY_REF=${{ github.sha }}
+            APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}
             EOF
 
-            # Останавливаем старые контейнеры (если есть) и удаляем их
+            # Останавливаем старые контейнеры (если есть) и пересоздаём с новым образом
             docker compose down --remove-orphans || true
-
-            # Скачиваем свежие образы и запускаем стек
             docker compose pull
-            docker compose up -d
+            docker compose up -d --force-recreate
 
-            # Ждём и проверяем работоспособность
+            # Проверка работоспособности
             sleep 5
             if curl -s --fail http://localhost:8181/login; then
               echo "✅ Docker Compose stack started successfully"
