@@ -1,97 +1,64 @@
 name: CD - Deploy with Docker Compose
 
 on:
-  push:
-    branches:
-      - lab4*
-      - lab4_autotests*
-  pull_request:
-    branches:
-      - lab4*
   release:
     types: [published]
-  workflow_dispatch:  # для ручного запуска
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Copy docker-compose.yml to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.PROXY_HOST }}
-          port: ${{ vars.SSH_PORT }}
-          username: ${{ vars.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml"
-          target: "/opt/catty-reminders/"
-          strip_components: 0
+    - name: Create .env file
+      run: |
+        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}" > .env
+        echo "DEPLOY_REF=${{ github.sha }}" >> .env
+        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+        echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
+        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+        echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
+    
+    - name: Copy .env to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ vars.PROXY_HOST }}
+        username: ${{ vars.SERVER_USER }}
+        port: ${{ vars.SSH_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ".env"
+        target: "/opt/catty-reminders/"
+        strip_components: 0
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.PROXY_HOST }}
-          port: ${{ vars.SSH_PORT }}
-          username: ${{ vars.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/catty-reminders
+    - name: Copy docker-compose.yml to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ vars.PROXY_HOST }}
+        username: ${{ vars.SERVER_USER }}
+        port: ${{ vars.SSH_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "docker-compose.yml"
+        target: "/opt/catty-reminders/"
+        strip_components: 0
 
-            # Определяем ветку, которая вызвала workflow
-            BRANCH="${{ github.ref_name }}"
-            echo "Deploying branch: $BRANCH"
-
-            # Если это pull_request, используем base_ref
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              BRANCH="${{ github.base_ref }}"
-            fi
-
-            # Если ветка не определена или пуста, пробуем lab4
-            if [ -z "$BRANCH" ]; then
-              BRANCH="lab4"
-            fi
-
-            # Скачиваем последние изменения из этой ветки
-            git fetch origin "$BRANCH"
-            git reset --hard "origin/$BRANCH"
-
-            # Получаем актуальный SHA из ветки
-            ACTUAL_SHA=$(git rev-parse HEAD)
-            echo "Actual SHA from branch: $ACTUAL_SHA"
-
-            # Логин в GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Создаём .env файл с актуальным SHA
-            cat > .env <<EOF
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            DEPLOY_REF=$ACTUAL_SHA
-            EOF
-
-            # Пересоздаём стек
-            docker compose down --remove-orphans || true
-            docker compose pull catty-app
-            docker compose up -d --force-recreate
-
-            sleep 5
-            if curl -s --fail http://localhost:8181/login; then
-              echo "✅ Docker Compose stack started successfully with SHA: $ACTUAL_SHA"
-            else
-              echo "❌ Application failed to start"
-              docker compose logs
-              exit 1
-            fi
-
-      - name: Verify external access
-        run: |
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ vars.PROXY_HOST }}
+        username: ${{ vars.SERVER_USER }}
+        port: ${{ vars.SSH_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /opt/catty-reminders
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker compose up -d --pull always --remove-orphans --force-recreate
           sleep 5
-          curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
-          echo "✅ Application is accessible"
+          curl -s --fail http://localhost:8181/login || exit 1
+
+    - name: Verify external access
+      run: |
+        sleep 5
+        curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
+        echo "✅ Application is accessible"
