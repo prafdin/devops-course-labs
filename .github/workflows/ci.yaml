@@ -1,4 +1,4 @@
-name: CI - Test and Build
+  name: CI - Test and Build
 
 on:
   push:
@@ -78,5 +78,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/vichurinnik/catty-reminders-app:latest
+            ghcr.io/vichurinnik/catty-reminders-app:${{ github.sha }}

@@ -20,7 +20,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            IMAGE_NAME="ghcr.io/${{ github.repository }}:latest"
+            IMAGE_NAME="ghcr.io/vichurinnik/catty-reminders-app:latest"
             CONTAINER_NAME="catty-app"
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
