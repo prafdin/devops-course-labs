@@ -19,7 +19,7 @@ jobs:
       
       - name: Deploy to production server
         run: |
-          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} -t '
+          ssh -tt -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             set -e
             cd /home/pyshisha/devops-lab/catty-reminders-app
             git fetch origin --tags
@@ -28,10 +28,14 @@ jobs:
             source /home/pyshisha/devops-lab/venv/bin/activate
             pip install -r requirements.txt
             COMMIT=$(git rev-parse HEAD)
-            sed -i "s/deployref\" content=\"[^\"]*/deployref\" content=\"$COMMIT/" templates/pages/login.html
+            mkdir -p static
+            echo "$COMMIT" > static/version.txt
+            if [ -f templates/pages/login.html ]; then
+              sed -i "s/deployref\" content=\"[^\"]*/deployref\" content=\"$COMMIT/" templates/pages/login.html
+            fi
             sudo systemctl restart catty-app
-            echo "Deployed commit: ${{ github.sha }}"
-          '
+            echo "Deployed commit: $COMMIT"
+          EOF
       
       - name: Verify deployment
         run: |
