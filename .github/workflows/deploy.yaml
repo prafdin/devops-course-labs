@@ -19,7 +19,7 @@ jobs:
       
       - name: Deploy to production server
         run: |
-          ssh -tt -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+          ssh -tt -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             set -e
             cd /home/pyshisha/devops-lab/catty-reminders-app
             git fetch origin --tags
