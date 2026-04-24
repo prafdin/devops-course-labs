@@ -45,7 +45,9 @@ jobs:
             sudo -n docker pull "$IMAGE"
             sudo -n docker pull mysql:8
 
-            sudo -n docker-compose down --remove-orphans || true
-            sudo -n docker-compose up -d --force-recreate
+            sudo -n docker rm -f catty-app catty-db || true
+            sudo -n docker network rm catty-reminders-app_default || true
+
+            sudo -n docker-compose up -d
 
             sudo -n docker-compose ps
