@@ -1,46 +1,18 @@
 name: CD - Deploy with Docker Compose
 
 on:
-  push:
-    branches:
-      - lab4
-      - lab4_autotests*
   release:
     types: [published]
 
 jobs:
-  wait-for-ci:
-    runs-on: ubuntu-latest
-    outputs:
-      commit_sha: ${{ steps.get-sha.outputs.sha }}
-    steps:
-      - name: Get commit SHA
-        id: get-sha
-        run: echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
-
   deploy:
     runs-on: ubuntu-latest
-    needs: wait-for-ci
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Wait for CI to complete
-      uses: lewagon/wait-on-check-action@v1.3.4
-      with:
-        ref: ${{ needs.wait-for-ci.outputs.commit_sha }}
-        check-name: 'docker-build'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        wait-interval: 15
-        allowed-conclusions: success
-
-    - name: Wait additional 30 seconds for image to be fully available
-      run: sleep 30
-
     - name: Create .env file
       run: |
-        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ needs.wait-for-ci.outputs.commit_sha }}" > .env
-        echo "DEPLOY_REF=${{ needs.wait-for-ci.outputs.commit_sha }}" >> .env
+        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:latest" > .env
+        echo "DEPLOY_REF=${{ github.sha }}" >> .env
         echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
         echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
@@ -78,9 +50,7 @@ jobs:
         script: |
           cd /opt/catty-reminders
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose down --remove-orphans || true
-          docker compose pull
-          docker compose up -d --force-recreate
+          docker compose up -d --pull always --remove-orphans --force-recreate
           sleep 5
           curl -s --fail http://localhost:8181/login || exit 1
 
