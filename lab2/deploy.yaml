@@ -1,0 +1,39 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Deploy to production server
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd /home/pyshisha/devops-lab/catty-reminders-app
+            git fetch origin --tags
+            git reset --hard origin/lab2
+            echo "${{ github.sha }}" | sudo tee /home/pyshisha/devops-lab/deploy_ref.txt
+            source /home/pyshisha/devops-lab/venv/bin/activate
+            pip install -r requirements.txt
+            COMMIT=$(git rev-parse HEAD)
+            sed -i "s/deployref\" content=\"[^\"]*/deployref\" content=\"$COMMIT/" templates/pages/login.html
+            sudo systemctl restart catty-app
+            echo "Deployed commit: ${{ github.sha }}"
+          EOF
+      
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl -s http://app.ryzkov.course.prafdin.ru/static/version.txt
