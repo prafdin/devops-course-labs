@@ -29,26 +29,9 @@ if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
 fi
 
-# Останавливаем приложение
-echo "=== Останавливаем приложение ==="
-pkill -f "uvicorn app.main:app" || true
-sleep 3
-
-# Запускаем приложение заново
-echo "=== Запускаем приложение ==="
-source venv/bin/activate
-nohup uvicorn app.main:app --host 0.0.0.0 --port 8081 > /tmp/app.log 2>&1 &
-NEW_PID=$!
-echo "Приложение запущено с PID: $NEW_PID"
-
-# Проверяем что запустилось
-sleep 3
-if ps -p $NEW_PID > /dev/null; then
-    echo "✅ Приложение успешно запущено"
-else
-    echo "❌ Ошибка запуска приложения"
-    cat /tmp/app.log
-    exit 1
-fi
+# Перезапускаем через systemd
+echo "=== Перезапуск сервиса ==="
+sudo systemctl daemon-reload
+sudo systemctl restart app.service
 
 echo "=== Деплой завершен ==="

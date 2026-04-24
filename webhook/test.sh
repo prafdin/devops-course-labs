@@ -16,11 +16,9 @@ echo "Текущий SHA: $DEPLOY_REF"
 # Активируем окружение
 source venv/bin/activate
 
-# Проверяем и устанавливаем Playwright браузер если нужно
-if [ ! -d "/home/ubuntu/.cache/ms-playwright/chromium_headless_shell-1208" ]; then
-    echo "=== Устанавливаем Playwright браузер ==="
-    playwright install chromium
-fi
+# Устанавливаем Playwright браузер (без привязки к версии)
+echo "=== Устанавливаем Playwright браузер ==="
+playwright install chromium
 
 # Запускаем приложение в фоне
 echo "Запускаем приложение..."
@@ -44,7 +42,7 @@ fi
 # Запускаем тесты
 echo "Выполняем тесты..."
 export PYTHONPATH=$APP_DIR:$PYTHONPATH
-PLAYWRIGHT_BROWSERS_PATH=/home/ubuntu/.cache/ms-playwright pytest tests --maxfail=1 --disable-warnings -q
+pytest tests --maxfail=1 --disable-warnings -q
 RESULT=$?
 
 # Останавливаем приложение
