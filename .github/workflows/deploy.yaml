@@ -12,20 +12,20 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: ilya
-          port: 3120
+          username: rover
+          port: 3182
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             bash -c '
               set -e
-              cd /home/ilya/catty-reminders-app
+              cd /home/rovver52/catty-reminders-app
               OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
               export DEPLOY_REF=${{ github.sha }}
               export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
               export DB_CONTAINER_NAME=catty-db
               export APP_CONTAINER_NAME=catty-app
               export MARIADB_ROOT_PASSWORD=mypass
-              export MARIADB_USER=ilya
+              export MARIADB_USER=rover
               export MARIADB_PASSWORD=mypass
               export MARIADB_DATABASE=catty_reminders
               export HOST_DB_PORT=3306
