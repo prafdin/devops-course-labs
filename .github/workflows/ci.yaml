@@ -83,7 +83,7 @@ jobs:
     needs: pipeline
     if: success()
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     steps:
@@ -95,7 +95,6 @@ jobs:
         run: |
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
-          echo "Image tag: $COMMIT_HASH"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -119,14 +118,3 @@ jobs:
           tags: |
             ghcr.io/timurmif/catty-reminders-app:${{ steps.vars.outputs.commit_hash }}
             ghcr.io/timurmif/catty-reminders-app:latest
-
-      - name: Create release for this commit
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Auto-release ${{ steps.vars.outputs.commit_hash }}"
-          tag_name: "auto-${{ steps.vars.outputs.commit_hash }}"
-          target_commitish: ${{ github.sha }}
-          generate_release_notes: false
-          make_latest: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
