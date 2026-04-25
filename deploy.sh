@@ -23,9 +23,20 @@ fi
 # 2. Освобождаем порт на всякий случай
 sudo fuser -k "${HOST_PORT}/tcp" 2>/dev/null || true
 
-# 3. Pull нового образа
+# 3. Pull нового образа (с ретраями — образ может ещё пушиться в GHCR)
 echo ">> Pulling image"
-docker pull "${IMAGE}"
+MAX_ATTEMPTS=20
+ATTEMPT=1
+until docker pull "${IMAGE}"; do
+    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+        echo "❌ Failed to pull image after ${MAX_ATTEMPTS} attempts"
+        exit 1
+    fi
+    echo "   pull attempt ${ATTEMPT}/${MAX_ATTEMPTS} failed, retrying in 15s..."
+    ATTEMPT=$((ATTEMPT + 1))
+    sleep 15
+done
+echo ">> Image pulled successfully"
 
 # 4. Останавливаем и удаляем старый контейнер
 echo ">> Removing old container"
