@@ -7,6 +7,7 @@ This module provides routes for the reminders pages.
 # --------------------------------------------------------------------------------
 
 from app import templates
+from app import DEPLOY_REF
 from app.utils.auth import get_storage_for_page
 from app.utils.storage import ReminderStorage
 
@@ -31,6 +32,7 @@ def _build_full_page_context(request: Request, storage: ReminderStorage):
 
   return {
     'request': request,
+    'deploy_ref': DEPLOY_REF,
     'owner': storage.owner,
     'reminder_lists': reminder_lists,
     'selected_list': selected_list}
