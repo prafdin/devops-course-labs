@@ -36,9 +36,9 @@ jobs:
 
             sleep 3
             if curl -s --fail http://localhost:8181/login; then
-              echo "✅ Docker container started successfully"
+              echo "Docker container started successfully"
             else
-              echo "❌ Application failed to start"
+              echo "Application failed to start"
               docker logs $CONTAINER_NAME
               exit 1
             fi
@@ -47,4 +47,4 @@ jobs:
         run: |
           sleep 5
           curl -s --fail "http://app.vichurin.course.prafdin.ru/login" || exit 1
-          echo "✅ Application is accessible at http://app.vichurin.course.prafdin.ru"
+          echo "Application is accessible at http://app.vichurin.course.prafdin.ru"
