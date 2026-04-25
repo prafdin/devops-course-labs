@@ -29,7 +29,9 @@ jobs:
         
     - name: Run tests
       run: |
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
         pytest -v > test_result.txt 2>&1 || true
+        cat test_result.txt
         
     - name: Upload test results
       uses: actions/upload-artifact@v4
