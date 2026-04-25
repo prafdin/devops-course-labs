@@ -56,7 +56,6 @@ jobs:
 
       - name: Patch config for CI
         run: |
-          # Меняем хост базы данных на локальный для тестов внутри раннера
           sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
           cat config.json
 
@@ -107,9 +106,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-
           platforms: linux/amd64,linux/arm64 
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:lab4
+            ghcr.io/${{ strings.tolower(github.repository_owner) }}/catty-reminders-app:${{ github.sha }}
+            ghcr.io/${{ strings.tolower(github.repository_owner) }}/catty-reminders-app:lab4
