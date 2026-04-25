@@ -2,7 +2,7 @@ services:
   db:
     image: mariadb:11
     container_name: catty-db
-    restart: always
+    restart: unless-stopped
     environment:
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
       - MARIADB_DATABASE=${MARIADB_DATABASE}
@@ -18,7 +18,7 @@ services:
   catty-app:
     image: ${IMAGE}
     container_name: ${APP_CONTAINER_NAME}
-    restart: always
+    restart: unless-stopped
     environment:
       - DEPLOY_REF=${DEPLOY_REF}
     ports: 
