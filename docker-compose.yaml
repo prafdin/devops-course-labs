@@ -18,13 +18,13 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: userpass
+      MYSQL_ROOT_PASSWORD: mypass
       MYSQL_USER: user
-      MYSQL_PASSWORD: userpass
+      MYSQL_PASSWORD: mypass
       MYSQL_DATABASE: catty_reminders
 
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -puserpass"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pmypass"]
       interval: 5s
       timeout: 5s
       retries: 10
