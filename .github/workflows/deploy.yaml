@@ -1,0 +1,49 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+        packages: read
+        contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Prepare Image Name
+      id: prep
+      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+          CONTAINER_NAME="catty-reminders-app"
+
+          echo "Logging in to GHCR..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          echo "Updating image..."
+          sudo docker pull $IMAGE_NAME
+
+          sudo docker stop $CONTAINER_NAME || true
+          sudo docker rm $CONTAINER_NAME || true
+
+          sudo docker run -d \
+            --name $CONTAINER_NAME \
+            -p 8181:8181 \
+            --restart unless-stopped \
+            -e DEPLOY_REF=${{ github.sha }} \
+            $IMAGE_NAME
+
+          sudo docker image prune -f
