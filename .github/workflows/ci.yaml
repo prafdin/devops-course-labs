@@ -102,6 +102,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare lowercase variables
+        run: |
+          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> ${GITHUB_ENV}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -109,5 +113,5 @@ jobs:
           platforms: linux/amd64,linux/arm64 
           push: true
           tags: |
-            ghcr.io/${{ strings.tolower(github.repository_owner) }}/catty-reminders-app:${{ github.sha }}
-            ghcr.io/${{ strings.tolower(github.repository_owner) }}/catty-reminders-app:lab4
+            ghcr.io/${{ env.OWNER_LC }}/catty-reminders-app:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/catty-reminders-app:lab4
