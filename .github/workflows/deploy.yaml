@@ -1,23 +1,31 @@
 name: CD - Deploy with Docker Compose
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI - Test and Build"] # Имя должно строго совпадать с name: в твоем ci.yaml
+    types:
+      - completed
     branches:
       - 'lab4*'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Запускаем деплой ТОЛЬКО если CI завершился успешно
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # При workflow_run нужно явно указывать ветку коммита, иначе скачается main
+        ref: ${{ github.event.workflow_run.head_sha }}
 
     - name: Create .env file
       run: |
-        # Используем github.sha для получения хэша текущего коммита
-        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}" > .env
-        echo "DEPLOY_REF=${{ github.sha }}" >> .env
+        # Используем head_sha для получения хэша коммита из CI пайплайна
+        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.event.workflow_run.head_sha }}" > .env
+        echo "DEPLOY_REF=${{ github.event.workflow_run.head_sha }}" >> .env
         echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
         echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
@@ -43,7 +51,6 @@ jobs:
         script: |
           cd /opt/catty-reminders
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          # Принудительно пересоздаем контейнеры с новым образом
           docker compose pull
           docker compose up -d --remove-orphans --force-recreate
           sleep 5
