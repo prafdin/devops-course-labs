@@ -21,8 +21,6 @@ with open('config.json') as config_json:
   users = config['users']
   db_config = config['db_config']
 
-DEPLOY_REF = os.getenv("DEPLOY_COMMIT", "NA")
-
 # --------------------------------------------------------------------------------
 # Establish the Secret Key
 # --------------------------------------------------------------------------------
