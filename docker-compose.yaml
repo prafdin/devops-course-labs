@@ -2,11 +2,11 @@ services:
   db:
     image: mariadb:11
     container_name: ${NAME_DB}
-    restart: always
+    restart: unless-stopped
     environment:
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
       - MARIADB_USER=${DB_USER}
-      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_PASSWORD_FILE=run/secrets/db_password
       - MARIADB_DATABASE=${DB_DATABASE}
     ports:
       - "${DB_PORT}:${DB_PORT}"
@@ -14,11 +14,14 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - catty-network
+    secrets:
+      - db_root_password
+      - db_password
 
   catty-app:
     image: ${IMAGE}
     container_name: ${NAME_APP}
-    restart: always
+    restart: unless-stopped
     environment:
       - DEPLOY_REF=${DEPLOY_REF}
     ports: 
@@ -34,3 +37,9 @@ networks:
 
 volumes:
   db_data:
+
+secrets:
+  db_root_password:
+    file: ./db_root_password.txt
+  db_password:
+    file: ./db_password.txt
