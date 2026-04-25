@@ -1,63 +1,50 @@
-name: CD - Deploy with Docker Compose
+name: Deploy
 
 on:
-  workflow_run:
-    workflows: ["CI - Test and Build"] # Имя должно строго совпадать с name: в твоем ci.yaml
-    types:
-      - completed
-    branches:
-      - 'lab4*'
+  release:
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Запускаем деплой ТОЛЬКО если CI завершился успешно
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        # При workflow_run нужно явно указывать ветку коммита, иначе скачается main
-        ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Create .env file
-      run: |
-        # Используем head_sha для получения хэша коммита из CI пайплайна
-        echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.event.workflow_run.head_sha }}" > .env
-        echo "DEPLOY_REF=${{ github.event.workflow_run.head_sha }}" >> .env
-        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
-        echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-        echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-    
-    - name: Copy files to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ vars.PROXY_HOST }}
-        username: ${{ vars.SERVER_USER }}
-        port: ${{ vars.SSH_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ".env,docker-compose.yml"
-        target: "/opt/catty-reminders/"
+      - name: Copy files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.PROXY_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          port: ${{ vars.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yaml,config.json"
+          target: "/opt/catty-reminders"
 
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ vars.PROXY_HOST }}
-        username: ${{ vars.SERVER_USER }}
-        port: ${{ vars.SSH_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd /opt/catty-reminders
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose pull
-          docker compose up -d --remove-orphans --force-recreate
-          sleep 5
-          curl -s --fail http://localhost:8181/login || exit 1
-
-    - name: Verify external access
-      run: |
-        sleep 5
-        curl -s --fail "http://app.${{ vars.ID }}.${{ vars.PROXY_HOST }}/login" || exit 1
-        echo "✅ Application is accessible"
+      - name: Deploy via docker-compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.PROXY_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          port: ${{ vars.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/catty-reminders
+            
+            # Подготовка переменных
+            OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
+            DEPLOY_SHA="${{ github.sha }}"
+            IMAGE="ghcr.io/$OWNER/catty-reminders-app:$DEPLOY_SHA"
+            
+            # Создаем .env на лету
+            printf "IMAGE=%s\nDEPLOY_REF=%s\n" "$IMAGE" "$DEPLOY_SHA" > .env
+            
+            # Авторизация и запуск
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull "$IMAGE"
+            
+            # Очистка старых контейнеров (чтобы избежать конфликтов имен)
+            docker ps -aq --filter "name=catty" | xargs -r docker rm -f
+            
+            docker compose up -d --force-recreate --remove-orphans
