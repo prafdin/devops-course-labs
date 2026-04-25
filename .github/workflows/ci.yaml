@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "lab3" ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,9 +28,9 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium
 
-      - name: Start application
+      - name: Start app
         run: |
-          uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          uvicorn main:app --host 0.0.0.0 --port 8181 &
           sleep 10
 
       - name: Run tests
@@ -45,10 +49,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v4
