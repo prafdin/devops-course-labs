@@ -4,21 +4,21 @@ services:
     container_name: catty-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-      MYSQL_USER: ${{ secrets.MYSQL_USER }}
-      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${{ secrets.MYSQL_ROOT_PASSWORD }}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 10s
 
   app:
-    image: ${IMAGE:-ghcr.io/${{ github.repository_owner }}/catty-reminders-app:lab4}
+    image: ${IMAGE}
     container_name: catty-app
     restart: unless-stopped
     depends_on:
@@ -27,12 +27,11 @@ services:
     ports:
       - "8181:8181"
     environment:
-      DEPLOY_REF: ${DEPLOY_REF:-NA}
-      # Переменные для подключения к БД если приложение их использует)
+      DEPLOY_REF: ${DEPLOY_REF}
       DB_HOST: db
-      DB_USER: ${{ secrets.MYSQL_USER }}
-      DB_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-      DB_NAME: ${{ secrets.MYSQL_DATABASE }}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
     volumes:
       - ./config.json:/app/config.json:ro
 
