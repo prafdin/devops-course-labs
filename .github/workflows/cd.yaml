@@ -1,0 +1,29 @@
+name: Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [ "lab3*" ]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+    steps:
+      - name: Source Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Deploy via Docker
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/catty-reminders-app
+          IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          chmod +x ./deploy.sh
+          ./deploy.sh "$IMAGE_NAME" "$IMAGE_TAG"

@@ -1,44 +1,52 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="catty-reminders-app"
-CONTAINER_NAME="lab3-app"
-HOST_PORT=8181
-GUEST_PORT=8181
-PROJECT_DIR="/home/vboxuser/catty-reminders-app"
+# Параметры: ./deploy.sh <image_name> <image_tag>
+IMAGE_NAME="${1:-ghcr.io/only-hell/catty-reminders-app}"
+IMAGE_TAG="${2:-latest}"
+IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
-cd "$PROJECT_DIR"
+CONTAINER_NAME="catty-app"
+HOST_PORT="8181"
+GUEST_PORT="8181"
 
-VERSION=${1:-$(git rev-parse HEAD)}
-IMAGE_TAG="ghcr.io/only-hell/${APP_NAME}:${VERSION}"
+echo "--- Deployment started ---"
+echo "Image: ${IMAGE}"
 
-echo "--- 🛠 Starting Deployment: ${VERSION} ---"
+# 1. Останавливаем старый systemd-сервис из Лабы 2 (если он ещё жив)
+if systemctl is-active --quiet catty-app 2>/dev/null; then
+    echo ">> Stopping legacy systemd service catty-app"
+    sudo systemctl stop catty-app
+    sudo systemctl disable catty-app || true
+fi
 
-cleanup_runtime() {
-    echo "🧹 Cleaning up..."
-    docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
-    sudo fuser -k "${HOST_PORT}/tcp" 2>/dev/null || true
-}
+# 2. Освобождаем порт на всякий случай
+sudo fuser -k "${HOST_PORT}/tcp" 2>/dev/null || true
 
-build_image() {
-    echo "🏗 Building Docker image: ${IMAGE_TAG}"
-    docker build --build-arg COMMIT_SHA="${VERSION}" -t "${IMAGE_TAG}" .
-    docker tag "${IMAGE_TAG}" "ghcr.io/only-hell/${APP_NAME}:latest"
-}
+# 3. Pull нового образа
+echo ">> Pulling image"
+docker pull "${IMAGE}"
 
-run_container() {
-    echo "🚀 Launching container..."
-    docker run -d \
-        --name "$CONTAINER_NAME" \
-        --restart always \
-        -p "${HOST_PORT}:${GUEST_PORT}" \
-        -v "${PROJECT_DIR}/config.json:/app/config.json" \
-        -e DEPLOY_REF="${VERSION}" \
-        "${IMAGE_TAG}"
-}
+# 4. Останавливаем и удаляем старый контейнер
+echo ">> Removing old container"
+docker stop "${CONTAINER_NAME}" 2>/dev/null || true
+docker rm   "${CONTAINER_NAME}" 2>/dev/null || true
 
-cleanup_runtime
-build_image
-run_container
+# 5. Запускаем новый контейнер
+echo ">> Starting new container"
+docker run -d \
+    --name "${CONTAINER_NAME}" \
+    --restart unless-stopped \
+    -p "${HOST_PORT}:${GUEST_PORT}" \
+    -e DEPLOY_REF="${IMAGE_TAG}" \
+    "${IMAGE}"
 
-echo "✅ Deployment finished: ${VERSION}"
+# 6. Проверка
+sleep 4
+if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "✅ Deployment OK: ${IMAGE_TAG}"
+else
+    echo "❌ Container not running, logs:"
+    docker logs "${CONTAINER_NAME}" || true
+    exit 1
+fi
