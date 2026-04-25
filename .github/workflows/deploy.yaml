@@ -1,8 +1,9 @@
 name: CD - Deploy with Docker Compose
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - 'lab4*'
 
 jobs:
   deploy:
@@ -14,6 +15,7 @@ jobs:
 
     - name: Create .env file
       run: |
+        # Используем github.sha для получения хэша текущего коммита
         echo "APP_IMAGE=ghcr.io/timurmif/catty-reminders-app:${{ github.sha }}" > .env
         echo "DEPLOY_REF=${{ github.sha }}" >> .env
         echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
@@ -21,27 +23,15 @@ jobs:
         echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
         echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
     
-    - name: Copy .env to server
+    - name: Copy files to server
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ vars.PROXY_HOST }}
         username: ${{ vars.SERVER_USER }}
         port: ${{ vars.SSH_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ".env"
+        source: ".env,docker-compose.yml"
         target: "/opt/catty-reminders/"
-        strip_components: 0
-
-    - name: Copy docker-compose.yml to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ vars.PROXY_HOST }}
-        username: ${{ vars.SERVER_USER }}
-        port: ${{ vars.SSH_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "docker-compose.yml"
-        target: "/opt/catty-reminders/"
-        strip_components: 0
 
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.3
@@ -53,7 +43,9 @@ jobs:
         script: |
           cd /opt/catty-reminders
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose up -d --pull always --remove-orphans --force-recreate
+          # Принудительно пересоздаем контейнеры с новым образом
+          docker compose pull
+          docker compose up -d --remove-orphans --force-recreate
           sleep 5
           curl -s --fail http://localhost:8181/login || exit 1
 
