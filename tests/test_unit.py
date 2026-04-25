@@ -3,7 +3,7 @@ This module contains unit tests for the Catty app.
 """
 
 # --------------------------------------------------------------------------------
-# Importss
+# Imports
 # --------------------------------------------------------------------------------
 
 from app.utils.auth import serialize_token, deserialize_token
