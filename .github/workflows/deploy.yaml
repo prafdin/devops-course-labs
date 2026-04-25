@@ -1,33 +1,18 @@
-- name: Deploy to server
-  uses: appleboy/ssh-action@v1
-  with:
-    host: course.prafdin.ru
-    port: 3113
-    username: hesa
-    key: ${{ secrets.SSH_PRIVATE_KEY }}
-    pty: true
-    script: |
-      set -e  # остановка при любой ошибке
-      echo "=== whoami ==="
-      whoami
-      echo "=== pwd ==="
-      pwd
-      echo "=== ls -la /home/hesa ==="
-      ls -la /home/hesa
-      echo "=== trying to write test file ==="
-      echo "hello" > /tmp/test_write
-      cat /tmp/test_write
-      echo "=== git fetch ==="
-      cd /home/hesa/catty-reminders-app
-      git fetch --all
-      echo "=== git reset ==="
-      git reset --hard ${{ github.sha }}
-      echo "=== write DEPLOY_REF without sudo ==="
-      echo "DEPLOY_REF=${{ github.sha }}" > /tmp/deploy_ref_test
-      cat /tmp/deploy_ref_test
-      echo "=== try sudo tee ==="
-      echo "DEPLOY_REF=${{ github.sha }}" | sudo /usr/bin/tee /etc/catty-app-env
-      echo "=== content after sudo tee ==="
-      cat /etc/catty-app-env
-      echo "=== restart service ==="
-      sudo /usr/bin/systemctl restart catty
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: hesa
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3113
+          script: bash /home/hesa/catty-reminders-app/deploy.sh ${{ github.sha }}
