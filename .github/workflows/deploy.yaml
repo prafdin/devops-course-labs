@@ -7,8 +7,27 @@
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     pty: true
     script: |
+      set -e  # остановка при любой ошибке
+      echo "=== whoami ==="
+      whoami
+      echo "=== pwd ==="
+      pwd
+      echo "=== ls -la /home/hesa ==="
+      ls -la /home/hesa
+      echo "=== trying to write test file ==="
+      echo "hello" > /tmp/test_write
+      cat /tmp/test_write
+      echo "=== git fetch ==="
       cd /home/hesa/catty-reminders-app
       git fetch --all
+      echo "=== git reset ==="
       git reset --hard ${{ github.sha }}
-      echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
+      echo "=== write DEPLOY_REF without sudo ==="
+      echo "DEPLOY_REF=${{ github.sha }}" > /tmp/deploy_ref_test
+      cat /tmp/deploy_ref_test
+      echo "=== try sudo tee ==="
+      echo "DEPLOY_REF=${{ github.sha }}" | sudo /usr/bin/tee /etc/catty-app-env
+      echo "=== content after sudo tee ==="
+      cat /etc/catty-app-env
+      echo "=== restart service ==="
       sudo /usr/bin/systemctl restart catty
