@@ -7,7 +7,6 @@ This module provides routes for authentication.
 # --------------------------------------------------------------------------------
 import os
 from app import templates
-from app import DEPLOY_REF
 from app.utils.auth import AuthCookie, get_login_form_creds, get_auth_cookie
 from app.utils.exceptions import UnauthorizedPageException
 
