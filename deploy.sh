@@ -8,18 +8,26 @@ echo "==> Deploying ref: $GIT_REF"
 cd "$APP_DIR"
 
 echo "==> Fetching latest"
-git fetch --all --tags --prune
+git fetch --all --prune
+git fetch --tags --force
 
-echo "==> Checking out $GIT_REF"
-git checkout -f "$GIT_REF"
-
-# Если это ветка — подтянем обновления
-if git symbolic-ref -q HEAD > /dev/null; then
-  git pull --ff-only
+echo "==> Resolving $GIT_REF"
+if git show-ref --verify --quiet "refs/remotes/origin/$GIT_REF"; then
+  TARGET="origin/$GIT_REF"
+else
+  TARGET="$GIT_REF"
 fi
+echo "==> Target: $TARGET"
 
-echo "==> Installing dependencies"
-python3 -m pip install --user -r requirements.txt
+echo "==> Checking out"
+git checkout -f "$TARGET"
+
+echo "==> Installing dependencies (venv)"
+if [ ! -d .venv ]; then
+  python3 -m venv .venv
+fi
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
 
 echo "==> Restarting service"
 sudo systemctl restart catty-app
