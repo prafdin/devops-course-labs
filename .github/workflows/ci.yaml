@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ "lab3" ]
+    branches:
+      - lab3*
   pull_request:
-    branches: [ "lab3" ]
+    branches:
+      - lab3*
 
 permissions:
   contents: read
@@ -50,7 +52,6 @@ jobs:
   docker-build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
