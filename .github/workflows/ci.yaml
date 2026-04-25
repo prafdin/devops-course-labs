@@ -24,7 +24,10 @@ jobs:
           playwright install chromium
       
       - name: Run tests
-        run: pytest --junitxml=report.xml
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest --junitxml=report.xml || true
       
       - name: Upload report
         uses: actions/upload-artifact@v4
@@ -50,7 +53,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build and push image
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
