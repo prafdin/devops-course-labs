@@ -1,4 +1,4 @@
-name: CD
+name: Deploy
 
 on:
   release:
@@ -7,48 +7,35 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - uses: actions/checkout@v4
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to production server
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-            -p ${{ secrets.SSH_PORT }} \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-              set -e
-              cd /home/pyshisha/devops-lab/catty-reminders-app
-
-              git fetch --all --tags --prune
-              git reset --hard ${{ github.sha }}
-
-              echo "${{ github.sha }}" > /home/pyshisha/devops-lab/deploy_ref.txt
-
-              source /home/pyshisha/devops-lab/venv/bin/activate
-              pip install -r requirements.txt
-
-              COMMIT=\$(git rev-parse HEAD)
-
-              mkdir -p static
-              echo "\$COMMIT" > static/version.txt
-
-              if [ -f templates/pages/login.html ]; then
-                sed -i "s|<meta name=\"deployref\" content=\".*\">|<meta name=\"deployref\" content=\"\$COMMIT\">|" templates/pages/login.html
-              fi
-
-              sudo systemctl restart catty-app
-
-              sleep 5
-              echo "Deployed commit: \$COMMIT"
-          EOF
-
-      - name: Verify deployment
-        run: |
-          sleep 5
-          curl -s http://app.ryzkov.course.prafdin.ru/static/version.txt
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u pyshisha --password-stdin
+            
+            docker pull ghcr.io/pyshisha/catty-reminders-app:latest
+            
+            docker stop catty-app || true
+            docker rm catty-app || true
+            
+            docker run -d \
+              --name catty-app \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              ghcr.io/pyshisha/catty-reminders-app:latest
+            
+            docker image prune -f
