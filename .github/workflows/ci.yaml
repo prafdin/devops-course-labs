@@ -41,13 +41,13 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest --junitxml=report.xml
+          pytest --junitxml=test_result.xml
 
-      - name: Upload report
+      - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
-          path: report.xml
+          name: test_result
+          path: test_result.xml
 
   docker-build:
     needs: test

@@ -32,10 +32,6 @@ jobs:
             docker stop catty-app || true
             docker rm catty-app || true
             
-            docker run -d \
-              --name catty-app \
-              -p 8181:8181 \
-              --restart unless-stopped \
-              ghcr.io/pyshisha/catty-reminders-app:latest
+            docker run -d --name catty-app -p 8181:8181 --restart always -e DEPLOY_REF=${{ github.sha }} ghcr.io/pyshisha/catty-reminders-app:latest
             
             docker image prune -f
