@@ -29,7 +29,7 @@ jobs:
         
     - name: Run tests
       run: |
-        pytest tests -v > test_result.txt || echo "Tests failed, but saving log"
+        pytest -v > test_result.txt 2>&1 || true
         
     - name: Upload test results
       uses: actions/upload-artifact@v4
