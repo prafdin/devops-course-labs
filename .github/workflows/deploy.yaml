@@ -7,9 +7,21 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get latest image tag
+        id: get-tag
+        run: |
+          TOKEN=${{ secrets.GITHUB_TOKEN }}
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          PACKAGE="${{ github.event.repository.name }}"
+          API="https://api.github.com/users/$OWNER/packages/container/$PACKAGE/versions"
+          TAG=$(curl -s -H "Authorization: Bearer $TOKEN" "$API" | jq -r '.[0].metadata.container.tags[0]')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -17,10 +29,7 @@ jobs:
           port: 3167
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash -c '
-              set -e
-              cd /home/vano/catty-reminders-app
-              chmod +x ./deploy.sh
-              OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-              ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ github.sha }}
-            '
+            cd /home/vano/catty-reminders-app
+            chmod +x ./deploy.sh
+            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            ./deploy.sh ghcr.io/$OWNER/${{ github.event.repository.name }} ${{ steps.get-tag.outputs.tag }}
