@@ -1,0 +1,48 @@
+name: CD Pipeline
+
+# Запуск только при создании Release
+on:
+  release:
+    types:[published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Копируем файлы проекта на ВМ
+      - name: Copy files via scp
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }} 
+          port: ${{ secrets.SERVER_PORT }} 
+          username: ${{ secrets.SERVER_USER }} 
+          key: ${{ secrets.SSH_PRIVATE_KEY }} 
+          source: "."
+          target: "/home/${{ secrets.SERVER_USER }}/app" 
+
+      # 2. Подключаемся по SSH и запускаем приложение
+      - name: Execute deployment script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/app
+            
+            # Устанавливаем зависимости (если нужны)
+            pip3 install -r requirements.txt
+            
+            # Убиваем старый процесс приложения, запущенный на порту 8181
+            sudo fuser -k 8181/tcp || true
+            
+            # Запускаем приложение в фоне (ПРИМЕР ДЛЯ PYTHON)
+            # Замените app.py на ваш главный файл
+            nohup python3 app.py --port 8181 > app.log 2>&1 &
+            
+            echo "Deployment successful!"
