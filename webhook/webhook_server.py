@@ -53,3 +53,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     print(f"Запуск webhook listener на порту {PORT}")
     HTTPServer(('0.0.0.0', PORT), WebhookHandler).serve_forever()
+
+
+    
