@@ -143,7 +143,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
                     cwd=tmpdir,
                     check=True,
                     capture_output=True,
-                    text=True
+                    text=True,
+                    timeout=600
                 )
                 print(f"      ✅ Тесты прошли успешно!")
                 print(f"         {result.stdout.strip()}")
