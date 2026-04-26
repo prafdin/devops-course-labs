@@ -3,8 +3,9 @@ name: CD Pipeline
 # Запуск только при создании Release
 on:
   release:
-    types:[published]
-
+    types: 
+      - published
+      
 jobs:
   deploy:
     runs-on: ubuntu-latest
