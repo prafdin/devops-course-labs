@@ -19,8 +19,6 @@ services:
     image: ${IMAGE}
     container_name: ${APP_CONTAINER_NAME}
     restart: always
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF}
     ports:
       - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
     volumes:

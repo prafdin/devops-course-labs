@@ -4,8 +4,6 @@ name: CI
 on:
   push:
     branches: [ lab4* ]
-  pull_request:
-    branches: [ lab4* ]
 
 jobs:
   docker-lint:
@@ -70,6 +68,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
             ghcr.io/rovver52/catty-reminders-app:latest
             ghcr.io/rovver52/catty-reminders-app:${{ github.sha }}
