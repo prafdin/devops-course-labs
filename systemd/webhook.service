@@ -1,0 +1,13 @@
+[Unit]
+Description=DevOps Webhook Server
+After=network.target
+
+[Service]
+User=anm
+WorkingDirectory=/home/anm/DevOps/catty-reminders-app
+ExecStart=/usr/bin/python3 /home/anm/DevOps/catty-reminders-app/webhook-server.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
