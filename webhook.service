@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=nightainted
+WorkingDirectory=/home/nightainted/catty-reminders-app
+ExecStart=/home/nightainted/catty-reminders-app/venv/bin/python  webhook_handler.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
