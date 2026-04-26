@@ -10,11 +10,11 @@ test -d static
 
 echo "✅ Basic file checks passed"
 
-if [ ! -d .venv ]; then
-  python3 -m venv .venv
+if [ ! -d venv ]; then
+  python3 -m venv venv
 fi
 
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q
+venv/bin/pip install -r requirements.txt
+venv/bin/python -m pytest -q
 
 echo "🎉 Catty tests finished"
