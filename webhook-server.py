@@ -35,10 +35,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self._process_webhook(payload)
 
             # Отвечаем успехом
+        try:
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(b'{"status": "success"}')
+        except (BrokenPipeError, ConnectionResetError):
+            pass 
 
         except json.JSONDecodeError:
             print("❌ Ошибка парсинга JSON")
