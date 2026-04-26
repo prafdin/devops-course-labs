@@ -1,21 +1,23 @@
 #!/bin/bash
 set -e
 REPO_DIR="/home/qzm/Desktop/catty-reminders-app"
-BRANCH=$1
-
 cd "$REPO_DIR"
-git fetch origin
-git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH"
-
-if [ ! -d ".venv" ]; then
-    python3 -m venv .venv/
-fi
 
 source .venv/bin/activate
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt -q
-fi
+
+playwright install chromium
+
+pip install -r requirements.txt -q
+
+echo "[TEST] Запуск временного сервера для тестов..."
+uvicorn main:app --host 127.0.0.1 --port 8181 > /tmp/test_app.log 2>&1 &
+APP_PID=$!
+sleep 3
 
 echo "[TEST] Запуск pytest..."
+set +e 
 python3 -m pytest -v
+RESULT=$?
+
+kill $APP_PID
+exit $RESULT
