@@ -6,7 +6,7 @@ source .venv/bin/activate
 fuser -k 8181/tcp || true
 
 echo "[TEST] Запуск сервера..."
-uvicorn main:app --host 0.0.0.0 --port 8181 > /tmp/test_app.log 2>&1 &
+uvicorn app.main:app --host 127.0.0.1 --port 8181 > /tmp/test_app.log 2>&1 &
 APP_PID=$!
 
 sleep 5
