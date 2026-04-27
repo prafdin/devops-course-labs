@@ -5,3 +5,7 @@ python-multipart
 itsdangerous
 jinja2
 pyjwt
+tinydb
+playwright
+pytest
+pytest-playwright
