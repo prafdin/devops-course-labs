@@ -28,12 +28,12 @@ jobs:
             echo "MARIADB_PASSWORD=mypass" >> .env
             echo "MARIADB_DATABASE=catty_reminders" >> .env
             echo "HOST_DB_PORT=3306" >> .env
-            echo "CONTAINER_DB_PORT=3306" >> .env
+            echo "CONTEINER_DB_PORT=3306" >> .env
             echo "APP_CONTAINER_NAME=catty-reminders-app" >> .env
             echo "IMAGE=ghcr.io/${OWNER}/catty-reminders-app:latest" >> .env
             echo "DEPLOY_REF=latest" >> .env
             echo "HOST_APP_PORT=8181" >> .env
-            echo "CONTAINER_APP_PORT=8181" >> .env
+            echo "CONTEINER_APP_PORT=8181" >> .env
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
