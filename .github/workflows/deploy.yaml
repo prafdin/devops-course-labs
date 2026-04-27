@@ -16,10 +16,9 @@ jobs:
           port: 3182
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            bash -c '
-              set -e
-              cd /home/rover/catty-reminders-app
-              cat > .env << EOF
+  set -e
+  cd /home/rover/catty-reminders-app
+  cat > .env << EOF
 DB_CONTAINER_NAME=catty-db
 MARIADB_ROOT_PASSWORD=mypass
 MARIADB_USER=rover
@@ -33,8 +32,6 @@ DEPLOY_REF=${{ github.sha }}
 HOST_APP_PORT=8181
 CONTAINER_APP_PORT=8181
 EOF
-              OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-              export DEPLOY_REF=${{ github.sha }}
-              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-              docker compose up -d --pull always --remove-orphans --force-recreate
-            '
+
+  echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  docker compose up -d --pull always --remove-orphans --force-recreate
