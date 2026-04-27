@@ -2,24 +2,21 @@ import os
 import json
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from typing import Dict, Optional
 from pydantic import BaseModel
 
 app = FastAPI(title="Catty Reminders App")
 
-# Чтение DEPLOY_REF
 def get_deploy_ref():
     return os.getenv('DEPLOY_REF', 'unknown')
 
-# Загружаем конфиг
 with open("config.json", "r") as f:
     config = json.load(f)
 
 DB_PATH = config.get("db_path", "reminder_db.json")
 USERS = config.get("users", {"tester": "foobar123"})
 
-# Аутентификация
 security = HTTPBasic()
 
 def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
@@ -33,7 +30,6 @@ def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
         headers={"WWW-Authenticate": "Basic"},
     )
 
-# Модели
 class Reminder(BaseModel):
     id: Optional[int] = None
     title: str
@@ -41,7 +37,6 @@ class Reminder(BaseModel):
     due_date: str
     completed: bool = False
 
-# Работа с БД
 def load_reminders() -> Dict[int, Reminder]:
     if not os.path.exists(DB_PATH):
         return {}
@@ -57,22 +52,6 @@ def save_reminders(reminders: Dict[int, Reminder]):
     with open(DB_PATH, "w") as f:
         json.dump(data, f, indent=2)
 
-# ========== LOGIN ==========
-@app.get("/login", response_class=HTMLResponse)
-async def login_page():
-    return """
-    <html>
-        <head><title>Login | Catty reminders app</title></head>
-        <body>
-            <form method="post" action="/login">
-                <input type="text" name="username" placeholder="Username" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit">Login</button>
-            </form>
-        </body>
-    </html>
-    """
-
 @app.post("/login")
 async def login(request: Request):
     form = await request.form()
@@ -80,40 +59,14 @@ async def login(request: Request):
     password = form.get("password")
     
     if username in USERS and USERS[username] == password:
-        response = RedirectResponse(url="/reminders", status_code=303)
-        return response
-    return HTMLResponse(content="Invalid credentials", status_code=401)
+        return RedirectResponse(url="/reminders", status_code=303)
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
-# ========== REMINDERS PAGE (для UI теста) ==========
-@app.get("/reminders", response_class=HTMLResponse)
-async def reminders_page():
-    return """
-    <html>
-        <head>
-            <title>Reminders | Catty reminders app</title>
-        </head>
-        <body>
-            <h1>Reminders</h1>
-            <p>Deploy ref: """ + get_deploy_ref() + """</p>
-        </body>
-    </html>
-    """
+@app.get("/reminders")
+async def get_reminders():
+    return [r.dict() for r in load_reminders().values()]
 
-# ========== API ЭНДПОИНТЫ ==========
-@app.get("/")
-async def root():
-    return {"message": "Catty Reminders App", "deploy_ref": get_deploy_ref()}
-
-@app.get("/deploy-ref")
-async def deploy_ref():
-    return {"deploy_ref": get_deploy_ref()}
-
-@app.get("/api/reminders")
-async def get_reminders_api(authenticated: str = Depends(authenticate)):
-    reminders = load_reminders()
-    return [r.dict() for r in reminders.values()]
-
-@app.post("/api/reminders")
+@app.post("/reminders")
 async def create_reminder(reminder: Reminder, authenticated: str = Depends(authenticate)):
     reminders = load_reminders()
     new_id = max(reminders.keys()) + 1 if reminders else 1
@@ -122,24 +75,9 @@ async def create_reminder(reminder: Reminder, authenticated: str = Depends(authe
     save_reminders(reminders)
     return {"message": "Reminder created", "id": new_id}
 
-@app.put("/api/reminders/{reminder_id}")
-async def update_reminder(reminder_id: int, reminder: Reminder, authenticated: str = Depends(authenticate)):
-    reminders = load_reminders()
-    if reminder_id not in reminders:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    reminder.id = reminder_id
-    reminders[reminder_id] = reminder
-    save_reminders(reminders)
-    return {"message": "Reminder updated"}
-
-@app.delete("/api/reminders/{reminder_id}")
-async def delete_reminder(reminder_id: int, authenticated: str = Depends(authenticate)):
-    reminders = load_reminders()
-    if reminder_id not in reminders:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    del reminders[reminder_id]
-    save_reminders(reminders)
-    return {"message": "Reminder deleted"}
+@app.get("/deploy-ref")
+async def deploy_ref():
+    return {"deploy_ref": get_deploy_ref()}
 
 @app.get("/health")
 async def health():
