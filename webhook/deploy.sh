@@ -35,7 +35,6 @@ sudo chown vboxuser:vboxuser "$PROJECT_DIR/.env"
 chmod 644 "$PROJECT_DIR/.env"
 
 echo "🔄 Restarting service..."
-sudo systemctl daemon-reload
 sudo systemctl restart app.service
 
-echo "✅ Deployment complete (SHA: $CURRENT_SHA)" 
+echo "✅ Deployment complete (SHA: $CURRENT_SHA)"
