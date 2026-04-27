@@ -1,13 +1,12 @@
 import os
 import json
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from pydantic import BaseModel
-from datetime import datetime
 
 app = FastAPI(title="Catty Reminders App")
 
@@ -31,7 +30,7 @@ DB_PATH = config.get("db_path", "reminder_db.json")
 SECRET_KEY = config.get("secret_key", "default_secret")
 USERS = config.get("users", {"tester": "foobar123"})
 
-# Базовая аутентификация
+# Базовая аутентификация для API
 security = HTTPBasic()
 
 def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
@@ -69,13 +68,35 @@ def save_reminders(reminders: Dict[int, Reminder]):
     with open(DB_PATH, "w") as f:
         json.dump(data, f, indent=2)
 
-# API эндпоинты
+# ========== LOGIN (ДЛЯ ТЕСТОВ) ==========
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
+    return """
+    <html>
+        <body>
+            <form method="post" action="/login">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </body>
+    </html>
+    """
+
+@app.post("/login")
+async def login(request: Request):
+    form = await request.form()
+    username = form.get("username")
+    password = form.get("password")
+    
+    if username in USERS and USERS[username] == password:
+        return RedirectResponse(url="/", status_code=303)
+    return HTMLResponse(content="Invalid credentials", status_code=401)
+
+# ========== ОСНОВНЫЕ ЭНДПОИНТЫ ==========
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "deploy_ref": get_deploy_ref()
-    })
+    return {"message": "Catty Reminders App", "deploy_ref": get_deploy_ref()}
 
 @app.get("/deploy-ref")
 async def deploy_ref():
