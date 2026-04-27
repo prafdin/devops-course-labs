@@ -19,21 +19,22 @@ jobs:
             set -e
             cd /home/rover/catty-reminders-app
             
+            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            export DEPLOY_REF=${{ github.sha }}
+            
             echo "DB_CONTAINER_NAME=catty-db" > .env
             echo "MARIADB_ROOT_PASSWORD=mypass" >> .env
-            echo "MARIADB_USER=rover" >> .env
+            echo "MARIADB_USER=root" >> .env
             echo "MARIADB_PASSWORD=mypass" >> .env
             echo "MARIADB_DATABASE=catty_reminders" >> .env
             echo "HOST_DB_PORT=3306" >> .env
             echo "CONTAINER_DB_PORT=3306" >> .env
-            echo "APP_CONTAINER_NAME=catty-app" >> .env
-            echo "IMAGE=ghcr.io/${{ github.repository_owner | lower }}/catty-reminders-app:${{ github.sha }}" >> .env
-            echo "DEPLOY_REF=${{ github.sha }}" >> .env
+            echo "APP_CONTAINER_NAME=catty-reminders-app" >> .env
+            echo "IMAGE=ghcr.io/${OWNER}/catty-reminders-app:latest" >> .env
+            echo "DEPLOY_REF=latest" >> .env
             echo "HOST_APP_PORT=8181" >> .env
             echo "CONTAINER_APP_PORT=8181" >> .env
 
-            # Авторизация
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Запуск
             docker compose up -d --pull always --remove-orphans --force-recreate
