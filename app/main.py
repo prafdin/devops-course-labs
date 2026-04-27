@@ -62,6 +62,7 @@ def save_reminders(reminders: Dict[int, Reminder]):
 async def login_page():
     return """
     <html>
+        <head><title>Login | Catty reminders app</title></head>
         <body>
             <form method="post" action="/login">
                 <input type="text" name="username" placeholder="Username" required>
@@ -79,10 +80,26 @@ async def login(request: Request):
     password = form.get("password")
     
     if username in USERS and USERS[username] == password:
-        return RedirectResponse(url="/reminders", status_code=303)
+        response = RedirectResponse(url="/reminders", status_code=303)
+        return response
     return HTMLResponse(content="Invalid credentials", status_code=401)
 
-# ========== API ==========
+# ========== REMINDERS PAGE (для UI теста) ==========
+@app.get("/reminders", response_class=HTMLResponse)
+async def reminders_page():
+    return """
+    <html>
+        <head>
+            <title>Reminders | Catty reminders app</title>
+        </head>
+        <body>
+            <h1>Reminders</h1>
+            <p>Deploy ref: """ + get_deploy_ref() + """</p>
+        </body>
+    </html>
+    """
+
+# ========== API ЭНДПОИНТЫ ==========
 @app.get("/")
 async def root():
     return {"message": "Catty Reminders App", "deploy_ref": get_deploy_ref()}
@@ -91,12 +108,12 @@ async def root():
 async def deploy_ref():
     return {"deploy_ref": get_deploy_ref()}
 
-@app.get("/reminders")
-async def get_reminders(authenticated: str = Depends(authenticate)):
+@app.get("/api/reminders")
+async def get_reminders_api(authenticated: str = Depends(authenticate)):
     reminders = load_reminders()
     return [r.dict() for r in reminders.values()]
 
-@app.post("/reminders")
+@app.post("/api/reminders")
 async def create_reminder(reminder: Reminder, authenticated: str = Depends(authenticate)):
     reminders = load_reminders()
     new_id = max(reminders.keys()) + 1 if reminders else 1
@@ -105,7 +122,7 @@ async def create_reminder(reminder: Reminder, authenticated: str = Depends(authe
     save_reminders(reminders)
     return {"message": "Reminder created", "id": new_id}
 
-@app.put("/reminders/{reminder_id}")
+@app.put("/api/reminders/{reminder_id}")
 async def update_reminder(reminder_id: int, reminder: Reminder, authenticated: str = Depends(authenticate)):
     reminders = load_reminders()
     if reminder_id not in reminders:
@@ -115,7 +132,7 @@ async def update_reminder(reminder_id: int, reminder: Reminder, authenticated: s
     save_reminders(reminders)
     return {"message": "Reminder updated"}
 
-@app.delete("/reminders/{reminder_id}")
+@app.delete("/api/reminders/{reminder_id}")
 async def delete_reminder(reminder_id: int, authenticated: str = Depends(authenticate)):
     reminders = load_reminders()
     if reminder_id not in reminders:
