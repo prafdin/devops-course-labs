@@ -20,7 +20,7 @@ jobs:
             cd /home/rover/catty-reminders-app
             
             OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            export DEPLOY_REF=${{ github.sha }}
+            DEPLOY_REF="${{ github.sha }}"
             
             echo "DB_CONTAINER_NAME=catty-db" > .env
             echo "MARIADB_ROOT_PASSWORD=mypass" >> .env
@@ -30,8 +30,8 @@ jobs:
             echo "HOST_DB_PORT=3306" >> .env
             echo "CONTEINER_DB_PORT=3306" >> .env
             echo "APP_CONTAINER_NAME=catty-reminders-app" >> .env
-            echo "IMAGE=ghcr.io/${OWNER}/catty-reminders-app:latest" >> .env
-            echo "DEPLOY_REF=latest" >> .env
+            echo "IMAGE=ghcr.io/${OWNER}/catty-reminders-app:${DEPLOY_REF}" >> .env
+            echo "DEPLOY_REF=${DEPLOY_REF}" >> .env
             echo "HOST_APP_PORT=8181" >> .env
             echo "CONTEINER_APP_PORT=8181" >> .env
 
