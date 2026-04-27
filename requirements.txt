@@ -4,3 +4,4 @@ pydantic
 python-multipart
 itsdangerous
 jinja2
+pyjwt
