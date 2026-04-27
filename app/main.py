@@ -3,34 +3,23 @@ import json
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from typing import Dict, Optional
 from pydantic import BaseModel
 
 app = FastAPI(title="Catty Reminders App")
 
-# Чтение DEPLOY_REF из файла (фиксируется при сборке)
+# Чтение DEPLOY_REF
 def get_deploy_ref():
-    try:
-        with open('/deploy_ref.txt', 'r') as f:
-            return f.read().strip()
-    except:
-        return os.getenv('DEPLOY_REF', 'unknown')
-
-# Монтируем статику и шаблоны
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+    return os.getenv('DEPLOY_REF', 'unknown')
 
 # Загружаем конфиг
 with open("config.json", "r") as f:
     config = json.load(f)
 
 DB_PATH = config.get("db_path", "reminder_db.json")
-SECRET_KEY = config.get("secret_key", "default_secret")
 USERS = config.get("users", {"tester": "foobar123"})
 
-# Базовая аутентификация для API
+# Аутентификация
 security = HTTPBasic()
 
 def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
@@ -52,7 +41,7 @@ class Reminder(BaseModel):
     due_date: str
     completed: bool = False
 
-# Загрузка напоминаний из JSON
+# Работа с БД
 def load_reminders() -> Dict[int, Reminder]:
     if not os.path.exists(DB_PATH):
         return {}
@@ -68,7 +57,7 @@ def save_reminders(reminders: Dict[int, Reminder]):
     with open(DB_PATH, "w") as f:
         json.dump(data, f, indent=2)
 
-# ========== LOGIN (ДЛЯ ТЕСТОВ) ==========
+# ========== LOGIN ==========
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
     return """
@@ -90,12 +79,12 @@ async def login(request: Request):
     password = form.get("password")
     
     if username in USERS and USERS[username] == password:
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/reminders", status_code=303)
     return HTMLResponse(content="Invalid credentials", status_code=401)
 
-# ========== ОСНОВНЫЕ ЭНДПОИНТЫ ==========
+# ========== API ==========
 @app.get("/")
-async def root(request: Request):
+async def root():
     return {"message": "Catty Reminders App", "deploy_ref": get_deploy_ref()}
 
 @app.get("/deploy-ref")
