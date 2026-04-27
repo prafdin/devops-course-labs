@@ -1,101 +1,119 @@
-"""
-This module is the main module for the FastAPI app.
-"""
-
-# --------------------------------------------------------------------------------
-# Imports
-# --------------------------------------------------------------------------------
-
-from app.utils.exceptions import UnauthorizedPageException
-from app.routers import api, login, reminders, root
-
-from fastapi import FastAPI, Request
-from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse, RedirectResponse
+import os
+import json
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
-from starlette.exceptions import HTTPException
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+from typing import Dict, List, Optional
+from pydantic import BaseModel
+from datetime import datetime
 
+app = FastAPI(title="Catty Reminders App")
 
-# --------------------------------------------------------------------------------
-# App Creation
-# --------------------------------------------------------------------------------
+# Чтение DEPLOY_REF из файла (фиксируется при сборке)
+def get_deploy_ref():
+    try:
+        with open('/deploy_ref.txt', 'r') as f:
+            return f.read().strip()
+    except:
+        return os.getenv('DEPLOY_REF', 'unknown')
 
-app = FastAPI()
-app.include_router(root.router)
-app.include_router(api.router)
-app.include_router(login.router)
-app.include_router(reminders.router)
-
-
-# --------------------------------------------------------------------------------
-# Static Files
-# --------------------------------------------------------------------------------
-
+# Монтируем статику и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
+# Загружаем конфиг
+with open("config.json", "r") as f:
+    config = json.load(f)
 
-# --------------------------------------------------------------------------------
-# Exception Handlers
-# --------------------------------------------------------------------------------
+DB_PATH = config.get("db_path", "reminder_db.json")
+SECRET_KEY = config.get("secret_key", "default_secret")
+USERS = config.get("users", {"tester": "foobar123"})
 
-@app.exception_handler(UnauthorizedPageException)
-async def unauthorized_exception_handler(request: Request, exc: UnauthorizedPageException):
-  return RedirectResponse('/login?unauthorized=True', status_code=302)
+# Базовая аутентификация
+security = HTTPBasic()
 
+def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+    username = credentials.username
+    password = credentials.password
+    if username in USERS and USERS[username] == password:
+        return username
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid credentials",
+        headers={"WWW-Authenticate": "Basic"},
+    )
 
-@app.exception_handler(404)
-async def page_not_found_exception_handler(request: Request, exc: HTTPException):
-  if request.url.path.startswith('/api/'):
-    return JSONResponse({'detail': exc.detail}, status_code=exc.status_code)
-  else:
-    return RedirectResponse('/not-found')
+# Модели
+class Reminder(BaseModel):
+    id: Optional[int] = None
+    title: str
+    description: str
+    due_date: str
+    completed: bool = False
 
+# Загрузка напоминаний из JSON
+def load_reminders() -> Dict[int, Reminder]:
+    if not os.path.exists(DB_PATH):
+        return {}
+    with open(DB_PATH, "r") as f:
+        data = json.load(f)
+    reminders = {}
+    for key, value in data.items():
+        reminders[int(key)] = Reminder(**value)
+    return reminders
 
-# --------------------------------------------------------------------------------
-# OpenAPI Customization
-# --------------------------------------------------------------------------------
+def save_reminders(reminders: Dict[int, Reminder]):
+    data = {str(k): v.dict() for k, v in reminders.items()}
+    with open(DB_PATH, "w") as f:
+        json.dump(data, f, indent=2)
 
-def custom_openapi():
-  if app.openapi_schema:
-    return app.openapi_schema
-  
-  description = \
-    """Catty is a web app for tracking reminders.
-    It is a full-stack Python app built using FastAPI and HTMX.
-    It is meant to be an "example" or "demo" app used for instructional purposes.
-    """
+# API эндпоинты
+@app.get("/")
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "deploy_ref": get_deploy_ref()
+    })
 
-  openapi_schema = get_openapi(
-    title="Catty: The Reminders App",
-    version="1.0.0",
-    description=description,
-    routes=app.routes,
-    tags=[
-      {
-        "name": "API",
-        "description": "Backend API routes for managing reminder lists and items.",
-      },
-      {
-        "name": "Pages",
-        "description": "The main Catty web pages.",
-      },
-      {
-        "name": "Authentication",
-        "description": "Routes for logging into and out of the app.",
-      },
-      {
-        "name": "HTMX Partials",
-        "description": "Routes that serve partial web page contents for HTMX-based requests.",
-      },
-    ]
-  )
+@app.get("/deploy-ref")
+async def deploy_ref():
+    return {"deploy_ref": get_deploy_ref()}
 
-  openapi_schema["info"]["x-logo"] = {
-    "url": "static/img/logos/catty-500px.png"
-  }
+@app.get("/reminders")
+async def get_reminders(authenticated: str = Depends(authenticate)):
+    reminders = load_reminders()
+    return [r.dict() for r in reminders.values()]
 
-  app.openapi_schema = openapi_schema
-  return app.openapi_schema
+@app.post("/reminders")
+async def create_reminder(reminder: Reminder, authenticated: str = Depends(authenticate)):
+    reminders = load_reminders()
+    new_id = max(reminders.keys()) + 1 if reminders else 1
+    reminder.id = new_id
+    reminders[new_id] = reminder
+    save_reminders(reminders)
+    return {"message": "Reminder created", "id": new_id}
 
+@app.put("/reminders/{reminder_id}")
+async def update_reminder(reminder_id: int, reminder: Reminder, authenticated: str = Depends(authenticate)):
+    reminders = load_reminders()
+    if reminder_id not in reminders:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    reminder.id = reminder_id
+    reminders[reminder_id] = reminder
+    save_reminders(reminders)
+    return {"message": "Reminder updated"}
 
-app.openapi = custom_openapi
+@app.delete("/reminders/{reminder_id}")
+async def delete_reminder(reminder_id: int, authenticated: str = Depends(authenticate)):
+    reminders = load_reminders()
+    if reminder_id not in reminders:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    del reminders[reminder_id]
+    save_reminders(reminders)
+    return {"message": "Reminder deleted"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "deploy_ref": get_deploy_ref()}
