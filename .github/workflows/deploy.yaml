@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+      - name: Remote Docker Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3106
+          script: |
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-app"
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              -e DEPLOY_REF=${{ github.sha }} \
+              $IMAGE
+            docker image prune -f
