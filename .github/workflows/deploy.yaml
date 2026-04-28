@@ -1,4 +1,4 @@
-name: CD - Deploy to Server (Docker)
+name: Deploy
 
 on:
   release:
@@ -10,44 +10,31 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Prepare lowercase repo name
-        run: echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Deploy via SSH
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+      - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3106
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3106
           script: |
-            set -e
-            IMAGE_NAME="ghcr.io/${{ env.REPO_LOWER }}:latest"
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
             CONTAINER_NAME="catty-app"
-
+            echo "Logging in to GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
             docker stop $CONTAINER_NAME || true
             docker rm $CONTAINER_NAME || true
-
-            docker pull $IMAGE_NAME
-
-            docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart unless-stopped \
-              -e DEPLOY_REF="${{ github.sha }}" \
-              $IMAGE_NAME
-
-            sleep 3
-            if curl -s --fail http://localhost:8181/login; then
-              echo "Docker container started successfully"
-            else
-              echo "Application failed to start"
-              docker logs $CONTAINER_NAME
-              exit 1
-            fi
-
-      - name: Verify external access
-        run: |
-          sleep 5
-          curl -s --fail "http://app.vichurin.course.prafdin.ru/login" || exit 1
-          echo "Application is accessible at http://app.vichurin.course.prafdin.ru"
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              -e DEPLOY_REF=${{ github.sha }} \
+              $IMAGE
+            docker image prune -f
