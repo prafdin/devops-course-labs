@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=umarbis
+WorkingDirectory=/home/umarbis/webhook-handler
+ExecStart=/home/umarbis/webhook-handler/venv/bin/python logic.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
