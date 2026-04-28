@@ -8,7 +8,7 @@ CONFIG = {
     "repo_dir": "/home/password_123/catty-reminders-app",
     "env_path": "/etc/catty-app-env",
     "systemd_unit": "catty",
-    "log_file": "/home/password_123/webhook_backdoor.log" 
+    "log_file": "/home/password_123/deploy.log" 
 }
 
 app = Flask(__name__)
