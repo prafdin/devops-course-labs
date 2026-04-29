@@ -1,0 +1,27 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          port: 2200
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vboxuser/devops-lab/catty-reminders-app
+            git fetch --all
+            git reset --hard origin/lab2
+            source venv/bin/activate
+            pip install -r requirements.txt
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
+            sudo systemctl restart app.service
