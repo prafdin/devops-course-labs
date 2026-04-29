@@ -1,0 +1,14 @@
+[Unit]
+Description=GitHub Webhook Handler
+After=network.target
+
+[Service]
+Type=simple
+User=anzorcode
+WorkingDirectory=/home/anzorcode/webhook
+ExecStart=/usr/bin/python3 /home/anzorcode/webhook/handler.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
