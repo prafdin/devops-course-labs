@@ -7,9 +7,9 @@ echo "Deploying SHA: $SHA"
 git fetch --all
 git reset --hard "$SHA"
 
-/home/vboxuser/devops/catty-reminders-app/venv/bin/python -m pip install -r requirements.txt
+/home/vboxuser/devops/venv/bin/python -m pip install -r requirements.txt
 
-echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
+echo "DEPLOY_REF=$SHA" | sudo tee /home/vboxuser/devops/catty-reminders-app/.env
 
 sudo systemctl restart catty-app
 
