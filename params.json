@@ -246,9 +246,44 @@
       "app": "catty-reminders-app"
     },
     {
+      "login": "chekulaev17",
+      "id": "chekulaev",
+      "app": "website-example"
+    },
+    {
       "login": "Shureevk",
       "id": "shureev",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "SeredovaSophia",
+      "id": "seredova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "AndreyPanakshin",
+      "id": "panakshin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "alvsbn",
+      "id": "alieva",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "DubovLeonid",
+      "id": "dubov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "exhaustion666",
+      "id": "sarychev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "AkatsukiDeki",
+      "id": "kruglov",
+      "app": "csharp-example"
     }
   ]
 }
