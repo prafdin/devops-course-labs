@@ -26,6 +26,7 @@ jobs:
 
       - name: Run tests
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest --junitxml=test_report.xml
 
       - name: Upload test results
