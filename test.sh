@@ -8,24 +8,32 @@ test -f requirements.txt
 test -f app/main.py
 test -d templates
 test -d static
+
 echo "✅ Basic file checks passed"
 
-# Setup venv if needed
-if [ ! -d venv ]; then
-    python3 -m venv venv
+if [ ! -d .venv ]; then
+    python3 -m venv .venv
 fi
 
-# Install dependencies
-venv/bin/pip install -r requirements.txt -q
+. .venv/bin/activate
 
-# Install Playwright browsers if pytest-playwright is in requirements
-if grep -q "pytest-playwright" requirements.txt; then
-    echo "🌐 Installing Playwright browsers..."
-    venv/bin/playwright install chromium --with-deps -q 2>&1 | head -20 || true
-fi
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip install pytest pytest-playwright playwright
+python -m playwright install chromium
 
-# Run tests
-echo "🔬 Running tests..."
-venv/bin/python -m pytest -q -v 2>&1 | head -100
+# Start app in background for UI tests
+uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+APP_PID=$!
+
+cleanup() {
+    kill "$APP_PID" || true
+}
+trap cleanup EXIT
+
+sleep 5
+
+export PYTHONPATH=.
+pytest -v --junitxml=test_result.xml
 
 echo "🎉 Catty tests finished"
