@@ -15,4 +15,5 @@ jobs:
           username: hesa
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3113
+          request_pty: true
           script: bash /home/hesa/catty-reminders-app/deploy.sh ${{ github.sha }}
