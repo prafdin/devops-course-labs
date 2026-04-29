@@ -9,7 +9,7 @@ cd "$REPO_DIR" || { echo "Error: Could not enter $REPO_DIR"; exit 1; }
 git fetch origin
 git reset --hard "origin/$BRANCH"
 
-COMMIT_HASH=$(git rev-parse --short HEAD)
+COMMIT_HASH=$(git rev-parse HEAD)
 echo "[deploy] Current commit hash: $COMMIT_HASH"
 
 TARGET_FILE=$(grep -rEl "DEPLOY_REF\s*=" . --exclude-dir={venv,__pycache__,.git} | head -n 1)
