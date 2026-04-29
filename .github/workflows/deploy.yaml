@@ -1,0 +1,35 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Get release commit SHA
+        id: get_sha
+        run: |
+          # Получаем SHA коммита, на который указывает release
+          RELEASE_TAG=${{ github.event.release.tag_name }}
+          git clone --depth 1 --branch $RELEASE_TAG https://github.com/me1ax/catty-reminders-app.git /tmp/repo
+          cd /tmp/repo
+          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Trigger Deploy on Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 2200
+          script: |
+            cd /home/vboxuser/devops-lab/catty-reminders-app
+            git fetch --all
+            git reset --hard ${{ steps.get_sha.outputs.COMMIT_SHA }}
+            source venv/bin/activate
+            pip install -r requirements.txt
+            echo "DEPLOY_REF=${{ steps.get_sha.outputs.COMMIT_SHA }}" > .env
+            sudo systemctl restart app.service

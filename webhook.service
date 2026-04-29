@@ -1,0 +1,16 @@
+[Unit]
+Description=GitHub Webhook Handler
+After=network.target
+
+[Service]
+Type=simple
+User=vboxuser
+Group=vboxuser
+WorkingDirectory=/home/vboxuser/devops-lab/catty-reminders-app
+Environment="PATH=/home/vboxuser/devops-lab/catty-reminders-app/venv/bin"
+ExecStart=/home/vboxuser/devops-lab/catty-reminders-app/venv/bin/python3 /home/vboxuser/devops-lab/catty-reminders-app/webhook/webhook.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

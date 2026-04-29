@@ -1,0 +1,16 @@
+[Unit]
+Description=Catty Reminders FastAPI App
+After=network.target
+
+[Service]
+Type=simple
+User=vboxuser
+Group=vboxuser
+WorkingDirectory=/home/vboxuser/devops-lab/catty-reminders-app
+EnvironmentFile=/home/vboxuser/devops-lab/catty-reminders-app/.env
+ExecStart=/home/vboxuser/devops-lab/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
