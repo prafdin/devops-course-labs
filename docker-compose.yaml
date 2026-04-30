@@ -10,8 +10,6 @@ services:
       MARIADB_DATABASE: ${DB_DATABASE:-catty_reminders}
       MARIADB_USER: ${DB_USER:-catty_user}
       MARIADB_PASSWORD: ${DB_PASSWORD:-catty_pass}
-    ports:
-      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
@@ -22,8 +20,6 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-mappy12}/catty-reminders-app:${DEPLOY_REF:-latest}
     container_name: catty-app
     restart: unless-stopped
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF:-development}
     ports:
       - "8181:8181"
     volumes:

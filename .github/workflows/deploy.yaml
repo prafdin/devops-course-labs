@@ -28,9 +28,6 @@ jobs:
 
             echo "=== Деплой через Docker Compose ==="
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            export DEPLOY_REF=${{ github.sha }}
             export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
             export DB_ROOT_PASSWORD=rootpass
             export DB_DATABASE=catty_reminders

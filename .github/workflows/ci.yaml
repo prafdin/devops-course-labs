@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [lab4, lab4*, lab-4, lab-4*]
+    branches: [lab-4]
   pull_request:
-    branches: [lab4, lab4*, lab-4, lab-4*]
+    branches: [lab-4]
 
 permissions:
   contents: read
