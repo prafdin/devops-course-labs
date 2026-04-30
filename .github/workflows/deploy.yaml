@@ -1,0 +1,51 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via Docker Compose
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3169
+          username: mappy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 30m
+          script: |
+            set -e
+
+            cd /home/mappy/Desktop/catty-reminders-app
+
+            echo "=== Деплой через Docker Compose ==="
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            export DB_ROOT_PASSWORD=rootpass
+            export DB_DATABASE=catty_reminders
+
+            docker compose down
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans
+
+            sleep 5
+
+            if docker compose ps | grep -q "Up"; then
+              echo "Стек успешно запущен"
+              echo "=== Текущий DEPLOY_REF ==="
+              docker exec catty-app printenv | grep DEPLOY_REF || echo "DEPLOY_REF not set"
+            else
+              echo "Ошибка: стек не запустился"
+              docker compose logs
+              exit 1
+            fi
