@@ -28,19 +28,11 @@ jobs:
               git fetch --all --tags --prune
               git reset --hard ${{ github.sha }}
 
-              echo "${{ github.sha }}" > /home/pyshisha/devops-lab/deploy_ref.txt
-
               source /home/pyshisha/devops-lab/venv/bin/activate
               pip install -r requirements.txt
 
               COMMIT=\$(git rev-parse HEAD)
-
-              mkdir -p static
-              echo "\$COMMIT" > static/version.txt
-
-              if [ -f templates/pages/login.html ]; then
-                sed -i "s|<meta name=\"deployref\" content=\".*\">|<meta name=\"deployref\" content=\"\$COMMIT\">|" templates/pages/login.html
-              fi
+              echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /home/pyshisha/devops-lab/catty-reminders-app/.deploy.env
 
               sudo systemctl restart catty-app
 
@@ -51,4 +43,4 @@ jobs:
       - name: Verify deployment
         run: |
           sleep 5
-          curl -s http://app.ryzkov.course.prafdin.ru/static/version.txt
+          curl -s http://app.ryzkov.course.prafdin.ru/login | grep "deployref"
