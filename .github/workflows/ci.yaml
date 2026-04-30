@@ -71,6 +71,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
             ghcr.io/${{ env.REPO_LOWER }}:latest
