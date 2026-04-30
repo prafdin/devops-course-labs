@@ -32,7 +32,7 @@ jobs:
               pip install -r requirements.txt
 
               COMMIT=\$(git rev-parse HEAD)
-              echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /home/pyshisha/devops-lab/catty-reminders-app/.deploy.env
+              echo "DEPLOY_REF=${{ github.sha }}" | tee /home/pyshisha/devops-lab/catty-reminders-app/.deploy.env
 
               sudo systemctl restart catty-app
 
