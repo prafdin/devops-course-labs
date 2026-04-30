@@ -1,0 +1,29 @@
+[Unit]
+Description=Catty Reminders Application
+Documentation=https://github.com/prafdin/catty-reminders-app
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pyshisha
+Group=pyshisha
+WorkingDirectory=/home/pyshisha/devops-lab/catty-reminders-app
+
+EnvironmentFile=-/home/pyshisha/devops-lab/catty-reminders-app/.deploy.env
+Environment="PATH=/home/pyshisha/devops-lab/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+
+ExecStart=/home/pyshisha/devops-lab/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
+
+Restart=always
+RestartSec=10
+
+MemoryLimit=512M
+CPUQuota=100%
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
