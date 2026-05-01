@@ -1,52 +1,47 @@
-name: CD Pipeline
+name: Production Deployment
 
 on:
   release:
-    types: [published] 
+    types: 
+      - published
 
 jobs:
-  deploy:
+  deploy-to-server:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Copy files via scp
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          port: ${{ secrets.SERVER_PORT }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/home/${{ secrets.SERVER_USER }}/app"
-
-      - name: Execute deployment script
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          port: ${{ secrets.SERVER_PORT }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/${{ secrets.SERVER_USER }}/app
-            
-            if [ ! -f .env ]; then
-                cp .env.example .env
-            fi
-
-            sed -i '/^DEPLOY_REF=/d' .env || true
-            echo "DEPLOY_REF=$(echo ${{ github.sha }})" >> .env
-
-            python3 -m venv venv
-            source venv/bin/activate
-            
-            pip install --upgrade pip
-            pip install -r requirements.txt
-            
-            sudo fuser -k 8181/tcp || true
-            
-            nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
-            
-            echo "Deployment to $SERVER_HOST successful!"
+    - name: Fetch repository contents
+      uses: actions/checkout@v4
+    
+    - name: Extract Release Metadata
+      id: release-info
+      run: |
+        REL_TAG="${{ github.event.release.tag_name }}"
+        REL_BRANCH="${{ github.event.release.target_commitish }}"
+        
+        # Более надежный способ получения хэша коммита по тегу
+        COMMIT_HASH=$(git rev-parse $REL_TAG^{commit} || git rev-list -n 1 $REL_TAG)
+        
+        echo "HASH=$COMMIT_HASH" >> $GITHUB_ENV
+        echo "TAG=$REL_TAG" >> $GITHUB_ENV
+        echo "BRANCH=$REL_BRANCH" >> $GITHUB_ENV
+        
+        echo "Target Tag: $REL_TAG"
+        echo "Source Branch: $REL_BRANCH"
+        echo "Resolved Hash: $COMMIT_HASH"
+    
+    - name: Authenticate SSH Key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Trigger Remote Deploy Script
+      env:
+        DEPLOY_HOST: ${{ vars.SERVER_HOST }}
+        DEPLOY_USER: ${{ vars.SERVER_USER }}
+        DEPLOY_PORT: ${{ vars.SERVER_PORT }}
+        RELEASE_HASH: ${{ env.HASH }}
+        RELEASE_BRANCH: ${{ env.BRANCH }}
+      run: |
+        chmod +x ./scripts/deploy.sh
+        bash ./scripts/deploy.sh

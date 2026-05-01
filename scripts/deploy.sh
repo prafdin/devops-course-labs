@@ -1,0 +1,66 @@
+#!/bin/bash
+
+set -e
+
+if [[ -z "$DEPLOY_HOST" || -z "$DEPLOY_USER" ]]; then
+    echo "CRITICAL: DEPLOY_HOST and DEPLOY_USER variables are required."
+    exit 1
+fi
+
+if [[ -z "$RELEASE_HASH" ]]; then
+    echo "CRITICAL: RELEASE_HASH is missing."
+    exit 1
+fi
+
+TARGET_PORT="${DEPLOY_PORT:-22}"
+APP_DIR="/home/ct/catty-reminders-app"
+
+echo "=== Starting deployment process ==="
+echo "Target: ${DEPLOY_USER}@${DEPLOY_HOST}:${TARGET_PORT}"
+echo "Updating to branch: ${RELEASE_BRANCH} (Commit: ${RELEASE_HASH})"
+
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" << 'REMOTE_SCRIPT'
+    set -e
+    
+REMOTE_SCRIPT
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" "bash -s" << REMOTE_SCRIPT
+    set -e
+
+    echo "--> Navigating to application directory"
+    cd ${APP_DIR}
+    
+    echo "--> Fetching latest changes"
+    git fetch origin
+    
+    echo "--> Checking out specific release commit"
+    git checkout ${RELEASE_HASH}
+    
+    # Сохраняем информацию для бота автопроверки
+    CURRENT_REF=\$(git rev-parse HEAD)
+    echo "DEPLOY_REF=\$CURRENT_REF" > .env.deploy
+    echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
+    
+    echo "--> Setting up Virtual Environment"
+    if [[ ! -d ".venv" ]]; then
+        python3 -m venv .venv
+    fi
+    source .venv/bin/activate
+    
+    echo "--> Installing dependencies"
+    if [[ -f "requirements.txt" ]]; then
+        python -m pip install -r requirements.txt
+    fi
+    
+    echo "--> Restarting Systemd Service"
+    sudo systemctl restart app.service
+    
+    echo "--> Verifying application status..."
+    sleep 5
+    
+    if sudo systemctl is-active --quiet app.service; then
+        echo "=== Deployment successful ==="
+    else
+        echo "=== DEPLOYMENT FAILED: Service is not active ==="
+        exit 1
+    fi
+REMOTE_SCRIPT
