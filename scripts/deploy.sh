@@ -36,7 +36,7 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     
     # Экранируем $, чтобы переменная CURRENT_REF выполнилась на сервере, а не в GitHub Actions
     CURRENT_REF=\$(git rev-parse HEAD)
-    echo "DEPLOY_REF=\$CURRENT_REF" > .env.deploy
+    echo "DEPLOY_REF=\$CURRENT_REF" > .env
     echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
     
     echo "--> Setting up Virtual Environment"
