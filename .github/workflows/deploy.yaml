@@ -23,6 +23,7 @@ jobs:
             git fetch origin
             git checkout lab2
             git pull origin lab2
+            git reset --hard ${{ github.sha }}
             echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
             if [ ! -d ".venv" ]; then
                 python3 -m venv .venv/
