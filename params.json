@@ -205,9 +205,93 @@
       "id": "bisultanov",
       "app": "catty-reminders-app"
     },
+      "login": "RenTogan",
+      "id": "mansurov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "SemeenS",
+      "id": "strebelev",
+      "app": "catty-reminders-app"
+    },
     {
       "login": "Demonstinatord",
       "id": "sergienko",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "vissstu",
+      "id": "chernikova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "KuzminStanislav",
+      "id": "kuzmin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Dester",
+      "id": "nosov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "KozlovDan",
+      "id": "kozlov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "h0shi-tech",
+      "id": "nikishin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "chekulaev17",
+      "id": "chekulaev",
+      "app": "website-example"
+    },
+    {
+      "login": "Shureevk",
+      "id": "shureev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "SeredovaSophia",
+      "id": "seredova",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "AndreyPanakshin",
+      "id": "panakshin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "alvsbn",
+      "id": "alieva",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "DubovLeonid",
+      "id": "dubov",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "exhaustion666",
+      "id": "sarychev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "AkatsukiDeki",
+      "id": "kruglov",
+      "app": "csharp-example"
+    },
+    {
+      "login": "anzorcode05",
+      "id": "magomedagaev",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "VladaGusakova",
+      "id": "gusakova",
       "app": "catty-reminders-app"
     }
   ]
