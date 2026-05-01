@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Application CI
 
 on:
   push:
@@ -11,38 +11,39 @@ on:
       - lab2_autotests*
 
 jobs:
-  test:
+  test-runner:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout code
+      - name: Fetch source code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.12"
+          cache: 'pip' 
 
-      - name: Install dependencies
+      - name: Install requirements
         run: |
-          python -m pip install --upgrade pip
+          python3 -m pip install -U pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      - name: Prepare environment and start app in background
+      - name: Launch application in background
         run: |
-          cp .env.example .env || true
-          
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > test_app.log 2>&1 &
-          
-          sleep 5 
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > server_output.log 2>&1 &
+          sleep 6 
 
-      - name: Run tests
-        run: |
-          python -m pytest -v --browser chromium tests > test_result.txt || true
+      - name: Execute test suite
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest --junitxml=test_result.xml
 
-      - name: Upload test results
+      - name: Save test report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_result.txt
+          path: test_result.xml
+          retention-days: 7
