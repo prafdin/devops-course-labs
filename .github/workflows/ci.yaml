@@ -2,9 +2,13 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "lab2", "lab1" ]
+    branches:
+      - lab2
+      - lab2_autotests*
   pull_request:
-    branches: [ "lab2", "lab1" ]
+    branches:
+      - lab2
+      - lab2_autotests*
 
 jobs:
   test:
@@ -23,11 +27,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest # Убедитесь, что у вас установлен фреймворк для тестов
+          # Устанавливаем браузеры для UI тестов (согласно README)
+          playwright install --with-deps chromium
+
+      - name: Prepare environment and start app in background
+        run: |
+          # Создаем .env файл из шаблона
+          cp .env.example .env || true
+          
+          # Запускаем FastAPI в фоне на порту 8181 для тестов
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > test_app.log 2>&1 &
+          
+          # Даем приложению 5 секунд, чтобы оно успело полностью запуститься
+          sleep 5 
 
       - name: Run tests
         run: |
-          pytest > test_result.txt || true # || true чтобы шаг не упал, если тесты не пройдут, и артефакт загрузился
+          # Запускаем pytest и сохраняем вывод. || true чтобы шаг не упал окончательно до загрузки артефакта
+          python -m pytest -v --browser chromium tests > test_result.txt || true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
