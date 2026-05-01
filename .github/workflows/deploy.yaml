@@ -23,7 +23,7 @@ jobs:
             git reset --hard
             git fetch --all
             git reset --hard ${{ github.sha }}
-            echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
+            echo "DEPLOY_REF=${{ github.sha }}" > /home/nightainted/catty-reminders-app/.env
             if [ ! -d ".venv" ]; then
                 python3 -m venv .venv/
             fi
