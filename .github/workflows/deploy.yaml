@@ -1,0 +1,41 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies (build step)
+        run: |
+          pip install -r requirements.txt
+
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3175
+          username: aleksandr
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/aleksandr/catty-reminders-app
+
+            git fetch --all
+            git reset --hard ${{ github.event.release.tag_name }}
+
+            echo "DEPLOY_REF=${{ github.event.release.tag_name }}" | sudo tee /etc/catty-app-env
+
+            sudo systemctl restart catty-app
+
