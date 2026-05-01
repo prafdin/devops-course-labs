@@ -13,7 +13,7 @@ if [[ -z "$RELEASE_HASH" ]]; then
 fi
 
 TARGET_PORT="${DEPLOY_PORT:-22}"
-APP_DIR="/home/ct/catty-reminders-app"
+APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
 
 echo "=== Starting deployment process ==="
 echo "Target: ${DEPLOY_USER}@${DEPLOY_HOST}:${TARGET_PORT}"

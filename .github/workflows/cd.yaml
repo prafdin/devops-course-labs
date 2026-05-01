@@ -19,7 +19,6 @@ jobs:
         REL_TAG="${{ github.event.release.tag_name }}"
         REL_BRANCH="${{ github.event.release.target_commitish }}"
         
-        # Более надежный способ получения хэша коммита по тегу
         COMMIT_HASH=$(git rev-parse $REL_TAG^{commit} || git rev-list -n 1 $REL_TAG)
         
         echo "HASH=$COMMIT_HASH" >> $GITHUB_ENV
