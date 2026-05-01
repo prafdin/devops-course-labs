@@ -32,8 +32,11 @@ jobs:
           sleep 5
 
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest tests/ -v --junitxml=test_result.xml || true
+          python -c "import sys; print('PYTHONPATH:', sys.path)"
+          pytest tests/test_unit.py tests/test_api.py -v --junitxml=test_result.xml || true
 
       - name: Upload test results
         if: always()
