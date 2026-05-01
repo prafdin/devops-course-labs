@@ -2,8 +2,8 @@
 
 set -e
 
-if [[ -z "$DEPLOY_HOST" || -z "$DEPLOY_USER" ]]; then
-    echo "CRITICAL: DEPLOY_HOST and DEPLOY_USER variables are required."
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" ]]; then
+    echo "CRITICAL: SERVER_HOST and SERVER_USER variables are required."
     exit 1
 fi
 
@@ -12,18 +12,18 @@ if [[ -z "$RELEASE_HASH" ]]; then
     exit 1
 fi
 
-TARGET_PORT="${DEPLOY_PORT:-22}"
+TARGET_PORT="${SERVER_PORT:-22}"
 APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
 
 echo "=== Starting deployment process ==="
-echo "Target: ${DEPLOY_USER}@${DEPLOY_HOST}:${TARGET_PORT}"
+echo "Target: ${SERVER_USER}@${SERVER_HOST}:${TARGET_PORT}"
 echo "Updating to branch: ${RELEASE_BRANCH} (Commit: ${RELEASE_HASH})"
 
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" << 'REMOTE_SCRIPT'
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << 'REMOTE_SCRIPT'
     set -e
     
 REMOTE_SCRIPT
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" "bash -s" << REMOTE_SCRIPT
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
 
     echo "--> Navigating to application directory"
