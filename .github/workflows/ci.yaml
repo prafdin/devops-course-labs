@@ -33,7 +33,6 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-
         run: |
           pytest --junitxml=test_result.xml
 
