@@ -35,7 +35,6 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}
     echo "--> Checking out specific release commit"
     git checkout ${RELEASE_HASH}
     
-    # Сохраняем информацию для бота автопроверки
     CURRENT_REF=\$(git rev-parse HEAD)
     echo "DEPLOY_REF=\$CURRENT_REF" > .env.deploy
     echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
