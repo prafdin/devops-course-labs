@@ -35,7 +35,11 @@ jobs:
             if [ ! -f .env ]; then
                 cp .env.example .env
             fi
-                        python3 -m venv venv
+
+            sed -i '/^DEPLOY_REF=/d' .env || true
+            echo "DEPLOY_REF=${{git rev-parse HEAD}}" >> .env
+
+            python3 -m venv venv
             source venv/bin/activate
             
             pip install --upgrade pip
