@@ -1,0 +1,26 @@
+name: CD Deployment
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: sarychev
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3157
+          script: |
+            cd ~/catty-reminders-app
+            git fetch origin
+            git checkout lab2
+            git reset --hard origin/lab2
+            bash deploy.sh lab2
