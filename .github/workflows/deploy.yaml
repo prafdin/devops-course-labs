@@ -18,12 +18,9 @@ jobs:
           port: 3181
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
           script: |
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
             git reset --hard ${{ github.sha }}
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
-            sudo systemctl daemon-reload
-            sudo systemctl restart catty
-            echo "Deployed ref: $(cat /etc/catty-app-env)"
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}
