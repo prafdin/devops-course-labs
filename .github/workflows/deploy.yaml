@@ -19,7 +19,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3157
           script: |
-            cd ~/catty-reminders-app
+            cd /home/nightainted/catty-reminders-app
+            git reset --hard
             git fetch --all
             git reset --hard ${{ github.sha }}
             echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
