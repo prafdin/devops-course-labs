@@ -40,10 +40,10 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
     
     echo "--> Setting up Virtual Environment"
-    if [[ ! -d ".venv" ]]; then
-        python3 -m venv .venv
+    if [[ ! -d "venv" ]]; then
+        python3 -m venv venv
     fi
-    source .venv/bin/activate
+    source venv/bin/activate
     
     echo "--> Installing dependencies"
     if [[ -f "requirements.txt" ]]; then
