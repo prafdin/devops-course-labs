@@ -37,7 +37,7 @@ jobs:
             fi
 
             sed -i '/^DEPLOY_REF=/d' .env || true
-            echo "DEPLOY_REF=${{git rev-parse HEAD}}" >> .env
+            echo "DEPLOY_REF=$(echo ${{ github.sha }})" >> .env
 
             python3 -m venv venv
             source venv/bin/activate
