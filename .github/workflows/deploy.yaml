@@ -22,6 +22,11 @@ jobs:
             cd ~/catty-reminders-app
             git fetch origin
             git checkout lab2
-            git reset --hard origin/lab2
-            echo "DEPLOY_REF=${{ github.sha }}" > .env
-            sudo systemctl restart catty-app
+            git pull origin lab2
+            echo "DEPLOY_REF=${{ github.sha }}" > .env.deploy
+            if [ ! -d ".venv" ]; then
+                python3 -m venv .venv/
+            fi
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart catty-app.service
