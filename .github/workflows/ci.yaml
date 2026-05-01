@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ lab2, main, catty-reminders-app ]
+    branches: [lab2*]
   pull_request:
-    branches: [ catty-reminders-app ]
+    branches: [lab2*]
 
 jobs:
   test:
@@ -21,16 +21,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
+          pip install -r requirements.txt
+          pip install uvicorn pytest-playwright
+          playwright install --with-deps chromium
 
-      - name: Run tests and generate report
+      - name: Start app
         run: |
-          if [ -d tests ] && [ "$(ls -A tests)" ]; then
-            PYTHONPATH=${{ github.workspace }} pytest tests/ --junitxml=test_result.xml
-          else
-            echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="dummy" tests="1" failures="0" errors="0" skipped="0"><testcase classname="dummy" name="dummy test" time="0"/></testsuite></testsuites>' > test_result.xml
-          fi
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 10
+          curl -s http://127.0.0.1:8181/login | grep -q "Catty"
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v5
