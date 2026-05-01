@@ -2,7 +2,7 @@ name: CD Pipeline
 
 on:
   release:
-    types: [published] # <-- Обязательно пробел после двоеточия!
+    types: [published] 
 
 jobs:
   deploy:
@@ -32,23 +32,17 @@ jobs:
           script: |
             cd /home/${{ secrets.SERVER_USER }}/app
             
-            # Подготавливаем файл переменных окружения, если его нет
             if [ ! -f .env ]; then
                 cp .env.example .env
             fi
-            
-            # Создаем изолированное окружение для Python (чтобы не сломать систему)
-            python3 -m venv venv
+                        python3 -m venv venv
             source venv/bin/activate
             
-            # Устанавливаем зависимости
             pip install --upgrade pip
             pip install -r requirements.txt
             
-            # Убиваем старый процесс на порту 8181
             sudo fuser -k 8181/tcp || true
             
-            # Запускаем FastAPI через uvicorn в фоне без режима --reload (для продакшена)
             nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 > app.log 2>&1 &
             
             echo "Deployment to $SERVER_HOST successful!"
