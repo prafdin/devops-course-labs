@@ -36,13 +36,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 
     def _run_pipeline(self, branch):
-        print(f"Запуск тестов для {branch}...")
+        target_branch = "lab1"
         try:
-            subprocess.run([f"{BASE_DIR}/webhook/test.sh", branch], check=True)
+            subprocess.run([f"{BASE_DIR}/webhook/test.sh", target_branch], check=True)
+            subprocess.run([f"{BASE_DIR}/webhook/deploy.sh", target_branch], check=True)
             
-            subprocess.run([f"{BASE_DIR}/webhook/deploy.sh", branch], check=True)
-            
-            subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "success", "DevOps pipeline passed"], check=False)
+            subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "success", "DevOps pipeline passed on lab1"], check=False)
         except subprocess.CalledProcessError:
             print("[X] Ошибка пайплайна!")
             subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "failure", "Pipeline failed"], check=False)

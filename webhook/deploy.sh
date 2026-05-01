@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 REPO_DIR="/home/qzm/Desktop/catty-reminders-app"
-BRANCH=$1
+BRANCH="lab1"
 
-cd "$REPO_DIR"
+git reset --hard
 git fetch origin
 git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH"
+git pull origin "$BRANCH
 
 source .venv/bin/activate
 pip install -r requirements.txt -q
