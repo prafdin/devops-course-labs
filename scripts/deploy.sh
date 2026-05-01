@@ -2,7 +2,6 @@
 
 set -e
 
-# Проверяем переменные
 if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" ]]; then
     echo "CRITICAL: SERVER_HOST and SERVER_USER variables are required."
     exit 1
@@ -21,7 +20,6 @@ echo "=== Starting deployment process ==="
 echo "Target: ${SERVER_USER}@${SERVER_HOST}:${TARGET_PORT}"
 echo "Updating to commit: ${RELEASE_HASH}"
 
-# Единый блок подключения по SSH
 ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
 
@@ -34,7 +32,6 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     echo "--> Checking out specific release commit"
     git checkout ${RELEASE_HASH}
     
-    # Экранируем $, чтобы переменная CURRENT_REF выполнилась на сервере, а не в GitHub Actions
     CURRENT_REF=\$(git rev-parse HEAD)
     echo "DEPLOY_REF=\$CURRENT_REF" > .env
     echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
