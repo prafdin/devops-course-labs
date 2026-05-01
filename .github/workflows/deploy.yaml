@@ -23,4 +23,5 @@ jobs:
             git fetch origin
             git checkout lab2
             git reset --hard origin/lab2
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
             bash deploy.sh lab2
