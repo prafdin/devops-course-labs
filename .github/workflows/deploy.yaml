@@ -22,7 +22,6 @@ jobs:
           host: course.prafdin.ru
           username: nightainted
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_SHA
           script: |
             cd /home/nightainted/catty-reminders-app
             git fetch origin
