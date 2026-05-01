@@ -39,10 +39,8 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print(f"Запуск тестов для {branch}...")
         try:
             subprocess.run([f"{BASE_DIR}/webhook/test.sh", branch], check=True)
-            print("--> Тесты пройдены! Переходим к деплою.")
             
             subprocess.run([f"{BASE_DIR}/webhook/deploy.sh", branch], check=True)
-            print("--> Деплой завершен.")
             
             subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "success", "DevOps pipeline passed"], check=False)
         except subprocess.CalledProcessError:
