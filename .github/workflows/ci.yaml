@@ -3,14 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
+      - "**"
   pull_request:
     branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
+      - "**"
 
 jobs:
   pipeline:
@@ -48,7 +44,6 @@ jobs:
           name: test_result
           path: test_result.xml
 
-      
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -57,15 +52,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
