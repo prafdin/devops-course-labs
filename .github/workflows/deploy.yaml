@@ -35,7 +35,7 @@ jobs:
             git fetch --all
             git reset --hard ${{ github.event.release.tag_name }}
 
-            echo "DEPLOY_REF=${{ github.event.release.tag_name }}" | sudo tee /etc/catty-app-env
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" | sudo tee /etc/catty-app-env
 
             sudo systemctl restart catty-app
 
