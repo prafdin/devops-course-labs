@@ -14,20 +14,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Deploy to Server
         uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_SHA: ${{ github.sha }}
         with:
-          host: course.prafdin.ru
-          username: nightainted
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3157
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: GITHUB_SHA
           script: |
             cd /home/nightainted/catty-reminders-app
             git fetch origin
-            git checkout lab2
-            git reset --hard origin/lab2
-            
+            git checkout $GITHUB_SHA
             ./venv/bin/pip install -r requirements.txt
-            
-            echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
+            echo "DEPLOY_REF=$GITHUB_SHA" > .env
             sudo systemctl restart catty-app
