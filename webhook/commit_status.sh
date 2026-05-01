@@ -16,5 +16,5 @@ curl -X POST \
     \"state\":\"$STATE\",
     \"context\":\"CI/CD Pipeline\",
     \"description\":\"$DESCRIPTION\",
-    \"target_url\":\"http://app.kuzmin.course.prafdin.ru\"
+    \"target_url\":\"http://v3-app.kuzmin.course.prafdin.ru\"
   }"
