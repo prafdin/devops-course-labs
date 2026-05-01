@@ -36,9 +36,10 @@ jobs:
     
     - name: Trigger Remote Deploy Script
       env:
-        DEPLOY_HOST: ${{ vars.SERVER_HOST }}
-        DEPLOY_USER: ${{ vars.SERVER_USER }}
-        DEPLOY_PORT: ${{ vars.SERVER_PORT }}
+        # Теперь берём из секретов и называем переменные правильно
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PORT: ${{ secrets.SERVER_PORT }}
         RELEASE_HASH: ${{ env.HASH }}
         RELEASE_BRANCH: ${{ env.BRANCH }}
       run: |
