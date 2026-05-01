@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3157
           script: |
-            cd ~/catty-reminders-app
+            cd /home/nightainted/catty-reminders-app
             git fetch origin
             git checkout lab2
             git reset --hard origin/lab2
