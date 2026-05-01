@@ -19,8 +19,8 @@ echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
 sudo systemctl restart catty
 
 # 6. Проверка
-sleep 3
-if sudo systemctl is-active --quiet catty; then
+sleep 5
+if systemctl is-active --quiet catty; then
     echo "SUCCESS: Deployed $SHA"
 else
     echo "ERROR: App failed"
