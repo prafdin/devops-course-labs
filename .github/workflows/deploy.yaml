@@ -18,6 +18,7 @@ jobs:
           port: 3181
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
           script: |
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
