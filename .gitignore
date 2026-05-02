@@ -3,3 +3,15 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+# IDE
+.idea/
+*.pyc
+__pycache__/
+# Secrets and local config
+.env
+config.json
+inputs.json
+# Lab1 leftovers
+lab1/
+# Duplicate workflows
+.github/workflows/ci.yml
