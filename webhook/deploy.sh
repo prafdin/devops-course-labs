@@ -6,7 +6,7 @@ BRANCH="lab1"
 git reset --hard
 git fetch origin
 git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH
+git pull origin "$BRANCH"
 
 source .venv/bin/activate
 pip install -r requirements.txt -q
