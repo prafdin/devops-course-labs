@@ -30,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-          pip install git+https://x-access-token:${{ secrets.TESTLIB_TOKEN }}@github.com/prafdin/testlib.git
+          pip install git+https://${{ secrets.GH_PAT }}@github.com/prafdin/testlib.git
 
           playwright install --with-deps chromium
 
