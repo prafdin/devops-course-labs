@@ -11,7 +11,7 @@ git pull origin "$BRANCH"
 source .venv/bin/activate
 pip install -r requirements.txt -q
 
-DEPLOY_REF=$(git rev-parse --short HEAD)
+DEPLOY_REF=$(git rev-parse HEAD)
 if grep -q "DEPLOY_REF=" "$REPO_DIR/.env"; then
     sed -i "s/DEPLOY_REF=.*/DEPLOY_REF=$DEPLOY_REF/" "$REPO_DIR/.env"
 else

@@ -5,3 +5,8 @@ __pycache__/
 .env
 app/
 tests/
+frp_*
+frpc
+frps
+*.tar.gz
+.env.deploy
