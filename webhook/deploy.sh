@@ -20,4 +20,5 @@ fi
 
 echo "[DEPLOY] Перезапуск приложения через systemd..."
 sudo fuser -k 8181/tcp || true
+sleep 1
 sudo systemctl restart devops-app.service
