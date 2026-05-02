@@ -13,7 +13,8 @@ services:
       - catty-network
 
   catty-app:
-    image: ${IMAGE}
+    image: ${IMAGE:-catty-app-local}
+    build: .
     restart: always
     environment:
       - DEPLOY_REF=${DEPLOY_REF:-unknown}
