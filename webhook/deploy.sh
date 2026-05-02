@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 REPO_DIR="/home/qzm/Desktop/catty-reminders-app"
-BRANCH="lab1"
+BRANCH="${1:-lab1}"
 
 git reset --hard
 git fetch origin

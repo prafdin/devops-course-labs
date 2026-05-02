@@ -30,22 +30,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
     def _process_webhook(self, payload):
         event_type = self.headers.get('X-GitHub-Event', 'unknown')
         if event_type == 'push':
-            branch = payload.get('ref', '').split('/')[-1]
-            print(f"\n[{datetime.now()}] Получен PUSH в ветку: {branch}")
-            self._run_pipeline(branch)
+            ref = payload.get('ref', '')
+            branch = ref.split('/')[-1]
+            if branch.startswith('lab1'):
+                self._run_pipeline(branch)
 
 
     def _run_pipeline(self, branch):
-        target_branch = "lab1"
         try:
-            subprocess.run([f"{BASE_DIR}/webhook/test.sh", target_branch], check=True)
-            subprocess.run([f"{BASE_DIR}/webhook/deploy.sh", target_branch], check=True)
-            
-            subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "success", "DevOps pipeline passed on lab1"], check=False)
+            print(f"[RUN] Запуск пайплайна для ветки: {branch}")
+            subprocess.run([f"{BASE_DIR}/webhook/test.sh", branch], check=True)
+            subprocess.run([f"{BASE_DIR}/webhook/deploy.sh", branch], check=True)
+            subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "success", f"Pipeline passed on {branch}"], check=False)
         except subprocess.CalledProcessError:
             print("[X] Ошибка пайплайна!")
             subprocess.run([f"{BASE_DIR}/webhook/commit_status.sh", "failure", "Pipeline failed"], check=False)
-
 
 if __name__ == '__main__':
     print(f"Запуск webhook listener на порту {PORT}")
