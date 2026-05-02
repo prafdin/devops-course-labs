@@ -6,6 +6,9 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+ARG DEPLOY_REF=NA
+ENV DEPLOY_REF=${DEPLOY_REF}
+
 COPY app/ ./app/
 COPY static/ ./static/
 COPY templates/ ./templates/
