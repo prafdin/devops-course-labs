@@ -92,7 +92,6 @@ if [ -f "requirements.txt" ]; then
 fi
 
 log_message "INFO" "Перезапуск systemd сервиса"
-systemctl --user daemon-reload
 if systemctl --user is-active --quiet "$SERVICE_NAME"; then
     systemctl --user restart "$SERVICE_NAME"
     check_success "Перезапуск $SERVICE_NAME"
