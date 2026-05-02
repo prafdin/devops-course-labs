@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mariadb:11
@@ -18,7 +16,7 @@ services:
     image: ${IMAGE}
     restart: always
     environment:
-      - DEPLOY_REF=${DEPLOY_REF}
+      - DEPLOY_REF=${DEPLOY_REF:-unknown}
       - DB_HOST=db
       - DB_USER=user
       - DB_PASS=pass

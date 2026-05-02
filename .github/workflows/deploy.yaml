@@ -8,8 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-        packages: read
-        contents: read
+      packages: read
+      contents: read
     
     steps:
     - name: Checkout code
@@ -29,17 +29,17 @@ jobs:
         script: |
           cd /home/Roman/Desktop/catty-reminders-app
           
-          export IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-          export DEPLOY_REF="${{ github.sha }}"
+          IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+          DEPLOY_SHA="${{ github.sha }}"
 
           echo "Logging in to GHCR..."
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
           echo "Updating images with Docker Compose..."
-          sudo -E docker compose pull
+          sudo IMAGE=$IMAGE_NAME DEPLOY_REF=$DEPLOY_SHA docker compose pull
 
           echo "Restarting stack..."
-          sudo -E docker compose up -d --remove-orphans
+          sudo IMAGE=$IMAGE_NAME DEPLOY_REF=$DEPLOY_SHA docker compose up -d --remove-orphans
 
           echo "Cleaning up old images..."
           sudo docker image prune -f
