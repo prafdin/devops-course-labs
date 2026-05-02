@@ -27,22 +27,19 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-          CONTAINER_NAME="catty-reminders-app"
+          cd /home/Roman/Desktop/catty-reminders-app
+          
+          export IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+          export DEPLOY_REF="${{ github.sha }}"
 
           echo "Logging in to GHCR..."
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          echo "Updating image..."
-          sudo docker pull $IMAGE_NAME
+          echo "Updating images with Docker Compose..."
+          sudo -E docker compose pull
 
-          sudo docker stop $CONTAINER_NAME || true
-          sudo docker rm $CONTAINER_NAME || true
+          echo "Restarting stack..."
+          sudo -E docker compose up -d --remove-orphans
 
-          sudo docker run -d \
-            --name $CONTAINER_NAME \
-            -p 8181:8181 \
-            --restart unless-stopped \
-            $IMAGE_NAME
-
+          echo "Cleaning up old images..."
           sudo docker image prune -f

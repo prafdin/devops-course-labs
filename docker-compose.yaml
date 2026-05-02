@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:11
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=root_pass
+      - MARIADB_USER=user
+      - MARIADB_PASSWORD=pass
+      - MARIADB_DATABASE=catty_db
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+
+  catty-app:
+    image: ${IMAGE}
+    restart: always
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF}
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASS=pass
+      - DB_NAME=catty_db
+    ports: 
+      - "8181:8181"
+    depends_on:
+      - db
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
