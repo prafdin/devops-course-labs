@@ -1,5 +1,4 @@
 name: CI Pipeline
-
 on:
   push:
     branches: ['**']
@@ -9,6 +8,16 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root_pass
+          MARIADB_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,14 +30,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
           pip install pytest pytest-playwright uvicorn mysql-connector-python
           playwright install chromium --with-deps
 
-      - name: Start application with Docker Compose
+      - name: Prepare config.json for tests
         run: |
-          IMAGE=ci-test DEPLOY_REF=${{ github.sha }} docker compose up -d --build
-          sleep 20
+          jq '.db_config.host = "127.0.0.1" | .db_config.password = "root_pass"' config.json > config.tmp && mv config.tmp config.json
+
+      - name: Start application in background
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 10 # Ждем запуска
 
       - name: Execute tests
         env:
@@ -43,10 +56,6 @@ jobs:
           name: test_result
           path: test_results.xml
 
-      - name: Stop application
-        if: always()
-        run: docker compose down
-
   build-and-push:
     needs: test
     if: github.event_name == 'push'
@@ -60,8 +69,7 @@ jobs:
 
       - name: Prepare Image Name
         id: prep
-        run: |
-          echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
