@@ -26,16 +26,15 @@ jobs:
           cd /home/Roman/Desktop/catty-reminders-app
           
           REPO_LOWER="${{ steps.prep.outputs.repo_lower }}"
-          IMAGE_VAL="ghcr.io/$REPO_LOWER:latest"
+          IMAGE_VAL="ghcr.io/$REPO_LOWER:${{ github.sha }}"
           REF_VAL="${{ github.sha }}"
 
-          echo "Logging in to GHCR..."
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          echo "Pulling new image..."
-          sudo IMAGE=$IMAGE_VAL DEPLOY_REF=$REF_VAL docker compose pull catty-app
+          echo "IMAGE=$IMAGE_VAL" > .env
+          echo "DEPLOY_REF=$REF_VAL" >> .env
           
-          echo "Restarting stack..."
-          sudo IMAGE=$IMAGE_VAL DEPLOY_REF=$REF_VAL docker compose up -d --force-recreate --remove-orphans
+          sudo docker compose pull catty-app
+          sudo docker compose up -d --force-recreate --remove-orphans
 
           sudo docker image prune -f
