@@ -1,42 +1,51 @@
-from flask import Flask, request
-from flask import jsonify
+from flask import Flask, request, jsonify
 import subprocess
 import os
 
-app = Flask(__name__)
-
-PORT = 8080
-APP_DIR = "/home/user/catty-reminders-app"
-APP_SERVICE = "catty-app"
-ENV_FILE = "/home/user/catty-reminders-app/.env"
-
-@app.route('/', methods=['GET', 'POST'])
-def handle():
-    if request.method == 'GET':
-        return jsonify({"message": "Webhook handler running"}), 200
+class WebhookManager:
+    def __init__(self):
+        self.app = Flask(__name__)
+        self.port = 8080
+        self.app_dir = "/home/user/catty-reminders-app"
+        self.service_name = "catty-app"
+        self.env_file = "/home/user/catty-reminders-app/.env"
+        self._register_routes()
     
-    if request.headers.get('X-GitHub-Event') == 'push':
-        data = request.json
-        commit_sha = data.get('after') if data else None
+    def _register_routes(self):
+        self.app.route('/', methods=['GET', 'POST'])(self.handle_request)
+    
+    def handle_request(self):
+        if request.method == 'GET':
+            return jsonify({"message": "Webhook handler running"}), 200
         
-        if not commit_sha or commit_sha == '0000000000000000000000000000000000000000':
-            return jsonify({"message": "No valid SHA"}), 200
+        if request.headers.get('X-GitHub-Event') == 'push':
+            payload = request.json
+            commit_sha = payload.get('after') if payload else None
             
-        print("Starting deployment...")
+            if not commit_sha or commit_sha == '0' * 40:
+                return jsonify({"message": "No valid SHA"}), 200
+            
+            self._deploy(commit_sha)
+            return jsonify({"message": "Deployment completed"}), 200
         
-        subprocess.run(["git", "-C", APP_DIR, "pull"], check=True)
-        print("Code updated")
+        return jsonify({"message": "Not a push event"}), 200
+    
+    def _deploy(self, sha):
+        print(">>> Starting deployment...")
         
-        with open(ENV_FILE, "w") as f:
-            f.write(f"DEPLOY_REF={commit_sha}")
-        print(f"DEPLOY_REF written: {commit_sha}")
+        subprocess.run(["git", "-C", self.app_dir, "pull"], check=True)
+        print(">>> Code updated")
         
-        subprocess.run(["sudo", "systemctl", "restart", APP_SERVICE], check=True)
-        print("Service restarted")
+        with open(self.env_file, "w") as f:
+            f.write(f"DEPLOY_REF={sha}")
+        print(f">>> DEPLOY_REF written: {sha}")
         
-        return jsonify({"message": "Deployment completed"}), 200
-        
-    return jsonify({"message": "Not a push event"}), 200
+        subprocess.run(["sudo", "systemctl", "restart", self.service_name], check=True)
+        print(">>> Service restarted")
+    
+    def run(self):
+        self.app.run(host='0.0.0.0', port=self.port)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=PORT)
+    manager = WebhookManager()
+    manager.run()
