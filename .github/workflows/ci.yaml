@@ -23,6 +23,16 @@ jobs:
           pip install -r requirements.txt pytest-playwright
           playwright install --with-deps chromium
 
+      - name: Start MySQL for tests
+        run: |
+          docker run -d --name test-db \
+            -e MYSQL_ROOT_PASSWORD=mypass \
+            -e MYSQL_DATABASE=catty_reminders \
+            -p 3306:3306 \
+            mysql:8.0
+          sleep 15
+          sed -i 's/"host": "db"/"host": "localhost"/' config.json
+
       - name: Start Application
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
@@ -55,8 +65,7 @@ jobs:
       - name: Prepare Image Name
         id: prep
         run: |
-          REPO_LOWER="sofiastepanova/catty-reminders-app"
-          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+          echo "repo_lower=sofiastepanova/catty-reminders-app" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -71,5 +80,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
+            ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab4
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
