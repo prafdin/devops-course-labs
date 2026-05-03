@@ -12,7 +12,7 @@ if [[ -z "$RELEASE_HASH" ]]; then
     exit 1
 fi
 
-# Если порт не передан, ставим 22 по умолчанию
+# Если порт не передан, ставим 67 по умолчанию
 TARGET_PORT="${SERVER_PORT:-22}"
 APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
 
