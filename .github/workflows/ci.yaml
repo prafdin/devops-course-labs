@@ -62,6 +62,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Prepare Image Name
         id: prep
         run: |
@@ -79,6 +85,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/arm64
           tags: |
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab4
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
