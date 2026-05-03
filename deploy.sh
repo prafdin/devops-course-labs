@@ -3,7 +3,6 @@ set -e
 
 IMAGE_NAME=$1
 DEPLOY_REF=$2
-
 HOST_PORT=8181
 CONTAINER_PORT=8181
 CONTAINER_NAME="catty-reminders-app"
@@ -24,5 +23,4 @@ docker run -d \
     -p $HOST_PORT:$CONTAINER_PORT \
     --name $CONTAINER_NAME \
     --restart unless-stopped \
-    -e DEPLOY_REF=$DEPLOY_REF \
     $IMAGE
