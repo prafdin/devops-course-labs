@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Docker container
+      - name: Deploy via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -20,18 +20,7 @@ jobs:
             
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            docker pull ghcr.io/sofiastepanova/catty-reminders-app:lab3
+            export DEPLOY_REF=${{ github.sha }}
             
-            docker stop catty-app || true
-            docker rm catty-app || true
-            
-            docker run -d \
-              --name catty-app \
-              --restart always \
-              -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
-              ghcr.io/sofiastepanova/catty-reminders-app:lab3
-            
-            echo "Waiting for new container to be healthy..."
-            sleep 1
-            docker ps --filter "name=catty-app" --filter "health=healthy"
+            docker compose pull app
+            docker compose up -d --remove-orphans
