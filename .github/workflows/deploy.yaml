@@ -1,0 +1,21 @@
+name: Deploy
+on:
+  release:
+    types: [published]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: vano
+          port: 3167
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/vano/catty-reminders-app
+            chmod +x ./deploy.sh
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ivandelibaltov --password-stdin
+            ./deploy.sh "ghcr.io/ivandelibaltov/catty-reminders-app" "${{ github.sha }}"
