@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=user
+WorkingDirectory=/home/user/webhook-handler
+ExecStart=/usr/bin/python3 /home/user/webhook-handler/webhook_server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
