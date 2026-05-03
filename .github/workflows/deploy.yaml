@@ -31,3 +31,5 @@ jobs:
               -p 8181:8181 \
               -e DEPLOY_REF=${{ github.sha }} \
               ghcr.io/sofiastepanova/catty-reminders-app:lab3
+            sleep 5
+            curl --retry 5 --retry-delay 2 http://localhost:8181/login
