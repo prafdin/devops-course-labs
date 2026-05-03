@@ -32,5 +32,6 @@ jobs:
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
         REPO_NAME: ${{ github.repository }}
       run: |
+        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/killa123/Desktop/devopss/catty-reminders-app/docker-compose.yaml
         chmod +x scripts/deploy.sh
         ./scripts/deploy.sh
