@@ -1,18 +1,21 @@
-# 1. Базовый образ с Python
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-# 2. Устанавливаем рабочую директорию
 WORKDIR /app
 
-# 3. Копируем зависимости и устанавливаем
+# Копируем зависимости
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Копируем всё приложение
-COPY . .
+# Копируем код приложения
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
+COPY config.json .
 
-# 5. Указываем правильный порт
+HEALTHCHECK --interval=1s --timeout=2s --retries=5 CMD curl --fail http://localhost:8181/login || exit 1
+
+# Открываем порт 8181
 EXPOSE 8181
 
-# 6. Команда запуска
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
+# Команда запуска
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
