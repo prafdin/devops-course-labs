@@ -1,46 +1,36 @@
-name: Production Deployment
+name: Deploy
 
 on:
   release:
-    types: 
-      - published
+    types: [published]
 
 jobs:
-  deploy-to-server:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Fetch repository contents
+    - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Extract Release Metadata
-      id: release-info
+    - name: Get release commit hash
       run: |
-        REL_TAG="${{ github.event.release.tag_name }}"
-        REL_BRANCH="${{ github.event.release.target_commitish }}"
-        
-        COMMIT_HASH=$(git rev-parse $REL_TAG^{commit} || git rev-list -n 1 $REL_TAG)
-        
-        echo "HASH=$COMMIT_HASH" >> $GITHUB_ENV
-        echo "TAG=$REL_TAG" >> $GITHUB_ENV
-        echo "BRANCH=$REL_BRANCH" >> $GITHUB_ENV
-        
-        echo "Target Tag: $REL_TAG"
-        echo "Source Branch: $REL_BRANCH"
-        echo "Resolved Hash: $COMMIT_HASH"
+        TAG=${{ github.event.release.tag_name }}
+        BRANCH=${{ github.event.release.target_commitish }}
+        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
     
-    - name: Authenticate SSH Key
+    - name: Setup SSH Agent
       uses: webfactory/ssh-agent@v0.7.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     
-    - name: Trigger Remote Deploy Script
+    - name: Deploy to server
       env:
         SERVER_HOST: ${{ secrets.SERVER_HOST }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
         SERVER_PORT: ${{ secrets.SERVER_PORT }}
-        RELEASE_HASH: ${{ env.HASH }}
-        RELEASE_BRANCH: ${{ env.BRANCH }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        REPO_NAME: ${{ github.repository }}
       run: |
-        chmod +x ./scripts/deploy.sh
-        bash ./scripts/deploy.sh
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh
