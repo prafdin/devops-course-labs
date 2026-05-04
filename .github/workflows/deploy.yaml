@@ -3,6 +3,7 @@ name: Deploy to Server
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -21,10 +22,10 @@ jobs:
           host: course.prafdin.ru
           username: nyanya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3132
+          port: ${{ secrets.SSH_PORT }}
           script: |
             IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-            CONTAINER_NAME="catty-app"
+            CONTAINER_NAME="catty-container"
             
             # Логинимся в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
