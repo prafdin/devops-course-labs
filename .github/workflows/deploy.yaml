@@ -51,7 +51,7 @@ jobs:
           set -e
           cd /home/semen/catty-reminders-app
           grep -v '^DEPLOY_REF=' /home/semen/catty-app-env > /tmp/catty-app-env || true
-          echo "DEPLOY_REF=${GITHUB_SHA}" >> /tmp/catty-app-env
+          echo "DEPLOY_REF=${{ github.sha }}" >> /tmp/catty-app-env
           sudo -n cp /tmp/catty-app-env /home/semen/catty-app-env
           python3 -m venv venv
           ./venv/bin/pip install --upgrade pip
