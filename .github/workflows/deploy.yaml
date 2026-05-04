@@ -19,7 +19,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: maximord
+          username: nyanya
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3132
           script: |
