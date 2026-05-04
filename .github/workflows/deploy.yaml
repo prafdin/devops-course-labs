@@ -1,4 +1,4 @@
-name: CD
+name: Deploy to Server
 
 on:
   release:
@@ -9,59 +9,39 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Prepare image name
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
-      - name: Deploy application
-        run: |
-          ssh -o StrictHostKeyChecking=no -p 3132 nyanya@course.prafdin.ru << EOF
-            set -e
-            echo "=== Starting deployment ==="
-            echo "Deploying commit: ${{ github.sha }}"
+          host: course.prafdin.ru
+          username: maximord
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3132
+          script: |
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-app"
             
-            cd /opt/catty-reminders || exit 1
+            # Логинимся в GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            echo "Current commit: \$(git rev-parse HEAD)"
+            # Скачиваем свежий образ
+            docker pull $IMAGE
             
-            echo "Fetching latest code..."
-            git fetch origin --tags
+            # Удаляем старый контейнер, если есть
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
             
-            echo "Resetting to commit ${{ github.sha }}..."
-            git reset --hard ${{ github.sha }}
+            # Запускаем новый контейнер
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              $IMAGE
             
-            echo "New commit: \$(git rev-parse HEAD)"
-            
-            echo "Installing dependencies..."
-            ./venv/bin/pip install -r requirements.txt
-            
-            echo "Updating deploy reference..."
-            echo "${{ github.sha }}" | sudo tee .deploy_ref
-            
-            echo "Restarting application..."
-            sudo systemctl daemon-reload
-            sudo systemctl restart catty-reminders
-            
-            sleep 3
-            
-            echo "Checking service status..."
-            if sudo systemctl is-active --quiet catty-reminders; then
-              echo "✅ Service is running"
-            else
-              echo "❌ Service failed to start"
-              sudo journalctl -u catty-reminders -n 20
-              exit 1
-            fi
-            
-            echo "=== Deployment finished successfully ==="
-          EOF
-      
-      - name: Verify deployment
-        run: |
-          echo "Waiting for app to be ready..."
-          sleep 5
-          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://app.yaroslavtsev.course.prafdin.ru || echo "App might not be ready yet"
+            # Чистим мусор
+            docker image prune -f
