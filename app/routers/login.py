@@ -11,6 +11,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from typing import Optional
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+deploy_ref_path = os.path.join(BASE_DIR, '.deploy_ref')
+
 router = APIRouter()
 
 
@@ -29,7 +32,7 @@ async def get_login(
     # Чтение deploy_ref из файла
     deploy_ref = None
     try:
-        with open('/opt/catty-reminders/.deploy_ref', 'r') as f:
+        with open(deploy_ref_path, 'r') as f:
             content = f.read().strip()
             if '=' in content:
                 deploy_ref = content.split('=', 1)[1]
