@@ -7,7 +7,6 @@ echo "Deploying SHA: $SHA"
 git fetch --all
 git reset --hard "$SHA"
 
-# Проверяем, есть ли venv, если нет - создаем
 if [ ! -d "venv" ]; then
     echo "Creating venv..."
     python3 -m venv venv
