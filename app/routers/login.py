@@ -29,15 +29,27 @@ async def get_login(
     logged_out: Optional[bool] = None,
     unauthorized: Optional[bool] = None):
 
-    # Чтение deploy_ref из файла
+    # Пытаемся получить deploy_ref из разных источников
     deploy_ref = None
-    try:
-        with open(deploy_ref_path, 'r') as f:
-            content = f.read().strip()
-            if '=' in content:
-                deploy_ref = content.split('=', 1)[1]
-    except:
-        pass
+    
+    # 1. Сначала пробуем из переменной окружения
+    deploy_ref = os.getenv("DEPLOY_REF")
+    
+    # 2. Если нет, пробуем из файла .deploy_ref
+    if not deploy_ref:
+        try:
+            with open(deploy_ref_path, 'r') as f:
+                content = f.read().strip()
+                if '=' in content:
+                    deploy_ref = content.split('=', 1)[1]
+                else:
+                    deploy_ref = content
+        except:
+            pass
+    
+    # 3. Если ничего нет, ставим "None"
+    if not deploy_ref:
+        deploy_ref = "None"
 
     context = {
         'request': request,
@@ -47,7 +59,6 @@ async def get_login(
         'unauthorized': unauthorized
     }
     return templates.TemplateResponse("pages/login.html", context)
-
 
 @router.post(
     path="/login",
