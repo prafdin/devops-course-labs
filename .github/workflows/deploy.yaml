@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to deploy'
+        description: 'Tag to deploy (branch name, commit sha, or release tag)'
         required: true
-        default: 'latest'
+        default: 'lab3'
 
 env:
   REGISTRY: ghcr.io
@@ -22,12 +22,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare deployment tag
+        id: prep
+        run: |
+          # Определяем тег для деплоя
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            # Если это релиз - используем тег релиза
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            # Иначе используем переданный тег или ветку lab3
+            TAG="${{ github.event.inputs.tag }}"
+          fi
+          
+          # Получаем короткий хэш коммита (на случай, если нужен)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          echo "deploy_tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          
+          echo "Will deploy tag: ${TAG}"
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Deploy to VM via SSH
         uses: appleboy/ssh-action@v1
@@ -39,31 +59,39 @@ jobs:
           script: |
             set -e
             
-            # Переменные
-            REGISTRY="ghcr.io"
+            REGISTRY="${{ env.REGISTRY }}"
             IMAGE="$REGISTRY/${{ github.repository }}"
-            TAG="${{ github.event.release.tag_name }}"
-            
-            # Если тег не указан, используем latest
-            if [ -z "$TAG" ]; then
-              TAG="latest"
-            fi
+            # Приводим к нижнему регистру
+            IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
+            TAG="${{ steps.prep.outputs.deploy_tag }}"
+            SHORT_SHA="${{ steps.prep.outputs.short_sha }}"
             
             echo "=== Deploying Docker container ==="
+            echo "Time: $(date)"
             echo "Image: $IMAGE:$TAG"
             
             # Логин в GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
             
+            # Пробуем разные варианты тегов
+            echo "Trying to pull image with tag: $TAG"
+            
+            if ! docker pull $IMAGE:$TAG 2>/dev/null; then
+              echo "Tag $TAG not found, trying branch name tag: lab3"
+              if ! docker pull $IMAGE:lab3 2>/dev/null; then
+                echo "Tag lab3 not found, trying commit SHA: $SHORT_SHA"
+                docker pull $IMAGE:$SHORT_SHA
+                TAG=$SHORT_SHA
+              else
+                TAG="lab3"
+              fi
+            fi
+            
+            echo "Successfully pulled image: $IMAGE:$TAG"
+            
             # Остановка и удаление старого контейнера
             docker stop catty-container 2>/dev/null || true
             docker rm catty-container 2>/dev/null || true
-            
-            # Удаление старого образа (опционально)
-            docker rmi $IMAGE:$TAG 2>/dev/null || true
-            
-            # Pull нового образа
-            docker pull $IMAGE:$TAG
             
             # Запуск нового контейнера
             docker run -d \
@@ -74,10 +102,25 @@ jobs:
               $IMAGE:$TAG
             
             # Проверка, что контейнер запустился
-            sleep 3
-            docker ps | grep catty-container
+            sleep 5
+            if docker ps | grep -q catty-container; then
+              echo "Container is running"
+            else
+              echo "Container failed to start"
+              docker logs catty-container --tail 20
+              exit 1
+            fi
             
             # Проверка приложения
-            curl -f http://localhost:8181/ || echo "App may not be ready yet"
+            echo "Testing application..."
+            if curl -f http://localhost:8181/ > /dev/null 2>&1; then
+              echo "Application is responding"
+              DEPLOY_REF_VALUE=$(curl -s http://localhost:8181/ | grep -o 'deployref" content="[^"]*' | cut -d'"' -f4)
+              echo "Deploy ref in app: $DEPLOY_REF_VALUE"
+            else
+              echo "Application may not be ready yet"
+              docker logs catty-container --tail 10
+            fi
             
             echo "=== Deployment completed ==="
+            echo "Image deployed: $IMAGE:$TAG"
