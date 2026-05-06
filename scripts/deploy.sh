@@ -23,13 +23,13 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     cd "${APP_DIR}"
 
     echo "--> Stopping old containers"
-    docker compose down
+    docker-compose down
 
     echo "--> Pulling latest images from GHCR"
-    docker compose pull
+    docker-compose pull
 
     echo "--> Starting new containers in background"
-    docker compose up -d
+    docker-compose up -d
 
     echo "--> Cleaning up old unused images"
     docker image prune -af || true
