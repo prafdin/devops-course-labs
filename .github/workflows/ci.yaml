@@ -74,7 +74,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          images: ghcr.io/vadimkadkdoofjf/${{ github.event.repository.name }}
           tags: |
             type=raw,value=${{ steps.vars.outputs.commit_hash }}
 
