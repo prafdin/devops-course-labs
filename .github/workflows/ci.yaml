@@ -3,14 +3,20 @@ name: CI
 on:
   push:
     branches:
-      - 'lab3*'
+      - lab3
+      - 'lab3_autotests*'
   pull_request:
     branches:
-      - 'lab3*'
+      - lab3
+      - 'lab3_autotests*'
 
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,6 +25,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -29,7 +36,7 @@ jobs:
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 4
+          sleep 5
 
       - name: Run tests
         env:
@@ -43,24 +50,6 @@ jobs:
           name: test_result
           path: test_result.xml
 
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: pipeline
-    if: success()
-    permissions:
-      contents: write
-      packages: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get commit hash
-        id: vars
-        run: |
-          COMMIT_HASH=$(git rev-parse HEAD)
-          echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -68,29 +57,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          tags: |
-            type=raw,value=${{ steps.vars.outputs.commit_hash }}
-            type=raw,value=latest
+      - name: Convert repository name to lowercase
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push'
-        with:
-          tag_name: v1.0.${{ github.run_number }} 
-          name: Release v1.0.${{ github.run_number }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tags: ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}

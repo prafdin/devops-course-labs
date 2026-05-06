@@ -7,65 +7,31 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get release info
-        id: info
-        run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-list -n 1 $TAG)
-          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     
-      - name: Deploy to server
-        env:
-          HOST: ${{ vars.DEPLOY_HOST }}
-          USER: ${{ vars.DEPLOY_USER }}
-          PORT: ${{ vars.DEPLOY_PORT }}
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          RELEASE_HASH: ${{ env.RELEASE_HASH }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST << EOF
-            set -e
-            
-            CONTAINER_NAME="catty-app"
-            IMAGE=$IMAGE_NAME:$RELEASE_HASH
-            
-            echo "Logging in to GHCR..."
-            echo "$TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            
-            echo "Pulling image: \$IMAGE"
-            sudo docker pull \$IMAGE
-            
-            echo "Cleaning up old container..."
-            sudo docker stop \$CONTAINER_NAME || true
-            sudo docker rm \$CONTAINER_NAME || true
-            
-            echo "Starting new container on port 80..."
-            # Пробрасываем порт 80 хоста на 8181 контейнера и передаем DEPLOY_REF
-            sudo docker run -d \
-              --name \$CONTAINER_NAME \
-              -p 80:8181 \
-              --restart unless-stopped \
-              -e DEPLOY_REF=$RELEASE_HASH \
-              \$IMAGE
-            
-            sleep 5
-            if sudo docker ps | grep -q \$CONTAINER_NAME; then
-              echo "Deployment successful!"
-            else
-              echo "Deployment failed!"
-              sudo docker logs \$CONTAINER_NAME
-              exit 1
-            fi
-          EOF
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        REPO_NAME: ${{ github.repository }}
+      run: |
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh
