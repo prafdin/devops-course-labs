@@ -20,7 +20,7 @@ jobs:
           TAG=${{ github.event.release.tag_name }}
           HASH=$(git rev-list -n 1 $TAG)
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-          echo "HASH=$HASH" >> $GITHUB_OUTPUT
+          echo "Deploying tag: $TAG with hash: $HASH"
 
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
@@ -40,35 +40,35 @@ jobs:
           ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST << EOF
             set -e
             
-            CONTAINER_NAME="catty-app-container"
+            CONTAINER_NAME="catty-app"
             IMAGE=$IMAGE_NAME:$RELEASE_HASH
-            APP_PORT=8181
             
-            echo "Step 1: Logging in to GHCR..."
+            echo "> Logging in to GitHub Container Registry..."
             echo "$TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
-            echo "Step 2: Pulling image \$IMAGE..."
+            echo "> Pulling image: \$IMAGE"
             sudo docker pull \$IMAGE
             
-            echo "Step 3: Cleaning up old container..."
+            echo "> Stopping and removing old container..."
             sudo docker stop \$CONTAINER_NAME || true
             sudo docker rm \$CONTAINER_NAME || true
             
-            echo "Step 4: Starting new container..."
+            echo "> Starting new container..."
             sudo docker run -d \
               --name \$CONTAINER_NAME \
-              -p 80:\$APP_PORT \
+              -p 80:8181 \
               --restart unless-stopped \
               -e DEPLOY_REF=$RELEASE_HASH \
               \$IMAGE
             
-            echo "Step 5: Healthcheck..."
+            echo "> Waiting for start..."
             sleep 5
+            
             if sudo docker ps | grep -q \$CONTAINER_NAME; then
-              echo "Deployment successful!"
+              echo "Deployment successful"
               sudo docker ps -f name=\$CONTAINER_NAME
             else
-              echo "Deployment FAILED. Inspecting logs:"
+              echo "ERROR: Container failed to start"
               sudo docker logs \$CONTAINER_NAME
               exit 1
             fi
