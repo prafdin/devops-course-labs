@@ -1,59 +1,78 @@
-name: CD - Deploy to Debian
+name: Deploy
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: course.prafdin.ru
-          username: vboxuser
-          port: 2200
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Get release info
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-list -n 1 $TAG)
 
-          script: |
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "HASH=$HASH" >> $GITHUB_ENV
+
+          echo "Deploying tag: $TAG"
+          echo "Commit hash: $HASH"
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy via SSH
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          USER: ${{ vars.DEPLOY_USER }}
+          PORT: ${{ vars.DEPLOY_PORT }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          HASH: ${{ env.HASH }}
+          ACTOR: ${{ github.actor }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+
+        run: |
+          ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST << EOF
             set -e
 
-            IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
+            CONTAINER=catty-app-container
+            IMAGE=$IMAGE_NAME:$HASH
 
-            echo "Using image: $IMAGE"
+            echo "Deploying image: $IMAGE"
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "$TOKEN" | sudo docker login ghcr.io -u "$ACTOR" --password-stdin
 
             echo "Pulling image..."
-            docker pull $IMAGE
+            sudo docker pull $IMAGE
 
             echo "Stopping old container..."
-            docker stop catty-app-container || true
-            docker rm catty-app-container || true
+            sudo docker stop $CONTAINER || true
+            sudo docker rm $CONTAINER || true
 
             echo "Starting new container..."
-            docker run -d \
-              --name catty-app-container \
+            sudo docker run -d \
+              --name $CONTAINER \
               -p 80:8181 \
-              --restart always \
+              --restart unless-stopped \
               $IMAGE
 
-            echo "Waiting for startup..."
             sleep 5
 
             echo "Container status:"
-            docker ps
+            sudo docker ps
 
             echo "Logs:"
-            docker logs catty-app-container --tail 50
+            sudo docker logs $CONTAINER --tail 50
 
-            if docker ps | grep -q catty-app-container; then
-              echo "Deployment successful!"
+            if sudo docker ps | grep -q $CONTAINER; then
+              echo "Deployment successful"
             else
-              echo "Deployment failed!"
-              docker logs catty-app-container
+              echo "Deployment failed"
+              sudo docker logs $CONTAINER
               exit 1
             fi
+          EOF
