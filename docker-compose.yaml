@@ -10,16 +10,11 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    build: ./backend
+    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
     container_name: catty_backend
     restart: unless-stopped
     ports:
       - "8181:8181"
-    environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: mypass
-      DB_NAME: catty_reminders
     depends_on:
       - db
 
