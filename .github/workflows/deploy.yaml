@@ -3,6 +3,16 @@ name: CD
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy'
+        required: true
+        default: 'latest'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   deploy:
@@ -12,14 +22,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies (build step)
-        run: |
-          pip install -r requirements.txt
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy to VM via SSH
         uses: appleboy/ssh-action@v1
@@ -30,12 +38,46 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /home/aleksandr/catty-reminders-app
-
-            git fetch --all
-            git reset --hard ${{ github.event.release.tag_name }}
-
-            echo "DEPLOY_REF=$(git rev-parse HEAD)" | sudo tee /etc/catty-app-env
-
-            sudo systemctl restart catty-app
-
+            
+            # Переменные
+            REGISTRY="ghcr.io"
+            IMAGE="$REGISTRY/${{ github.repository }}"
+            TAG="${{ github.event.release.tag_name }}"
+            
+            # Если тег не указан, используем latest
+            if [ -z "$TAG" ]; then
+              TAG="latest"
+            fi
+            
+            echo "=== Deploying Docker container ==="
+            echo "Image: $IMAGE:$TAG"
+            
+            # Логин в GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+            
+            # Остановка и удаление старого контейнера
+            docker stop catty-container 2>/dev/null || true
+            docker rm catty-container 2>/dev/null || true
+            
+            # Удаление старого образа (опционально)
+            docker rmi $IMAGE:$TAG 2>/dev/null || true
+            
+            # Pull нового образа
+            docker pull $IMAGE:$TAG
+            
+            # Запуск нового контейнера
+            docker run -d \
+              --name catty-container \
+              --restart unless-stopped \
+              -p 8181:8181 \
+              -e DEPLOY_REF="$TAG" \
+              $IMAGE:$TAG
+            
+            # Проверка, что контейнер запустился
+            sleep 3
+            docker ps | grep catty-container
+            
+            # Проверка приложения
+            curl -f http://localhost:8181/ || echo "App may not be ready yet"
+            
+            echo "=== Deployment completed ==="
