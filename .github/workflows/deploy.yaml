@@ -7,72 +7,69 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Get release info
+        id: info
         run: |
           TAG=${{ github.event.release.tag_name }}
           HASH=$(git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+          echo "HASH=$HASH" >> $GITHUB_OUTPUT
 
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "HASH=$HASH" >> $GITHUB_ENV
-
-          echo "Deploying tag: $TAG"
-          echo "Commit hash: $HASH"
-
-      - name: Setup SSH
+      - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy via SSH
+    
+      - name: Deploy to server
         env:
           HOST: ${{ vars.DEPLOY_HOST }}
           USER: ${{ vars.DEPLOY_USER }}
           PORT: ${{ vars.DEPLOY_PORT }}
           IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          HASH: ${{ env.HASH }}
-          ACTOR: ${{ github.actor }}
-          TOKEN: ${{ secrets.DOCKER_TOKEN }}
-
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST << EOF
             set -e
-
-            CONTAINER=catty-app-container
-            IMAGE=$IMAGE_NAME:$HASH
-
-            echo "Deploying image: $IMAGE"
-
-            echo "$TOKEN" | sudo docker login ghcr.io -u "$ACTOR" --password-stdin
-
-            echo "Pulling image..."
-            sudo docker pull $IMAGE
-
-            echo "Stopping old container..."
-            sudo docker stop $CONTAINER || true
-            sudo docker rm $CONTAINER || true
-
-            echo "Starting new container..."
+            
+            CONTAINER_NAME="catty-app-container"
+            IMAGE=$IMAGE_NAME:$RELEASE_HASH
+            APP_PORT=8181
+            
+            echo "Step 1: Logging in to GHCR..."
+            echo "$TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            
+            echo "Step 2: Pulling image \$IMAGE..."
+            sudo docker pull \$IMAGE
+            
+            echo "Step 3: Cleaning up old container..."
+            sudo docker stop \$CONTAINER_NAME || true
+            sudo docker rm \$CONTAINER_NAME || true
+            
+            echo "Step 4: Starting new container..."
             sudo docker run -d \
-              --name $CONTAINER \
-              -p 80:8181 \
+              --name \$CONTAINER_NAME \
+              -p 80:\$APP_PORT \
               --restart unless-stopped \
-              $IMAGE
-
+              -e DEPLOY_REF=$RELEASE_HASH \
+              \$IMAGE
+            
+            echo "Step 5: Healthcheck..."
             sleep 5
-
-            echo "Container status:"
-            sudo docker ps
-
-            echo "Logs:"
-            sudo docker logs $CONTAINER --tail 50
-
-            if sudo docker ps | grep -q $CONTAINER; then
-              echo "Deployment successful"
+            if sudo docker ps | grep -q \$CONTAINER_NAME; then
+              echo "Deployment successful!"
+              sudo docker ps -f name=\$CONTAINER_NAME
             else
-              echo "Deployment failed"
-              sudo docker logs $CONTAINER
+              echo "Deployment FAILED. Inspecting logs:"
+              sudo docker logs \$CONTAINER_NAME
               exit 1
             fi
           EOF
