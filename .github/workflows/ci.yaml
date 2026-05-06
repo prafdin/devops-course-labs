@@ -30,12 +30,11 @@ jobs:
           pip install pytest
 
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          if [ -d tests ]; then
-            pytest tests/test_unit.py -v --junitxml=test_result.xml || true
-          else
-            echo "No tests found"
-          fi
+          python -c "import sys; print('PYTHONPATH:', sys.path)"
+          pytest tests/test_unit.py tests/test_api.py -v --junitxml=test_result.xml || true
 
       - name: Upload test results
         if: always()
