@@ -3,12 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - lab3
-      - 'lab3_autotests*'
+      - lab4
+      - lab4_autotests*
   pull_request:
     branches:
-      - lab3
-      - 'lab3_autotests*'
+      - lab4
+      - lab4_autotests*
 
 jobs:
   pipeline:
@@ -16,6 +16,20 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: mypass
+          MYSQL_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout repository
@@ -27,6 +41,10 @@ jobs:
           python-version: "3.12"
           cache: 'pip'
 
+      - name: Temporary swap config for tests
+        run: |
+          sed -i 's/"host": "db"/"host": "localhost"/' config.json
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -35,13 +53,17 @@ jobs:
 
       - name: Start app
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 &
+          sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
+
+      - name: Revert config swap
+        run: |
+          git checkout config.json
 
       - name: Upload test results
         if: always()
@@ -67,4 +89,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}:latest
