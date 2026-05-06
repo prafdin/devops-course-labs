@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ lab2, lab2_autotests*, main ]
+    branches: [ lab3, lab2_autotests* ]
   pull_request:
-    branches: [ lab2, main ]
+    branches: [ lab3 ]
 
 env:
   REGISTRY: ghcr.io
