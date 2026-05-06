@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ lab3, lab2_autotests* ]
+    branches: [ lab3, lab3_autotests* ]
   pull_request:
     branches: [ lab3 ]
 
@@ -28,6 +28,13 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest
+
+      - name: Start Application
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > uvicorn.log 2>&1 &
+          sleep 5
+          # Проверяем, что приложение запустилось
+          curl -f http://127.0.0.1:8181/ || cat uvicorn.log
 
       - name: Run tests
         env:
