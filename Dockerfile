@@ -1,5 +1,11 @@
 FROM python:3.12-slim
 
+# Аргумент для передачи на этапе сборки
+ARG DEPLOY_REF=unknown
+
+# Переменная окружения внутри контейнера
+ENV DEPLOY_REF=$DEPLOY_REF
+
 WORKDIR /app
 
 # Установка зависимостей проекта
