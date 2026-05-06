@@ -1,30 +1,41 @@
-- name: Execute remote commands via SSH
-  uses: appleboy/ssh-action@v1
-  with:
-    host: course.prafdin.ru
-    username: vboxuser
-    port: 2200
-    key: ${{ secrets.SSH_PRIVATE_KEY }}
-    script: |
-      echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+name: CD - Deploy to Debian
 
-      docker stop catty-app-container || true
-      docker rm -f catty-app-container || true
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
 
-      docker pull ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-      docker run -d \
-        --name catty-app-container \
-        -p 8181:8181 \
-        --restart always \
-        ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+    steps:
+      - name: Execute remote commands via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          port: 2200
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      sleep 5
+            docker stop catty-app-container || true
+            docker rm -f catty-app-container || true
 
-      if docker ps | grep -q "catty-app-container"; then
-        echo "Deployment successful! SHA: ${{ github.sha }}"
-      else
-        echo "Deployment failed!"
-        docker logs catty-app-container
-        exit 1
-      fi
+            docker pull ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+
+            docker run -d \
+              --name catty-app-container \
+              -p 8181:8181 \
+              --restart always \
+              ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+
+            sleep 5
+            if docker ps | grep -q "catty-app-container"; then
+              echo "Deployment successful! SHA: ${{ github.sha }}"
+            else
+              echo "Deployment failed!"
+              docker logs catty-app-container
+              exit 1
+            fi
