@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mariadb:10.11
@@ -12,11 +10,16 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
+    build: ./backend
     container_name: catty_backend
     restart: unless-stopped
     ports:
       - "8181:8181"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: mypass
+      DB_NAME: catty_reminders
     depends_on:
       - db
 
