@@ -9,29 +9,39 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Get release commit hash
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        BRANCH=${{ github.event.release.target_commitish }}
-        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-    
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-    - name: Deploy to server
-      env:
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_PORT: ${{ secrets.SERVER_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        REPO_NAME: ${{ github.repository }}
-      run: |
-        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/killa123/Desktop/devopss/catty-reminders-app/docker-compose.yaml
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get release commit hash
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Ensure app directory exists
+        run: |
+          ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no \
+          vboxuser@${{ secrets.SERVER_HOST }} \
+          "mkdir -p /home/vboxuser/catty-reminders-app"
+
+      - name: Upload docker-compose.yaml
+        run: |
+          scp -P ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no \
+          docker-compose.yaml \
+          vboxuser@${{ secrets.SERVER_HOST }}:/home/vboxuser/catty-reminders-app/docker-compose.yaml
+
+      - name: Deploy to server
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: vboxuser
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
