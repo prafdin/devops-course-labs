@@ -2,7 +2,7 @@
 set -e
 
 if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
-    echo "CRITICAL: Missing required variables."
+    echo "CRITICAL: Missing required variables"
     exit 1
 fi
 
@@ -13,31 +13,33 @@ APP_DIR="/home/vboxuser/catty-reminders-app"
 
 echo "Deploying to ${SERVER_HOST}..."
 
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+ssh -p "$TARGET_PORT" \
+    -o StrictHostKeyChecking=no \
+    "${SERVER_USER}@${SERVER_HOST}" \
+    "bash -s" << EOF
+
 set -e
 
-APP_DIR="${APP_DIR}"
-
-mkdir -p \$APP_DIR
-cd \$APP_DIR
-
-echo "REPO_LOWER=${REPO_LOWER}" > .env
-echo "RELEASE_HASH=${RELEASE_HASH}" >> .env
+cd ${APP_DIR}
 
 echo "--> Current env:"
-cat .env
+echo "REPO_LOWER=${REPO_LOWER}"
+echo "RELEASE_HASH=${RELEASE_HASH}"
+
+export REPO_LOWER="${REPO_LOWER}"
+export RELEASE_HASH="${RELEASE_HASH}"
 
 echo "--> Stopping old containers"
-docker compose down || true
+docker-compose down || true
 
 echo "--> Pulling latest image"
-docker compose pull
+docker-compose pull
 
 echo "--> Starting containers"
-docker compose up -d
+docker-compose up -d
 
-echo "--> Cleaning old images"
+echo "--> Cleanup"
 docker image prune -af || true
 
-echo "--> Deployment finished"
-REMOTE_SCRIPT
+echo "--> Deploy finished"
+EOF

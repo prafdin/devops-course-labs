@@ -1,24 +1,39 @@
+version: "3.9"
+
 services:
   db:
     image: mariadb:10.11
     container_name: catty_db
     restart: unless-stopped
+
     environment:
       MYSQL_ROOT_PASSWORD: mypass
       MYSQL_DATABASE: catty_reminders
+
     volumes:
       - db_data:/var/lib/mysql
 
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
+
     container_name: catty_backend
     restart: unless-stopped
+
     ports:
       - "8181:8181"
-    environment:
-      DEPLOY_REF: ${RELEASE_HASH}
+
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+    environment:
+      RELEASE_HASH: ${RELEASE_HASH}
 
 volumes:
   db_data:
