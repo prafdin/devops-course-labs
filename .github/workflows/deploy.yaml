@@ -28,6 +28,7 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
           REPO_NAME: ${{ github.repository }}
+          IMAGE_NAME: ghcr.io/${{ github.repository }}
           DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
