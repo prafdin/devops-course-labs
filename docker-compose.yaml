@@ -28,12 +28,12 @@ services:
     ports:
       - "8181:8181"
 
+    environment:
+      RELEASE_HASH: ${RELEASE_HASH:-latest}
+
     depends_on:
       db:
         condition: service_healthy
-
-    environment:
-      RELEASE_HASH: ${RELEASE_HASH:-latest}
 
 volumes:
   db_data:
