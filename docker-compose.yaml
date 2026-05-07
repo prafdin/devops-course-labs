@@ -13,14 +13,8 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
-    image: ghcr.io/${REPO_LOWER:-vadimkadkdoofjf/catty-reminders-app}:${RELEASE_HASH:-latest}
+    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
 
     container_name: catty_backend
     restart: unless-stopped
@@ -29,7 +23,7 @@ services:
       - "8181:8181"
 
     environment:
-      RELEASE_HASH: ${RELEASE_HASH:-latest}
+      RELEASE_HASH: ${RELEASE_HASH}
 
     depends_on:
       db:

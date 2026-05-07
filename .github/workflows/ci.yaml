@@ -13,6 +13,7 @@ on:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
@@ -25,66 +26,41 @@ jobs:
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: 'pip'
 
-      - name: Temporary swap config for tests
+      - name: Install deps
         run: |
-          sed -i 's/"host": "db"/"host": "localhost"/' config.json
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
-
-      - name: Start app
-        run: |
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 &
-          sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
 
-      - name: Revert config swap
-        run: |
-          git checkout config.json
-
-      - name: Upload test results
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: test_result
           path: test_result.xml
 
-      - name: Log in to GitHub Container Registry
+      - name: Login GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Convert repository name to lowercase
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
+      - name: Lowercase repo
+        run: echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build and push Docker image
+      - name: Build & push image
         uses: docker/build-push-action@v5
         with:
           context: .
