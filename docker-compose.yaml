@@ -10,11 +10,13 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
+    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
     container_name: catty_backend
     restart: unless-stopped
     ports:
       - "8181:8181"
+    environment:
+      DEPLOY_REF: ${RELEASE_HASH}
     depends_on:
       - db
 

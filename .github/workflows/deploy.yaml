@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,7 +15,7 @@ jobs:
       - name: Get release commit hash
         run: |
           TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          HASH=$(git rev-list -n 1 $TAG)
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
       - name: Setup SSH Agent
@@ -25,13 +25,15 @@ jobs:
 
       - name: Ensure app directory exists
         run: |
-          ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no \
+          ssh -p ${{ secrets.SERVER_PORT }} \
+          -o StrictHostKeyChecking=no \
           vboxuser@${{ secrets.SERVER_HOST }} \
           "mkdir -p /home/vboxuser/catty-reminders-app"
 
       - name: Upload docker-compose.yaml
         run: |
-          scp -P ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no \
+          scp -P ${{ secrets.SERVER_PORT }} \
+          -o StrictHostKeyChecking=no \
           docker-compose.yaml \
           vboxuser@${{ secrets.SERVER_HOST }}:/home/vboxuser/catty-reminders-app/docker-compose.yaml
 
