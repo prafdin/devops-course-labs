@@ -9,8 +9,6 @@ fi
 REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 IMAGE="ghcr.io/${REPO_LOWER}:${RELEASE_HASH}"
 
-echo "Connecting to $DEPLOY_HOST on port ${DEPLOY_PORT:-22}..."
-
 ssh -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" "bash -s" << EOF
     set -e
     
@@ -30,6 +28,11 @@ ssh -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY
         -p 8181:8181 \
         -e COMMIT_SHA=${RELEASE_HASH} \
         ${IMAGE}
-        
+    
+    sleep 2
+
+    echo "> Injecting hash into HTML file..."
+    docker exec catty-app sed -i "s/content=\"NA\"/content=\"${RELEASE_HASH}\"/g" /app/templates/login.html
+    
     echo "> Deployment successful!"
 EOF
