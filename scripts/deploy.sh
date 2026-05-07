@@ -28,7 +28,6 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
         --name catty-app \
         --restart always \
         -p 8181:8181 \
-        -e DEPLOY_REF=${RELEASE_HASH} \
         ${IMAGE_NAME}
         
     echo "--> Deployment finished successfully"
