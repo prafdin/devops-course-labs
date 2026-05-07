@@ -1,33 +1,29 @@
-version: "3.9"
-
 services:
   db:
     image: mariadb:10.11
     container_name: catty_db
-    restart: unless-stopped
-
     environment:
-      MYSQL_ROOT_PASSWORD: mypass
-      MYSQL_DATABASE: catty_reminders
-
-    volumes:
-      - db_data:/var/lib/mysql
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: catty_reminders
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
-    image: ghcr.io/${REPO_LOWER:-vadimkadkdoofjf/catty-reminders-app}:${RELEASE_HASH:-latest}
-
+    build: .
     container_name: catty_backend
-    restart: unless-stopped
-
     ports:
       - "8181:8181"
-
-    environment:
-      RELEASE_HASH: ${RELEASE_HASH:-latest}
-
     depends_on:
-      - db
-
-volumes:
-  db_data:
-
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: catty_reminders
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8181
