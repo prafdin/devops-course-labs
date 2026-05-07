@@ -15,20 +15,22 @@ echo "Deploying image: $IMAGE_NAME"
 ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
 
-    echo "--> Pulling latest Docker image"
+    echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    echo "--> Pulling image"
     docker pull ${IMAGE_NAME}
     
-    echo "--> Stopping old container (if exists)"
+    echo "--> Cleaning up old container"
     docker stop catty-app || true
     docker rm catty-app || true
     
-    echo "--> Starting new container"
+    echo "--> Starting new container on port 80"
     docker run -d \
         --name catty-app \
         --restart always \
-        -p 8181:8181 \
-        -e DEPLOY_REF=${RELEASE_HASH} \
+        -p 80:8181 \
+        -e COMMIT_SHA=${RELEASE_HASH} \
         ${IMAGE_NAME}
         
-    echo "--> Deployment finished successfully"
+    echo "--> Deployment successful"
 REMOTE_SCRIPT
