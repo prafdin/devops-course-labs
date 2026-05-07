@@ -54,13 +54,13 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          [cite_start]password: ${{ secrets.GITHUB_TOKEN }} [cite: 84, 87]
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        [cite_start]uses: docker/build-push-action@v5 [cite: 33, 88]
+        uses: docker/build-push-action@v5
         with:
-          [cite_start]context: . [cite: 32]
-          [cite_start]push: true [cite: 34]
-          [cite_start]tags: | [cite: 79]
+          context: .
+          push: true
+          tags: |
             ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
             ghcr.io/${{ env.REPO_LOWER }}:latest
