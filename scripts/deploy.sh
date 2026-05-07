@@ -1,36 +1,38 @@
 #!/bin/bash
 set -e
 
-if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
-    echo "CRITICAL: Missing required variables."
+if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ] || [ -z "$RELEASE_HASH" ] || [ -z "$IMAGE_NAME" ]; then
+    echo "Error: Required environment variables (DEPLOY_HOST, DEPLOY_USER, RELEASE_HASH, IMAGE_NAME) are not set"
     exit 1
 fi
 
-TARGET_PORT="${SERVER_PORT:-22}"
-REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
-IMAGE_NAME="ghcr.io/${REPO_LOWER}:${RELEASE_HASH}"
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+CONTAINER_NAME="catty-app"
+IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
-echo "Deploying image: $IMAGE_NAME"
+echo "Deploying image $IMAGE to $DEPLOY_HOST"
 
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+ssh -p "$DEPLOY_PORT" -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
-
-    echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-    echo "--> Pulling image"
-    docker pull ${IMAGE_NAME}
     
-    echo "--> Cleaning up old container"
-    docker stop catty-app || true
-    docker rm catty-app || true
+    echo "> Logging in to GHCR..."
+    echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+    echo "> Pulling image..."
+    docker pull $IMAGE
     
-    echo "--> Starting new container on port 80"
+    echo "> Cleaning up old container..."
+    docker stop $CONTAINER_NAME || true
+    docker rm $CONTAINER_NAME || true
+    
+    echo "> Starting new container on port 80..."
     docker run -d \
-        --name catty-app \
-        --restart always \
+        --name $CONTAINER_NAME \
+        --restart unless-stopped \
         -p 80:8181 \
-        -e COMMIT_SHA=${RELEASE_HASH} \
-        ${IMAGE_NAME}
-        
-    echo "--> Deployment successful"
-REMOTE_SCRIPT
+        -e COMMIT_SHA=$RELEASE_HASH \
+        -e DEPLOY_REF=$RELEASE_HASH \
+        $IMAGE
+    
+    echo "> Deployment finished successfully"
+EOF

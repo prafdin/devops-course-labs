@@ -7,31 +7,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Get release commit hash
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-    
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-    - name: Deploy to server
-      env:
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_PORT: ${{ secrets.SERVER_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        REPO_NAME: ${{ github.repository }}
-      run: |
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Get release commit hash
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Run deploy script
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
