@@ -14,7 +14,7 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
+    image: ghcr.io/${REPO_LOWER:-vadimkadkdoofjf/catty-reminders-app}:${RELEASE_HASH:-latest}
 
     container_name: catty_backend
     restart: unless-stopped
@@ -23,11 +23,11 @@ services:
       - "8181:8181"
 
     environment:
-      RELEASE_HASH: ${RELEASE_HASH}
+      RELEASE_HASH: ${RELEASE_HASH:-latest}
 
     depends_on:
-      db:
-        condition: service_healthy
+      - db
 
 volumes:
   db_data:
+
