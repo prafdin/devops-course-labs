@@ -28,7 +28,7 @@ jobs:
       - name: Add known hosts
         run: |
               mkdir -p ~/.ssh
-               ssh-keyscan -H petrov.course.prafdin.ru >> ~/.ssh/known_hosts
+               ssh-keyscan -p 3155 petrov.course.prafdin.ru >> ~/.ssh/known_hosts
 
       - name: Deploy
         env:
