@@ -12,32 +12,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build variables (SAFE lowercase + image)
+      - name: Get release commit hash
         run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          REPO=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
-          HASH=$(git rev-parse HEAD)
-
-          IMAGE="ghcr.io/$OWNER/$REPO:$HASH"
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-list -n 1 $TAG)
 
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-
-          echo "Deploy image: $IMAGE"
+          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}" >> $GITHUB_ENV
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to server
+      - name: Add known hosts
+        run: |
+              mkdir -p ~/.ssh
+               ssh-keyscan -H petrov.course.prafdin.ru >> ~/.ssh/known_hosts
+
+      - name: Deploy
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
-          IMAGE: ${{ env.IMAGE }}
-          DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
           chmod +x scripts/deploy.sh
