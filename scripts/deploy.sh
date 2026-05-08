@@ -1,42 +1,62 @@
 #!/bin/bash
+
 set -e
 
-CONTAINER_NAME="catty-app"
-PORT=8181
-
 if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
-  echo "DEPLOY_HOST / DEPLOY_USER missing"
-  exit 1
+    echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
+    exit 1
 fi
 
 if [ -z "$RELEASE_HASH" ]; then
-  echo "RELEASE_HASH missing"
-  exit 1
+    echo "Error: RELEASE_HASH must be set"
+    exit 1
 fi
 
-IMAGE="${IMAGE_NAME}:${RELEASE_HASH}"
+if [ -z "$IMAGE_NAME" ]; then
+    echo "Error: IMAGE_NAME must be set"
+    exit 1
+fi
 
-echo "Deploying: $IMAGE"
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+CONTAINER_NAME="catty-app"
+PORT="8181"
+IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
-ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-set -e
+echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
+echo "User: $DEPLOY_USER"
+echo "Release hash: $RELEASE_HASH"
+echo "Image: $IMAGE"
 
-echo "Logging into GHCR..."
-echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
-echo "Pulling image..."
-docker pull $IMAGE
+ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+    set -e
+    
+    echo ">Logging in to GitHub Container Registry..."
+    echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-echo "Restarting container..."
-docker stop $CONTAINER_NAME || true
-docker rm $CONTAINER_NAME || true
-
-docker run -d \
-  -p 3155:8181 \
-  --name $CONTAINER_NAME \
-  --restart unless-stopped \
-  -e DEPLOY_REF=$RELEASE_HASH \
-  $IMAGE
-
-echo "Deployed OK"
+    echo ">Pulling image: $IMAGE"
+    sudo docker pull $IMAGE
+    
+    echo ">Stopping old container..."
+    sudo docker stop $CONTAINER_NAME
+    sudo docker rm $CONTAINER_NAME
+    
+    echo ">Starting new container..."
+    sudo docker run -d \
+        -p $PORT:$PORT \
+        --name $CONTAINER_NAME \
+        --restart unless-stopped \
+        -e DEPLOY_REF=$RELEASE_HASH \
+        $IMAGE
+    
+    sleep 4
+    
+    if sudo docker ps | grep -q $CONTAINER_NAME; then
+        echo "Deployment completed successfully"
+    else
+        echo "ERROR: Application failed to start"
+        sudo docker logs $CONTAINER_NAME
+        exit 1
+    fi
 EOF
