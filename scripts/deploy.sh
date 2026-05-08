@@ -29,7 +29,8 @@ echo "Image: $IMAGE"
 
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
-ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" \
+"DOCKER_TOKEN='$DOCKER_TOKEN' GITHUB_ACTOR='$GITHUB_ACTOR' RELEASE_HASH='$RELEASE_HASH' IMAGE_NAME='$IMAGE_NAME' bash -s" << 'EOF'
     set -e
     
     echo ">Logging in to GitHub Container Registry..."

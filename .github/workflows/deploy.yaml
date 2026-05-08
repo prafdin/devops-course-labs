@@ -34,9 +34,8 @@ jobs:
         DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
         IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}Expand commentComment on line R37
-        GITHUB_ACTOR: ${{ github.actor }}
+        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.repository_owner }}
       run: |
         chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
-        
+        ./scripts/deploy.sh        
