@@ -13,7 +13,7 @@ services:
     environment:
       - DEPLOY_REF=${DEPLOY_REF}
     volumes:
-      - ./config.json:/catty-reminders-app/config.json:ro
+      - ./config.json:/app/config.json:ro
     depends_on:
       db:
         condition: service_healthy
