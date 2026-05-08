@@ -25,6 +25,9 @@ fi
 DEPLOY_PORT=${DEPLOY_PORT:-22}
 CONTAINER_NAME="catty-app"
 PORT="8181"
+
+IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+
 IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
@@ -46,11 +49,10 @@ bash -s
     set -e
 
     echo ">Logging in to GitHub Container Registry..."
-
     echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
     echo ">Pulling image: $IMAGE"
-    sudo docker pull $IMAGE
+    sudo docker pull "$IMAGE"
 
     echo ">Stopping old container..."
     sudo docker stop $CONTAINER_NAME || true
@@ -73,3 +75,5 @@ bash -s
         sudo docker logs $CONTAINER_NAME
         exit 1
     fi
+
+EOF
