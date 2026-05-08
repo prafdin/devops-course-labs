@@ -1,20 +1,23 @@
 #!/bin/bash
 set -e
 
-REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+echo "REPO=$REPO"
+echo "RELEASE_HASH=$RELEASE_HASH"
+
+REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
 IMAGE="ghcr.io/${REPO_LOWER}:${RELEASE_HASH}"
 
 echo "Deploying: $IMAGE"
 
-ssh -p "$DEPLOY_PORT" \
+ssh -p "${DEPLOY_PORT}" \
   -o StrictHostKeyChecking=no \
-  "$DEPLOY_USER@$DEPLOY_HOST" \
-  "DOCKER_TOKEN='$DOCKER_TOKEN' GITHUB_ACTOR='$GITHUB_ACTOR' RELEASE_HASH='$RELEASE_HASH' IMAGE='$IMAGE' bash -s" << 'EOF'
+  "${DEPLOY_USER}@${DEPLOY_HOST}" \
+  "IMAGE='$IMAGE' RELEASE_HASH='$RELEASE_HASH' GH_USER='$GH_USER' GH_TOKEN='$GH_TOKEN' bash -s" << 'EOF'
 
 set -e
 
 echo "Login GHCR"
-echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 
 echo "Pull image"
 docker pull "$IMAGE"
