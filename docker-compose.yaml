@@ -38,6 +38,12 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - catty-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pmypass --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
 volumes:
