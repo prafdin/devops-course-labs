@@ -31,7 +31,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: mypass
-      MYSQL_USER: user
+      MYSQL_USER: root
       MYSQL_PASSWORD: mypass
       MYSQL_DATABASE: catty_reminders
     volumes:
