@@ -23,6 +23,10 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     echo "--> Navigating to application directory"
     cd ${APP_DIR}
 
+    #Останавливаем и удаляем старые контейнеры
+    echo "--> Stopping old compose stack"
+    docker compose down
+
     echo "--> Pulling latest images"
     docker compose pull
 
