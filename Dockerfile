@@ -27,5 +27,4 @@ RUN mkdir -p /app/data
 # Открытие порта
 EXPOSE 8181
 
-# Команда запуска приложения
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
