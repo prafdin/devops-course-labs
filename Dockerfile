@@ -18,7 +18,6 @@ COPY requirements.txt .
 # Установка Python зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование всего приложения
 COPY . .
 
 # Создание директории для данных
