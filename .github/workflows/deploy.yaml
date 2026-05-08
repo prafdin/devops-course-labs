@@ -9,35 +9,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Get release hash
         run: |
           TAG=${{ github.event.release.tag_name }}
           HASH=$(git rev-list -n 1 $TAG)
-
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy application
+      - name: Run deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: vboxuser
-          DEPLOY_PORT: 22
-
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
-
-          REPO_NAME: ${{ github.repository }}
-
-          DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          GITHUB_ACTOR: ${{ github.actor }}
-
+          REPO: ${{ github.repository }}
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x scripts/deploy.sh
           ./scripts/deploy.sh
