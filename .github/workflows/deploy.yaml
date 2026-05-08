@@ -29,4 +29,11 @@ jobs:
             echo "DEPLOY_REF=${{ github.sha }}" > .env
             echo "Logging in to GHCR..."
             echo "${{ secrets.DOCKER_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            sudo docker compose up -d --pull always --remove-orphans --force-recreate
+            docker compose down
+            docker compose up -d --pull always
+            sleep 10
+            docker compose ps
+            curl -f http://localhost:8181/ || echo "App may not be ready yet"
+
+            echo "Deployment completed!"
+
