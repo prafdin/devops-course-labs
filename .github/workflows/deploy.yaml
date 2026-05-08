@@ -1,43 +1,52 @@
 name: Deploy
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - lab3*
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Get release commit hash
-        run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-list -n 1 $TAG)
-
-          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-          echo "IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}" >> $GITHUB_ENV
-
-      - name: Setup SSH
+      - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add known hosts
         run: |
-              mkdir -p ~/.ssh
-               ssh-keyscan -p 3155 petrov.course.prafdin.ru >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H petrov.course.prafdin.ru >> ~/.ssh/known_hosts
 
-      - name: Deploy
+      - name: Deploy app
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          RELEASE_HASH: ${{ env.RELEASE_HASH }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          IMAGE: ghcr.io/vadimkadkdoofjf/catty-reminders-app:${{ github.sha }}
+          SHA: ${{ github.sha }}
         run: |
-          chmod +x scripts/deploy.sh
-          ./scripts/deploy.sh
+          ssh -o StrictHostKeyChecking=no -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+            set -e
+
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+
+            echo "Stopping old container..."
+            docker stop catty-app || true
+            docker rm catty-app || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name catty-app \
+              --restart unless-stopped \
+              -p 3155:8181 \
+              -e DEPLOY_REF=$SHA \
+              $IMAGE
+
+            echo "Deploy successful: $SHA"
+          EOF
