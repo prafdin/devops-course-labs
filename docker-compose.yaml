@@ -2,7 +2,7 @@ name: catty-reminders
 
 services:
   app:
-    image: ghcr.io/${GITHUB_REPOSITORY:-nprkhn/catty-reminders-app}:${github.sha}
+    image: ghcr.io/${GITHUB_REPOSITORY:-nprkhn/catty-reminders-app}:${DEPLOY_REF}
     build:
       context: .
       dockerfile: Dockerfile
