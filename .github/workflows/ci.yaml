@@ -48,7 +48,6 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -78,3 +77,6 @@ jobs:
           tags: |
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
+
