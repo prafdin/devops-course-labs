@@ -1,6 +1,9 @@
 # Базовый образ с Python
 FROM python:3.11-slim
 
+ARG DEPLOY_REF
+ENV DEPLOY_REF=$DEPLOY_REF
+
 # Установка рабочей директории
 WORKDIR /app
 
@@ -23,9 +26,6 @@ RUN mkdir -p /app/data
 
 # Открытие порта
 EXPOSE 8181
-
-# Переменная окружения для deploy_ref
-ENV DEPLOY_REF=NA
 
 # Команда запуска приложения
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
