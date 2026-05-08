@@ -5,3 +5,7 @@ __pycache__/
 *.pyo
 
 .vscode/
+
+# docker compose secrets
+db_root_password.txt
+db_password.txt
