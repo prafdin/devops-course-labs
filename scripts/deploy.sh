@@ -1,32 +1,40 @@
 #!/bin/bash
 set -e
 
-PORT=${DEPLOY_PORT:-22}
+: "${DEPLOY_HOST:?DEPLOY_HOST required}"
+: "${DEPLOY_USER:?DEPLOY_USER required}"
+: "${DEPLOY_PORT:?DEPLOY_PORT required}"
+: "${RELEASE_HASH:?RELEASE_HASH required}"
+: "${IMAGE:?IMAGE required}"
+
 CONTAINER_NAME="catty-app"
+HOST_PORT=3155
+CONTAINER_PORT=8181
 
-echo "Deploying image: $IMAGE"
+echo "Deploying: $IMAGE"
 
-ssh -p "$PORT" -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+ssh -p "$DEPLOY_PORT" -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" << EOF
 set -e
 
-echo "Login GHCR"
-echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+echo "Logging into GHCR..."
+echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-echo "Pulling $IMAGE"
-docker pull $IMAGE
+echo "Pulling image..."
+sudo docker pull $IMAGE
 
-echo "Stopping container"
-docker stop $CONTAINER_NAME || true
-docker rm $CONTAINER_NAME || true
+echo "Stopping old container..."
+sudo docker stop $CONTAINER_NAME || true
+sudo docker rm $CONTAINER_NAME || true
 
-echo "Starting container"
-docker run -d \
+echo "Starting new container..."
+sudo docker run -d \
+  -p $HOST_PORT:$CONTAINER_PORT \
   --name $CONTAINER_NAME \
   --restart unless-stopped \
-  -p 8181:8181 \
-  -e RELEASE_HASH=$RELEASE_HASH \
+  -e DEPLOY_REF=$RELEASE_HASH \
   $IMAGE
 
-echo "OK"
-docker ps
+sleep 3
+
+sudo docker ps | grep -q $CONTAINER_NAME && echo "OK deployed"
 EOF

@@ -9,29 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Get release hash
+      - name: Get release commit hash
         run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-list -n 1 $TAG)
+          HASH=$(git rev-parse HEAD)
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-          echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$HASH" >> $GITHUB_ENV
+          echo "IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$HASH" >> $GITHUB_ENV
+          echo "Deploy image: $HASH"
 
-      - name: Setup SSH
+      - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy
+      - name: Deploy to server
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_USER: vboxuser
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          IMAGE: ${{ env.IMAGE }}
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          IMAGE: ${{ env.IMAGE }}
           DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           chmod +x scripts/deploy.sh
           ./scripts/deploy.sh
