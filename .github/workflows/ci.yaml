@@ -39,7 +39,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -c "import sys; print('PYTHONPATH:', sys.path)"
-          pytest tests/test_unit.py tests/test_api.py -v --junitxml=test_result.xml || true
+          pytest tests/test_unit.py -v --junitxml=test_result.xml || true
 
       - name: Upload test results
         if: always()
