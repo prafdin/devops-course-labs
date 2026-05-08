@@ -1,0 +1,49 @@
+name: catty-reminders
+
+services:
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY:-nprkhn/catty-reminders-app}:${github.sha}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DEPLOY_REF: ${DEPLOY_REF}
+    ports:
+      - "8181:8181"
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF}
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - catty-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_USER: user
+      MYSQL_PASSWORD: mypass
+      MYSQL_DATABASE: catty_reminders
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - catty-network
+    restart: unless-stopped
+
+volumes:
+  db-data:
+    driver: local
+
+networks:
+  catty-network:
+    driver: bridge
