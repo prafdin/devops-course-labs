@@ -27,7 +27,6 @@ CONTAINER_NAME="catty-app"
 PORT="8181"
 
 IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
-
 IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
@@ -43,37 +42,42 @@ GITHUB_ACTOR='$GITHUB_ACTOR' \
 RELEASE_HASH='$RELEASE_HASH' \
 IMAGE_NAME='$IMAGE_NAME' \
 IMAGE='$IMAGE' \
+PORT='$PORT' \
+CONTAINER_NAME='$CONTAINER_NAME' \
 bash -s
 " << 'EOF'
 
-    set -e
+set -e
 
-    echo ">Logging in to GitHub Container Registry..."
-    echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+: "${PORT:?PORT is empty}"
+: "${CONTAINER_NAME:?CONTAINER_NAME is empty}"
 
-    echo ">Pulling image: $IMAGE"
-    sudo docker pull "$IMAGE"
+echo "> Logging in to GitHub Container Registry..."
+echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-    echo ">Stopping old container..."
-    sudo docker stop $CONTAINER_NAME || true
-    sudo docker rm $CONTAINER_NAME || true
+echo "> Pulling image: $IMAGE"
+sudo docker pull "$IMAGE"
 
-    echo ">Starting new container..."
-    sudo docker run -d \
-        -p $PORT:$PORT \
-        --name $CONTAINER_NAME \
-        --restart unless-stopped \
-        -e DEPLOY_REF=$RELEASE_HASH \
-        $IMAGE
+echo "> Stopping old container..."
+sudo docker stop "$CONTAINER_NAME" || true
+sudo docker rm "$CONTAINER_NAME" || true
 
-    sleep 4
+echo "> Starting new container..."
+sudo docker run -d \
+    -p "$PORT:$PORT" \
+    --name "$CONTAINER_NAME" \
+    --restart unless-stopped \
+    -e DEPLOY_REF="$RELEASE_HASH" \
+    "$IMAGE"
 
-    if sudo docker ps | grep -q $CONTAINER_NAME; then
-        echo "Deployment completed successfully"
-    else
-        echo "ERROR: Application failed to start"
-        sudo docker logs $CONTAINER_NAME
-        exit 1
-    fi
+sleep 4
+
+if sudo docker ps | grep -q "$CONTAINER_NAME"; then
+    echo "Deployment completed successfully"
+else
+    echo "ERROR: Application failed to start"
+    sudo docker logs "$CONTAINER_NAME"
+    exit 1
+fi
 
 EOF
