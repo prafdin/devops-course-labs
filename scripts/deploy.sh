@@ -1,39 +1,32 @@
 #!/bin/bash
 set -e
 
-echo "REPO=$REPO"
-echo "RELEASE_HASH=$RELEASE_HASH"
+PORT=${DEPLOY_PORT:-22}
+CONTAINER_NAME="catty-app"
 
-REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
-IMAGE="ghcr.io/${REPO_LOWER}:${RELEASE_HASH}"
+echo "Deploying image: $IMAGE"
 
-echo "Deploying: $IMAGE"
-
-ssh -p "${DEPLOY_PORT}" \
-  -o StrictHostKeyChecking=no \
-  "${DEPLOY_USER}@${DEPLOY_HOST}" \
-  "IMAGE='$IMAGE' RELEASE_HASH='$RELEASE_HASH' GH_USER='$GH_USER' GH_TOKEN='$GH_TOKEN' bash -s" << 'EOF'
-
+ssh -p "$PORT" -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" << EOF
 set -e
 
 echo "Login GHCR"
-echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
+echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-echo "Pull image"
-docker pull "$IMAGE"
+echo "Pulling $IMAGE"
+docker pull $IMAGE
 
-echo "Restart container"
-docker stop catty-app || true
-docker rm catty-app || true
+echo "Stopping container"
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
 
+echo "Starting container"
 docker run -d \
-  --name catty-app \
+  --name $CONTAINER_NAME \
   --restart unless-stopped \
   -p 8181:8181 \
-  -e COMMIT_SHA="$RELEASE_HASH" \
-  "$IMAGE"
+  -e RELEASE_HASH=$RELEASE_HASH \
+  $IMAGE
 
 echo "OK"
 docker ps
-
 EOF
