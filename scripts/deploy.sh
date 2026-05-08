@@ -17,6 +17,11 @@ if [ -z "$IMAGE_NAME" ]; then
     exit 1
 fi
 
+if [ -z "$DOCKER_TOKEN" ] || [ -z "$GITHUB_ACTOR" ]; then
+    echo "Error: DOCKER_TOKEN and GITHUB_ACTOR must be set"
+    exit 1
+fi
+
 DEPLOY_PORT=${DEPLOY_PORT:-22}
 CONTAINER_NAME="catty-app"
 PORT="8181"
@@ -39,17 +44,18 @@ bash -s
 " << 'EOF'
 
     set -e
-    
+
     echo ">Logging in to GitHub Container Registry..."
+
     echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
     echo ">Pulling image: $IMAGE"
     sudo docker pull $IMAGE
-    
+
     echo ">Stopping old container..."
-    sudo docker stop $CONTAINER_NAME
-    sudo docker rm $CONTAINER_NAME
-    
+    sudo docker stop $CONTAINER_NAME || true
+    sudo docker rm $CONTAINER_NAME || true
+
     echo ">Starting new container..."
     sudo docker run -d \
         -p $PORT:$PORT \
@@ -57,9 +63,9 @@ bash -s
         --restart unless-stopped \
         -e DEPLOY_REF=$RELEASE_HASH \
         $IMAGE
-    
+
     sleep 4
-    
+
     if sudo docker ps | grep -q $CONTAINER_NAME; then
         echo "Deployment completed successfully"
     else
@@ -67,4 +73,3 @@ bash -s
         sudo docker logs $CONTAINER_NAME
         exit 1
     fi
-EOF
