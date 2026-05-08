@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: ${NAME_DB}
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD_FILE=run/secrets/db_password
+      - MARIADB_DATABASE=${DB_DATABASE}
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+    secrets:
+      - db_root_password
+      - db_password
+
+  catty-app:
+    image: ${IMAGE}
+    container_name: ${NAME_APP}
+    restart: unless-stopped
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF}
+    ports: 
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      - db
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
+
+secrets:
+  db_root_password:
+    file: ./db_root_password.txt
+  db_password:
+    file: ./db_password.txt
