@@ -1,5 +1,4 @@
-name: CD
-
+name: CD Workflow
 on:
   release:
     types: [published]
@@ -8,20 +7,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Deploy via script
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3181
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          port: 3181
           script: |
-            cd /home/vboxuser/catty-reminders-app
-            git fetch --all
-            git reset --hard ${{ github.sha }}
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            echo "=== Deploy triggered ==="
+            echo "Full SHA from GitHub: ${{ github.sha }}"
+            bash /home/vboxuser/catty-reminders-app/run_app.sh ${{ github.sha }}
