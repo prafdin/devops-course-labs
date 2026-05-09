@@ -299,6 +299,11 @@
       "login": "RomaError5",
       "id": "otyubrin",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "andreyKruglovRes",
+      "id": "kruglovdev",
+      "app": "catty-reminders-app"
     }
   ]
 }
