@@ -28,8 +28,7 @@ jobs:
           script: |
             cd ~/Desktop/catty-reminders-app
             git fetch origin lab2
-            git checkout lab2
-            git pull origin lab2
+            git reset --hard origin/lab2
             source .venv/bin/activate
             pip install -r requirements.txt
             sudo systemctl restart app.service
