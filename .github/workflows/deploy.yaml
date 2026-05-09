@@ -17,17 +17,18 @@ jobs:
           port: 3157
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+            IMAGE_TAG=${{ github.sha }}
+
             docker pull ghcr.io/${{ github.repository }}:latest
-            
+
             docker stop catty-container || true
             docker rm catty-container || true
-            
+
             docker run -d \
               --name catty-container \
               -p 8181:8181 \
               --env-file /home/nightainted/catty-reminders-app/.env \
               --restart always \
               ghcr.io/${{ github.repository }}:latest
-            
+
             docker image prune -f
