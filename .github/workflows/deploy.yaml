@@ -1,32 +1,37 @@
 name: CD Deployment
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [lab3]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@master
         with:
-          host: course.prafdin.ru
+          host: ${{ secrets.HOST }}
           username: nightainted
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.KEY }}
           port: 3157
           script: |
-            cd /home/nightainted/catty-reminders-app
-            git reset --hard
-            git fetch --all
-            git reset --hard ${{ github.sha }}
-            echo "DEPLOY_REF=${{ github.sha }}" > /home/nightainted/catty-reminders-app/.env
-            if [ ! -d ".venv" ]; then
-                python3 -m venv .venv/
-            fi
-            source .venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart catty-app.service
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            docker pull ghcr.io/${{ github.repository }}:latest
+            
+            docker stop catty-container || true
+            docker rm catty-container || true
+            
+            docker run -d \
+              --name catty-container \
+              -p 8181:8181 \
+              --env-file /home/nightainted/catty-reminders-app/.env \
+              --restart always \
+              ghcr.io/${{ github.repository }}:latest
+            
+            docker image prune -f
