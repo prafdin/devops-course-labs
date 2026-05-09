@@ -1,11 +1,8 @@
 name: CD Deployment
 
 on:
-  workflow_run:
-    workflows: ["CI Pipeline"]
-    types:
-      - completed
-    branches: [ "lab3" ]
+  release:
+    types: [published]
 
 jobs:
   deploy:
