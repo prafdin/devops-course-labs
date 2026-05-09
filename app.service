@@ -1,0 +1,14 @@
+[Unit]
+Description=Catty Reminders App
+After=network.target
+
+[Service]
+User=qzm
+Group=qzm
+WorkingDirectory=/home/qzm/Desktop/catty-reminders-app
+ExecStart=/home/qzm/Desktop/catty-reminders-app/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8181
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
