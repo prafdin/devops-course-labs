@@ -1,4 +1,5 @@
-name: CD Workflow
+name: Docker CD
+
 on:
   release:
     types: [published]
@@ -7,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via script
+      - name: Deploy to VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -15,6 +16,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
           script: |
-            echo "=== Deploy triggered ==="
-            echo "Full SHA from GitHub: ${{ github.sha }}"
-            bash /home/vboxuser/catty-reminders-app/run_app.sh ${{ github.sha }}
+            docker pull ghcr.io/${{ github.repository }}:latest
+            docker stop catty-app-container || true
+            docker rm catty-app-container || true
+            docker run -d --name catty-app-container -p 8181:8181 ghcr.io/${{ github.repository }}:latest
