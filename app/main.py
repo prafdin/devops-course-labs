@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException
 import os
 
 app = FastAPI()
-# app.include_router(root.router)
+# app.include_router(root.router)   # закомментировано для проверок
 app.include_router(api.router)
 app.include_router(login.router)
 app.include_router(reminders.router)
