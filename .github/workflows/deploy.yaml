@@ -1,4 +1,5 @@
-name: CD Workflow
+name: CD
+
 on:
   release:
     types: [published]
@@ -7,7 +8,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via script
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+
+      - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -15,6 +25,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
           script: |
-            echo "=== Deploy triggered ==="
-            echo "Full SHA from GitHub: ${{ github.sha }}"
-            bash /home/vboxuser/catty-reminders-app/run_app.sh ${{ github.sha }}
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-container"
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker pull $IMAGE
+
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              -e DEPLOY_REF=${{ github.sha }} \
+              $IMAGE
+
+            docker image prune -f
