@@ -1,36 +1,63 @@
-name: Python CI
+name: Python CI and Docker Build
 
 on:
   push:
-    branches: [ lab2 ]
+    branches: [ lab3 ]
   pull_request:
-    branches: [ lab2 ]
+    branches: [ lab3 ]
+
+# Даем права на загрузку пакетов (Docker образов) в GitHub Packages
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      [cite_start]uses: actions/checkout@v4 [cite: 105]
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      [cite_start]uses: actions/setup-python@v5 [cite: 107]
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt [cite: 126]
+        pip install -r requirements.txt
 
     - name: Run tests
-      # Запускаем pytest и записываем вывод в файл для артефакта
       run: |
         pytest > test_result.txt || echo "Tests failed, check logs" >> test_result.txt
 
     - name: Upload test results
-      [cite_start]uses: actions/upload-artifact@v4 [cite: 98]
+      uses: actions/upload-artifact@v4
       with:
         name: test_result
         path: test_result.txt
+
+    # --- НОВЫЕ ШАГИ ДЛЯ DOCKER ИЗ 3 ЛАБЫ ---
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
