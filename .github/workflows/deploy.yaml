@@ -2,14 +2,14 @@ name: CD - Deploy to Server
 
 on:
   release:
-    [cite_start]types: [published] 
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
- 
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -23,10 +23,12 @@ jobs:
         with:
           host: course.prafdin.ru
           username: qzm
-          [cite_start]key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3149
           script: |
             cd ~/Desktop/catty-reminders-app
+            git fetch origin lab2
+            git checkout lab2
             git pull origin lab2
             source .venv/bin/activate
             pip install -r requirements.txt
