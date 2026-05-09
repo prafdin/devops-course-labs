@@ -6,7 +6,7 @@ from app.utils.exceptions import UnauthorizedPageException
 from app.routers import api, login, reminders, root
 from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 import os
@@ -47,6 +47,20 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 @app.get("/")
-def home_with_deploy():
+def home_for_check():
     deploy_ref = os.getenv("DEPLOY_REF", "unknown")
-    return {"message": "Catty Reminders", "deploy_ref": deploy_ref}
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="deployref" content="{deploy_ref}">
+        <title>Catty Reminders</title>
+    </head>
+    <body>
+        <h1>Catty Reminders</h1>
+        <p>Deploy ref: {deploy_ref}</p>
+        <p><a href="/reminders">Go to reminders</a></p>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
