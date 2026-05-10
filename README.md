@@ -9,8 +9,9 @@ It uses:
 * [FastAPI](https://fastapi.tiangolo.com/) for the backend
 * [HTMX](https://htmx.org/) 1.8.6 for handling dynamic interactions (instead of raw JavaScript)
 * [Jinja templates](https://jinja.palletsprojects.com/en/3.1.x/) with HTML and CSS for the frontend
-* [TinyDB](https://tinydb.readthedocs.io/en/latest/index.html) for the database
+* [MariaDB](https://mariadb.org/) for the database
 * [Playwright](https://playwright.dev/python/) and [pytest](https://docs.pytest.org/) for testing
+* [Docker Compose](https://docs.docker.com/compose/) for the runtime stack
 
 ## Installing dependencies
 
@@ -24,7 +25,7 @@ pip install -r requirements.txt
 It is recommended to install dependencies into a [virtual environment](https://docs.python.org/3/library/venv.html).
 
 
-## Running the app
+## Running the app directly
 
 Prepare environment variables from template and export it:
 ```bash
@@ -48,12 +49,17 @@ Then, open your browser to [`http://127.0.0.1:8181`](http://127.0.0.1:8181) to l
 The [`config.json`](config.json) file declares the users for the app.
 You may use any configured user credentials, or change them to your liking.
 
-## Setting the database path
+## Running with Docker Compose
 
-The app uses TinyDB, which stores the database as a JSON file.
-The default database filepath is `reminder_db.json`.
-You may change this path in [`config.json`](config.json).
-If you change the filepath, the app will automatically create a new, empty database.
+Build the application image and start the full stack:
+
+```bash
+docker build -t catty-reminders-app:local .
+IMAGE=catty-reminders-app:local DEPLOY_REF=local-test docker compose up -d
+```
+
+The application will be available on `http://127.0.0.1:8181`.
+Database data is stored in the named volume `catty-db-data`, so it survives stack recreation.
 
 
 ## Using the app
