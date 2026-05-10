@@ -34,5 +34,5 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/catty-reminders-app
+            cd "${{ secrets.APP_DIR }}"
             APP_DIR="$PWD" APP_ENV_FILE="$PWD/.env" APP_SERVICE=none RUN_TESTS=1 ./scripts/deploy.sh lab2 ${{ github.sha }}
