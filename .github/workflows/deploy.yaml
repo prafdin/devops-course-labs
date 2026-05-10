@@ -17,10 +17,11 @@ jobs:
           port: 3149
           script: |
             cd ~/Desktop/catty-reminders-app
-            git fetch origin
+            git fetch -all
             git reset --hard ${{ github.sha }}
 
             echo "${{ github.sha }}" > version.txt
+            echo "${{ github.sha }}" > app/version.txt
             echo "DEPLOY_REF=${{ github.sha }}" > .env
             
             if [ -f "requirements.txt" ]; then
