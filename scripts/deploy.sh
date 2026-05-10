@@ -117,7 +117,8 @@ if [[ "$RUN_TESTS" != "0" ]]; then
   )
 fi
 
-if run_docker_deploy; then
+if [[ -n "$IMAGE" ]]; then
+  run_docker_deploy
   echo "Docker deployment completed at $DEPLOYED_SHA with $IMAGE"
   exit 0
 fi
