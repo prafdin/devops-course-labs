@@ -21,6 +21,7 @@ IMAGE="${IMAGE:-}"
 CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
 CONTAINER_PORT="${CONTAINER_PORT:-8181}"
 HOST_PORT="${HOST_PORT:-8181}"
+DOCKER_BIN="${DOCKER_BIN:-}"
 LOCK_FILE="${LOCK_FILE:-/tmp/catty-deploy.lock}"
 LOCK_DIR="${LOCK_DIR:-/tmp/catty-deploy.lockdir}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
@@ -37,14 +38,28 @@ run_docker_deploy() {
     return 1
   fi
 
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    echo "$GITHUB_TOKEN" | docker login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
+  if [[ -z "$DOCKER_BIN" ]]; then
+    DOCKER_BIN="$(command -v docker || true)"
+  fi
+  if [[ -z "$DOCKER_BIN" && -x /opt/homebrew/bin/docker ]]; then
+    DOCKER_BIN="/opt/homebrew/bin/docker"
+  fi
+  if [[ -z "$DOCKER_BIN" && -x /usr/local/bin/docker ]]; then
+    DOCKER_BIN="/usr/local/bin/docker"
+  fi
+  if [[ -z "$DOCKER_BIN" ]]; then
+    echo "docker command not found" >&2
+    exit 1
   fi
 
-  docker pull "$IMAGE"
-  docker stop "$CONTAINER_NAME" 2>/dev/null || true
-  docker rm "$CONTAINER_NAME" 2>/dev/null || true
-  docker run -d \
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    echo "$GITHUB_TOKEN" | "$DOCKER_BIN" login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
+  fi
+
+  "$DOCKER_BIN" pull "$IMAGE"
+  "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
+  "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
+  "$DOCKER_BIN" run -d \
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -p "$HOST_PORT:$CONTAINER_PORT" \
