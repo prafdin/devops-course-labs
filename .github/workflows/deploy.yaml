@@ -31,6 +31,7 @@ jobs:
             echo "DEPLOY_REF=$NEW_SHA" > .env
             echo "DEPLOY_REF=$NEW_SHA" > app/.env
             
+            sudo pkill -f uvicorn || true
             if [ -f "requirements.txt" ]; then
                 if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
                 source .venv/bin/activate
