@@ -16,7 +16,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3149
           script: |
-            cd ~/Desktop/catty-reminders-app
+            cd /home/qzm/Desktop/catty-reminders-app
             git fetch origin
             git reset --hard ${{ github.sha }}
 
@@ -26,9 +26,7 @@ jobs:
             echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env > /dev/null
 
             if [ -f "requirements.txt" ]; then
-                [ -d ".venv" ] || python3 -m venv .venv
-                source .venv/bin/activate
-                pip install -r requirements.txt
+                /home/qzm/Desktop/catty-reminders-app/.venv/bin/pip install -r requirements.txt
             fi
             
             sudo pkill -9 -f uvicorn || true
