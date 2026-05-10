@@ -15,6 +15,7 @@ jobs:
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3149
+          script_stop: true
           script: |
             cd ~/Desktop/catty-reminders-app
             git fetch origin lab2
