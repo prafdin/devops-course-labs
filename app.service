@@ -6,7 +6,8 @@ After=network.target
 User=qzm
 Group=qzm
 WorkingDirectory=/home/qzm/Desktop/catty-reminders-app
-EnvironmentFile=/home/qzm/Desktop/catty-reminders-app/.env
+Environment="PYTHONPATH=/home/qzm/Desktop/catty-reminders-app"
+EnvironmentFile=/home/qzm/Desktop/catty-reminders-app/.env.deploy
 ExecStart=/home/qzm/Desktop/catty-reminders-app/.venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 
