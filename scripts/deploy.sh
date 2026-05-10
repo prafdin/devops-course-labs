@@ -52,6 +52,10 @@ run_docker_deploy() {
     exit 1
   fi
 
+  export PATH="$(dirname "$DOCKER_BIN"):$PATH"
+  export DOCKER_CONFIG="${DOCKER_CONFIG:-/tmp/catty-docker-config}"
+  mkdir -p "$DOCKER_CONFIG"
+
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     echo "$GITHUB_TOKEN" | "$DOCKER_BIN" login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
   fi
@@ -65,8 +69,6 @@ run_docker_deploy() {
     -p "$HOST_PORT:$CONTAINER_PORT" \
     -e DEPLOY_REF="$DEPLOYED_SHA" \
     "$IMAGE"
-
-  return 0
 }
 
 mkdir -p "$(dirname "$LOCK_FILE")"
