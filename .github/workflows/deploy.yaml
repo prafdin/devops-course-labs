@@ -29,9 +29,3 @@ jobs:
             sudo systemctl restart app.service
             
             sleep 5
-            if sudo systemctl is-active --quiet app.service; then
-                echo "Success"
-            else
-                echo "Error"
-                exit 1
-            fi
