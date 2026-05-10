@@ -21,7 +21,7 @@ jobs:
             git fetch origin
             git checkout -B $TARGET_BRANCH origin/$TARGET_BRANCH
             git reset --hard origin/$TARGET_BRANCH
-            git rev-parse HEAD > .commit_hash
+            git rev-parse HEAD > version.txt
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
             if [ -f "requirements.txt" ]; then
