@@ -19,17 +19,14 @@ jobs:
             cd /home/qzm/Desktop/catty-reminders-app
             
             sudo git fetch --all
-            sudo git reset --hard ${{ github.sha }}
+            sudo git reset --hard ${{ github.event.release.target_commitish || github.sha }}
 
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee .env
+            echo "DEPLOY_REF=${{ github.event.release.target_commitish || github.sha }}" | sudo tee .env
+            sudo systemctl stop app.service
             sudo chmod 644 .env
             
             sudo fuser -k 8181/tcp || true
-            sudo pkill -9 -f uvicorn || true
-            
-            if [ -f "requirements.txt" ]; then
-                sudo /home/qzm/Desktop/catty-reminders-app/.venv/bin/pip install -r requirements.txt
-            fi
             
             sudo systemctl daemon-reload
-            sudo systemctl restart app.service
+            sudo systemctl start app.service
+            sleep 10
