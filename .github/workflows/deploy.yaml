@@ -21,10 +21,7 @@ jobs:
             sudo git fetch --all
             sudo git reset --hard ${{ github.event.release.target_commitish || github.sha }}
 
-            DEPLOY_REF=$(git rev-parse HEAD)
-            echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee .env.deploy
-            sudo chmod 644 .env.deploy
-            sudo find . -name "__pycache__" -type d -exec rm -rf {} +
+            echo "DEPLOY_REF=${{ github.event.release.target_commitish || github.sha }}" | sudo tee .env.deploy
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
             
