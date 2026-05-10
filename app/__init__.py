@@ -23,6 +23,22 @@ with open('config.json') as config_json:
 
 DEPLOY_REF = os.getenv("DEPLOY_REF", "NA")
 
+
+def get_deploy_ref() -> str:
+  env_path = os.getenv("DEPLOY_REF_FILE", ".env")
+  deploy_ref = os.getenv("DEPLOY_REF")
+  if deploy_ref:
+    return deploy_ref
+
+  if os.path.exists(env_path):
+    with open(env_path) as env_file:
+      for line in env_file:
+        key, separator, value = line.strip().partition("=")
+        if separator and key == "DEPLOY_REF":
+          return value
+
+  return "NA"
+
 # --------------------------------------------------------------------------------
 # Establish the Secret Key
 # --------------------------------------------------------------------------------
