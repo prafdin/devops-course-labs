@@ -24,8 +24,8 @@ jobs:
             DEPLOY_REF=$(git rev-parse HEAD)
             echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee .env.deploy
             sudo chmod 644 .env.deploy
-
+            sudo find . -name "__pycache__" -type d -exec rm -rf {} +
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
             
-            sleep 5
+            sleep 10
