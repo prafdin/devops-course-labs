@@ -17,14 +17,22 @@ jobs:
           port: 3149
           script: |
             cd ~/Desktop/catty-reminders-app
-            TARGET_BRANCH=${{ github.event.release.target_commitish }}
+            
             git fetch origin
-            git checkout -B $TARGET_BRANCH origin/$TARGET_BRANCH
-            git reset --hard origin/$TARGET_BRANCH
-            git rev-parse HEAD > version.txt
+            git reset --hard ${{ github.event.release.target_commitish }}
+
+            echo "DEPLOY_REF=${{ github.event.release.target_commitish }}" > .env
+            echo "${{ github.event.release.target_commitish }}" > version.txt
+            
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
-            if [ -f "requirements.txt" ]; then
-              pip install -r requirements.txt
-            fi
+            pip install -r requirements.txt
+            
             sudo systemctl restart app.service
+            
+            sleep 5
+            if ! systemctl is-active --quiet app.service; then
+              echo "ERROR: app.service failed to start!"
+              journalctl -u app.service -n 20
+              exit 1
+            fi
