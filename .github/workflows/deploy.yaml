@@ -17,7 +17,7 @@ jobs:
           host: course.prafdin.ru
           username: dima
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3120
+          port: 3105
           script: |
             IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
             CONTAINER_NAME="catty-container"
