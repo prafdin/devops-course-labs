@@ -28,4 +28,4 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
             
-            sleep 10
+            sleep 7
