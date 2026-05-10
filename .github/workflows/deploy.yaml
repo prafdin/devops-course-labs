@@ -17,22 +17,23 @@ jobs:
           port: 3149
           script: |
             cd ~/Desktop/catty-reminders-app
+            NEW_SHA=${{ github.event.release.target_commitish }}
             
             git fetch origin
-            git reset --hard ${{ github.event.release.target_commitish }}
-
-            echo "DEPLOY_REF=${{ github.event.release.target_commitish }}" > .env
-            echo "${{ github.event.release.target_commitish }}" > version.txt
             
-            if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
-            source .venv/bin/activate
-            pip install -r requirements.txt
+            if git show origin/$NEW_SHA:requirements.txt > /dev/null 2>&1; then
+                git checkout -B $NEW_SHA origin/$NEW_SHA
+                git reset --hard origin/$NEW_SHA
+            fi
+
+            echo "$NEW_SHA" > version.txt
+            echo "$NEW_SHA" > .commit_hash
+            echo "DEPLOY_REF=$NEW_SHA" > .env
+            
+            if [ -f "requirements.txt" ]; then
+                if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
+                source .venv/bin/activate
+                pip install -r requirements.txt
+            fi
             
             sudo systemctl restart app.service
-            
-            sleep 5
-            if ! systemctl is-active --quiet app.service; then
-              echo "ERROR: app.service failed to start!"
-              journalctl -u app.service -n 20
-              exit 1
-            fi
