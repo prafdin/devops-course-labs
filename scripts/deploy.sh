@@ -17,6 +17,10 @@ APP_DIR="${APP_DIR:-/opt/catty/app}"
 APP_SERVICE="${APP_SERVICE:-catty-app.service}"
 APP_RESTART_COMMAND="${APP_RESTART_COMMAND:-}"
 APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env}"
+IMAGE="${IMAGE:-}"
+CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
+CONTAINER_PORT="${CONTAINER_PORT:-8181}"
+HOST_PORT="${HOST_PORT:-8181}"
 LOCK_FILE="${LOCK_FILE:-/tmp/catty-deploy.lock}"
 LOCK_DIR="${LOCK_DIR:-/tmp/catty-deploy.lockdir}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
@@ -27,6 +31,28 @@ if [[ -z "$REPO_URL" ]]; then
   echo "REPO_URL is not set and could not be read from git remote origin" >&2
   exit 2
 fi
+
+run_docker_deploy() {
+  if [[ -z "$IMAGE" ]]; then
+    return 1
+  fi
+
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    echo "$GITHUB_TOKEN" | docker login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
+  fi
+
+  docker pull "$IMAGE"
+  docker stop "$CONTAINER_NAME" 2>/dev/null || true
+  docker rm "$CONTAINER_NAME" 2>/dev/null || true
+  docker run -d \
+    --name "$CONTAINER_NAME" \
+    --restart unless-stopped \
+    -p "$HOST_PORT:$CONTAINER_PORT" \
+    -e DEPLOY_REF="$DEPLOYED_SHA" \
+    "$IMAGE"
+
+  return 0
+}
 
 mkdir -p "$(dirname "$LOCK_FILE")"
 if command -v flock >/dev/null 2>&1; then
@@ -72,6 +98,11 @@ if [[ "$RUN_TESTS" != "0" ]]; then
     cd "$APP_DIR"
     bash -lc "$TEST_COMMAND"
   )
+fi
+
+if run_docker_deploy; then
+  echo "Docker deployment completed at $DEPLOYED_SHA with $IMAGE"
+  exit 0
 fi
 
 touch "$APP_ENV_FILE"
