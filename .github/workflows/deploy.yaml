@@ -23,7 +23,8 @@ jobs:
             echo "${{ github.sha }}" > version.txt
             echo "${{ github.sha }}" > app/version.txt
             echo "DEPLOY_REF=${{ github.sha }}" > .env
-            
+
+            sudo pkill -9 -f uvicorn || true
             if [ -f "requirements.txt" ]; then
                 [ -d ".venv" ] || python3 -m venv .venv
                 source .venv/bin/activate
