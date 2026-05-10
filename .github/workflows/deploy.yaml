@@ -20,11 +20,18 @@ jobs:
             
             sudo git fetch --all
             sudo git reset --hard ${{ github.event.release.target_commitish || github.sha }}
-            sudo mkdir -p /etc/systemd/system/app.service.d
 
-            echo "[Service]" | sudo tee /etc/systemd/system/app.service.d/override.conf
-            echo "Environment=\"DEPLOY_REF=${{ github.event.release.target_commitish || github.sha }}\"" | sudo tee -a /etc/systemd/system/app.service.d/override.conf
-            
+            DEPLOY_REF=$(git rev-parse HEAD)
+            echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee .env.deploy
+            sudo chmod 644 .env.deploy
+
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
-            sleep 10
+            
+            sleep 5
+            if sudo systemctl is-active --quiet app.service; then
+                echo "Success"
+            else
+                echo "Error"
+                exit 1
+            fi
