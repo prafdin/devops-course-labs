@@ -18,27 +18,15 @@ jobs:
           script: |
             cd ~/Desktop/catty-reminders-app
             git fetch origin
-            
-            TARGET_REF=${{ github.event.release.target_commitish }}
-            
-            if git show origin/$TARGET_REF:requirements.txt > /dev/null 2>&1; then
-                git checkout -B $TARGET_REF origin/$TARGET_REF
-                git reset --hard origin/$TARGET_REF
-            fi
+            git reset --hard ${{ github.sha }}
 
-            ACTUAL_SHA=$(git rev-parse HEAD)
-
-            echo "$ACTUAL_SHA" > version.txt
-            echo "$ACTUAL_SHA" > app/version.txt
-            echo "DEPLOY_REF=$ACTUAL_SHA" > .env
-            echo "DEPLOY_REF=$ACTUAL_SHA" > app/.env
+            echo "${{ github.sha }}" > version.txt
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
             
             if [ -f "requirements.txt" ]; then
-                if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
+                [ -d ".venv" ] || python3 -m venv .venv
                 source .venv/bin/activate
                 pip install -r requirements.txt
             fi
             
-            sudo pkill -f uvicorn || true
-            sudo systemctl daemon-reload
             sudo systemctl restart app.service
