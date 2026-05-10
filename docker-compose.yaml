@@ -19,9 +19,7 @@ services:
     image: ${IMAGE}
     container_name: ${APP_CONTAINER_NAME}
     restart: always
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF}
-    ports: 
+    ports:
       - "${HOST_APP_PORT}:${CONTAINER_APP_PORT}"
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro

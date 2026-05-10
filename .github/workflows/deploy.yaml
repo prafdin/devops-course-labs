@@ -20,10 +20,8 @@ jobs:
               set -e
               cd /home/umarbis/catty-reminders-app
               OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-              
               export DEPLOY_REF=${{ github.sha }}
               export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
-              
               export DB_CONTAINER_NAME=catty-db
               export APP_CONTAINER_NAME=catty
               export MARIADB_ROOT_PASSWORD=mypass
