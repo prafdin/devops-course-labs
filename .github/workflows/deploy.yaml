@@ -21,7 +21,8 @@ jobs:
             sudo git fetch --all
             sudo git reset --hard ${{ github.sha }}
 
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/default/catty-app-env
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee .env
+            sudo chmod 644 .env
             
             sudo fuser -k 8181/tcp || true
             sudo pkill -9 -f uvicorn || true
