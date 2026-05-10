@@ -16,10 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build on runner
-        run: |
-          docker build -t ghcr.io/an664/catty-reminders-app:${{ github.sha }} .
-
       - name: Deploy through SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -28,7 +24,7 @@ jobs:
           SSH_HOST: course.prafdin.ru
           SSH_PORT: "26311"
           SSH_USER: root
-          IMAGE: ghcr.io/an664/catty-reminders-app:${{ github.sha }}
+          DEPLOY_DIR: /opt/catty-reminders-app
         run: |
           set -Eeuo pipefail
 
@@ -41,20 +37,32 @@ jobs:
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             "$SSH_USER@$SSH_HOST" \
-            "DEPLOY_SHA='$DEPLOY_SHA' IMAGE='$IMAGE' GHCR_TOKEN='$GHCR_TOKEN' bash -s" <<'REMOTE'
+            "DEPLOY_DIR='$DEPLOY_DIR' mkdir -p '$DEPLOY_DIR'"
+
+          scp -i "$key_file" \
+            -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            docker-compose.yaml \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_DIR/docker-compose.yaml"
+
+          ssh -i "$key_file" \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_DIR='$DEPLOY_DIR' DEPLOY_SHA='$DEPLOY_SHA' GHCR_TOKEN='$GHCR_TOKEN' bash -s" <<'REMOTE'
           set -Eeuo pipefail
 
           printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io -u an664 --password-stdin
-          docker pull "$IMAGE"
 
           systemctl stop catty-reminders-app.service || true
           systemctl disable catty-reminders-app.service || true
 
           docker rm -f catty-reminders-app || true
-          docker run -d \
-            --name catty-reminders-app \
-            --restart always \
-            -p 8181:8181 \
-            -e DEPLOY_REF="$DEPLOY_SHA" \
-            "$IMAGE"
+
+          printf 'APP_IMAGE_TAG=%s\nDEPLOY_REF=%s\n' "$DEPLOY_SHA" "$DEPLOY_SHA" > "$DEPLOY_DIR/.env"
+
+          docker compose --env-file "$DEPLOY_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yaml" pull
+          docker compose --env-file "$DEPLOY_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yaml" up -d
           REMOTE

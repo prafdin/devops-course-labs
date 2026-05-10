@@ -74,7 +74,7 @@ async def get_reminders_list_row(
   request: Request,
   storage: MySQLStorage = Depends(get_storage_for_page)
 ):
-  reminder__list = storage.get_list(list_id)
+  reminder_list = storage.get_list(list_id)
   selected_list = storage.get_selected_list()
   context = {'request': request, 'reminder_list': reminder_list, 'selected_list': selected_list}
   return templates.TemplateResponse("partials/reminders/list-row.html", context)

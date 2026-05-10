@@ -1,0 +1,32 @@
+name: catty-reminders-app
+
+services:
+  app:
+    image: ghcr.io/an664/catty-reminders-app:${APP_IMAGE_TAG}
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      DEPLOY_REF: ${DEPLOY_REF}
+    ports:
+      - "8181:8181"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_DATABASE: catty_reminders
+    volumes:
+      - catty-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pmypass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  catty-mysql-data:
