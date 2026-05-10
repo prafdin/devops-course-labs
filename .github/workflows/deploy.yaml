@@ -21,7 +21,9 @@ jobs:
             sudo git fetch --all
             sudo git reset --hard ${{ github.event.release.target_commitish || github.sha }}
 
-            echo "DEPLOY_REF=${{ github.event.release.target_commitish || github.sha }}" | sudo tee .env.deploy
+            ACTUAL_SHA=$(git rev-parse HEAD)
+            echo "DEPLOY_REF=$ACTUAL_SHA" | sudo tee .env.deploy
+            sudo chmod 644 .env.deploy
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
             
