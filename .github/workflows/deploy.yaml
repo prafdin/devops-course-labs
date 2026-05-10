@@ -17,18 +17,20 @@ jobs:
           port: 3149
           script: |
             cd ~/Desktop/catty-reminders-app
-            git fetch -all
+            git fetch origin
             git reset --hard ${{ github.sha }}
 
-            echo "${{ github.sha }}" > version.txt
-            echo "${{ github.sha }}" > app/version.txt
             echo "DEPLOY_REF=${{ github.sha }}" > .env
+            echo "${{ github.sha }}" > version.txt
+            
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env > /dev/null
 
-            sudo pkill -9 -f uvicorn || true
             if [ -f "requirements.txt" ]; then
                 [ -d ".venv" ] || python3 -m venv .venv
                 source .venv/bin/activate
                 pip install -r requirements.txt
             fi
             
+            sudo pkill -9 -f uvicorn || true
+            sudo systemctl daemon-reload
             sudo systemctl restart app.service
