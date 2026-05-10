@@ -1,0 +1,16 @@
+[Unit]
+Description=Catty GitHub webhook deployer
+After=network.target catty-reminders-app.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/catty-reminders-app/current
+Environment=DEPLOY_SCRIPT=/opt/catty-reminders-app/current/ops/deploy.sh
+Environment=WEBHOOK_HOST=0.0.0.0
+Environment=WEBHOOK_PORT=8080
+ExecStart=/usr/bin/python3 /opt/catty-reminders-app/current/ops/webhook_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
