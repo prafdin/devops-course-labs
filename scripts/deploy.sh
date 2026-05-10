@@ -18,6 +18,9 @@ APP_SERVICE="${APP_SERVICE:-catty-app.service}"
 APP_RESTART_COMMAND="${APP_RESTART_COMMAND:-}"
 APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env}"
 IMAGE="${IMAGE:-}"
+COMPOSE_DEPLOY="${COMPOSE_DEPLOY:-0}"
+COMPOSE_FILE_PATH="${COMPOSE_FILE_PATH:-$APP_DIR/docker-compose.yaml}"
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-catty}"
 CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
 CONTAINER_PORT="${CONTAINER_PORT:-8181}"
 HOST_PORT="${HOST_PORT:-8181}"
@@ -58,6 +61,22 @@ run_docker_deploy() {
 
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     echo "$GITHUB_TOKEN" | "$DOCKER_BIN" login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
+  fi
+
+  if [[ "$COMPOSE_DEPLOY" == "1" ]]; then
+    if [[ ! -f "$COMPOSE_FILE_PATH" ]]; then
+      echo "docker compose file not found at $COMPOSE_FILE_PATH" >&2
+      exit 1
+    fi
+
+    "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
+    "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
+    export IMAGE
+    export DEPLOY_REF="$DEPLOYED_SHA"
+    "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
+    "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
+    "$DOCKER_BIN" image prune -af >/dev/null 2>&1 || true
+    return 0
   fi
 
   "$DOCKER_BIN" pull "$IMAGE"
