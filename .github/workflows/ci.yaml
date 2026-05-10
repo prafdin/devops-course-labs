@@ -2,9 +2,9 @@ name: CI - Code Check
 
 on:
   push:
-    branches: [ lab2 ]
+    branches: [ lab2, "lab2_autotests*" ]
   pull_request:
-    branches: [ lab2 ]
+    branches: [ lab2, "lab2_autotests*" ]
 
 jobs:
   test:
@@ -31,7 +31,8 @@ jobs:
           pytest --junitxml=result.xml
 
       - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: result.xml
+          path: test_result.xml
