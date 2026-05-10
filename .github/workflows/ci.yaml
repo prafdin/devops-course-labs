@@ -28,7 +28,7 @@ jobs:
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
-          pytest --junitxml=result.xml
+          pytest --junitxml=test_result.xml
 
       - name: Upload test results
         if: always()
