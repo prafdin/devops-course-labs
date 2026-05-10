@@ -17,16 +17,15 @@ jobs:
           port: 3149
           script: |
             cd /home/qzm/Desktop/catty-reminders-app
-            
             sudo git fetch --all
-            sudo git reset --hard origin/lab2
-            sudo rm -f .env.deploy
-
+            TARGET="${{ github.event.release.target_commitish || github.sha }}"
+           
+            sudo git reset --hard $TARGET
             DEPLOY_REF=$(git rev-parse HEAD)
-            echo "DEPLOY_REF=$DEPLOY_REF" > /tmp/.env.deploy
-
+            echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee .env.deploy
             sudo chmod 644 .env.deploy
+           
+            sudo chown qzm:qzm .env.deploy
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
-            
-            sleep 7
+            sleep 10
