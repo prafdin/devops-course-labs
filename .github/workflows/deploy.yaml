@@ -17,18 +17,21 @@ jobs:
           port: 3149
           script: |
             cd /home/qzm/Desktop/catty-reminders-app
-            git fetch origin
-            git reset --hard ${{ github.sha }}
-
-            echo "DEPLOY_REF=${{ github.sha }}" > .env
-            echo "${{ github.sha }}" > version.txt
             
-            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env > /dev/null
+            sudo git fetch --all
+            sudo git reset --hard ${{ github.sha }}
 
+            echo "${{ github.sha }}" | sudo tee version.txt
+            echo "${{ github.sha }}" | sudo tee app/version.txt
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee .env
+            echo "DEPLOY_REF=${{ github.sha }}" | sudo tee app/.env
+            
+            sudo fuser -k 8181/tcp || true
+            sudo pkill -9 -f uvicorn || true
+            
             if [ -f "requirements.txt" ]; then
-                /home/qzm/Desktop/catty-reminders-app/.venv/bin/pip install -r requirements.txt
+                sudo /home/qzm/Desktop/catty-reminders-app/.venv/bin/pip install -r requirements.txt
             fi
             
-            sudo pkill -9 -f uvicorn || true
             sudo systemctl daemon-reload
             sudo systemctl restart app.service
