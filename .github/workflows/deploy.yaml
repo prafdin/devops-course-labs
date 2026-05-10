@@ -15,12 +15,15 @@ jobs:
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3149
-          script_stop: true
           script: |
             cd ~/Desktop/catty-reminders-app
-            git fetch --all
-            git reset --hard origin/${{ github.event.release.target_commitish }}
+            TARGET_BRANCH=${{ github.event.release.target_commitish }}
+            git fetch origin
+            git checkout -B $TARGET_BRANCH origin/$TARGET_BRANCH
+            git reset --hard origin/$TARGET_BRANCH
             if [ ! -d ".venv" ]; then python3 -m venv .venv; fi
             source .venv/bin/activate
-            pip install -r requirements.txt
+            if [ -f "requirements.txt" ]; then
+              pip install -r requirements.txt
+            fi
             sudo systemctl restart app.service
