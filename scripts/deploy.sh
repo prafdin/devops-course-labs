@@ -18,6 +18,7 @@ IMAGE="${IMAGE:-}"
 COMPOSE_FILE_PATH="${COMPOSE_FILE_PATH:-$APP_DIR/docker-compose.yaml}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-catty}"
 CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
+DB_CONTAINER_NAME="${DB_CONTAINER_NAME:-catty-db}"
 DOCKER_BIN="${DOCKER_BIN:-}"
 DOCKER_COMPOSE_BIN="${DOCKER_COMPOSE_BIN:-}"
 LOCK_FILE="${LOCK_FILE:-/tmp/catty-deploy.lock}"
@@ -82,6 +83,8 @@ run_docker_deploy() {
 
   "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
   "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
+  "$DOCKER_BIN" stop "$DB_CONTAINER_NAME" 2>/dev/null || true
+  "$DOCKER_BIN" rm "$DB_CONTAINER_NAME" 2>/dev/null || true
   export IMAGE
   "${compose_cmd[@]}" -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
   "${compose_cmd[@]}" -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
