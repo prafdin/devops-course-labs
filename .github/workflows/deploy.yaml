@@ -43,5 +43,4 @@ jobs:
             GITHUB_ACTOR="${{ github.actor }}" \
             GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
             APP_DIR="$PWD" \
-            APP_ENV_FILE="$PWD/.env" \
             ./scripts/deploy.sh lab3 ${{ github.sha }}
