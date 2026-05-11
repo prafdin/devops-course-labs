@@ -25,7 +25,6 @@ services:
     ports:
       - "8181:8181"
     environment:
-      DEPLOY_REF: ${DEPLOY_REF:-local-test}
       DB_HOST: db
       DB_PORT: "3306"
       DB_USER: root

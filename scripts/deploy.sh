@@ -72,7 +72,6 @@ run_docker_deploy() {
     "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
     "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
     export IMAGE
-    export DEPLOY_REF="$DEPLOYED_SHA"
     "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
     "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
     "$DOCKER_BIN" image prune -af >/dev/null 2>&1 || true
@@ -86,7 +85,6 @@ run_docker_deploy() {
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -p "$HOST_PORT:$CONTAINER_PORT" \
-    -e DEPLOY_REF="$DEPLOYED_SHA" \
     "$IMAGE"
 }
 
