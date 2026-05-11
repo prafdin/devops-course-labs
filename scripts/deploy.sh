@@ -14,16 +14,10 @@ DEFAULT_REPO_URL="$(git -C "$SCRIPT_DIR/.." remote get-url origin 2>/dev/null ||
 
 REPO_URL="${REPO_URL:-$DEFAULT_REPO_URL}"
 APP_DIR="${APP_DIR:-/opt/catty/app}"
-APP_SERVICE="${APP_SERVICE:-catty-app.service}"
-APP_RESTART_COMMAND="${APP_RESTART_COMMAND:-}"
-APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env}"
 IMAGE="${IMAGE:-}"
-COMPOSE_DEPLOY="${COMPOSE_DEPLOY:-0}"
 COMPOSE_FILE_PATH="${COMPOSE_FILE_PATH:-$APP_DIR/docker-compose.yaml}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-catty}"
 CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
-CONTAINER_PORT="${CONTAINER_PORT:-8181}"
-HOST_PORT="${HOST_PORT:-8181}"
 DOCKER_BIN="${DOCKER_BIN:-}"
 LOCK_FILE="${LOCK_FILE:-/tmp/catty-deploy.lock}"
 LOCK_DIR="${LOCK_DIR:-/tmp/catty-deploy.lockdir}"
@@ -38,7 +32,8 @@ fi
 
 run_docker_deploy() {
   if [[ -z "$IMAGE" ]]; then
-    return 1
+    echo "IMAGE is required for compose deployment" >&2
+    exit 1
   fi
 
   if [[ -z "$DOCKER_BIN" ]]; then
@@ -63,29 +58,17 @@ run_docker_deploy() {
     echo "$GITHUB_TOKEN" | "$DOCKER_BIN" login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
   fi
 
-  if [[ "$COMPOSE_DEPLOY" == "1" ]]; then
-    if [[ ! -f "$COMPOSE_FILE_PATH" ]]; then
-      echo "docker compose file not found at $COMPOSE_FILE_PATH" >&2
-      exit 1
-    fi
-
-    "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
-    "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
-    export IMAGE
-    "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
-    "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
-    "$DOCKER_BIN" image prune -af >/dev/null 2>&1 || true
-    return 0
+  if [[ ! -f "$COMPOSE_FILE_PATH" ]]; then
+    echo "docker compose file not found at $COMPOSE_FILE_PATH" >&2
+    exit 1
   fi
 
-  "$DOCKER_BIN" pull "$IMAGE"
   "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
   "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
-  "$DOCKER_BIN" run -d \
-    --name "$CONTAINER_NAME" \
-    --restart unless-stopped \
-    -p "$HOST_PORT:$CONTAINER_PORT" \
-    "$IMAGE"
+  export IMAGE
+  "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
+  "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
+  "$DOCKER_BIN" image prune -af >/dev/null 2>&1 || true
 }
 
 mkdir -p "$(dirname "$LOCK_FILE")"
@@ -134,28 +117,5 @@ if [[ "$RUN_TESTS" != "0" ]]; then
   )
 fi
 
-if [[ -n "$IMAGE" ]]; then
-  run_docker_deploy
-  echo "Docker deployment completed at $DEPLOYED_SHA with $IMAGE"
-  exit 0
-fi
-
-touch "$APP_ENV_FILE"
-if grep -q '^DEPLOY_REF=' "$APP_ENV_FILE"; then
-  sed -i.bak "s/^DEPLOY_REF=.*/DEPLOY_REF=$DEPLOYED_SHA/" "$APP_ENV_FILE"
-  rm -f "$APP_ENV_FILE.bak"
-else
-  printf 'DEPLOY_REF=%s\n' "$DEPLOYED_SHA" >> "$APP_ENV_FILE"
-fi
-
-if [[ -n "$APP_RESTART_COMMAND" ]]; then
-  bash -lc "$APP_RESTART_COMMAND"
-elif [[ -z "$APP_SERVICE" || "$APP_SERVICE" == "none" ]]; then
-  echo "Skipping service restart"
-elif [[ "$(id -u)" -eq 0 ]]; then
-  systemctl restart "$APP_SERVICE"
-else
-  sudo systemctl restart "$APP_SERVICE"
-fi
-
-echo "Deployment completed at $DEPLOYED_SHA"
+run_docker_deploy
+echo "Docker Compose deployment completed at $DEPLOYED_SHA with $IMAGE"
