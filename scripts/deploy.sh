@@ -19,6 +19,7 @@ COMPOSE_FILE_PATH="${COMPOSE_FILE_PATH:-$APP_DIR/docker-compose.yaml}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-catty}"
 CONTAINER_NAME="${CONTAINER_NAME:-catty-reminders-app}"
 DOCKER_BIN="${DOCKER_BIN:-}"
+DOCKER_COMPOSE_BIN="${DOCKER_COMPOSE_BIN:-}"
 LOCK_FILE="${LOCK_FILE:-/tmp/catty-deploy.lock}"
 LOCK_DIR="${LOCK_DIR:-/tmp/catty-deploy.lockdir}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
@@ -54,6 +55,22 @@ run_docker_deploy() {
   export DOCKER_CONFIG="${DOCKER_CONFIG:-/tmp/catty-docker-config}"
   mkdir -p "$DOCKER_CONFIG"
 
+  local compose_cmd=()
+  if [[ -n "$DOCKER_COMPOSE_BIN" ]]; then
+    compose_cmd=("$DOCKER_COMPOSE_BIN")
+  elif "$DOCKER_BIN" compose version >/dev/null 2>&1; then
+    compose_cmd=("$DOCKER_BIN" "compose")
+  elif command -v docker-compose >/dev/null 2>&1; then
+    compose_cmd=("$(command -v docker-compose)")
+  elif [[ -x /opt/homebrew/bin/docker-compose ]]; then
+    compose_cmd=("/opt/homebrew/bin/docker-compose")
+  elif [[ -x /usr/local/bin/docker-compose ]]; then
+    compose_cmd=("/usr/local/bin/docker-compose")
+  else
+    echo "docker compose command not found" >&2
+    exit 1
+  fi
+
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     echo "$GITHUB_TOKEN" | "$DOCKER_BIN" login ghcr.io -u "${GITHUB_ACTOR:-github-actions}" --password-stdin
   fi
@@ -66,8 +83,8 @@ run_docker_deploy() {
   "$DOCKER_BIN" stop "$CONTAINER_NAME" 2>/dev/null || true
   "$DOCKER_BIN" rm "$CONTAINER_NAME" 2>/dev/null || true
   export IMAGE
-  "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
-  "$DOCKER_BIN" compose -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
+  "${compose_cmd[@]}" -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" pull
+  "${compose_cmd[@]}" -f "$COMPOSE_FILE_PATH" --project-name "$COMPOSE_PROJECT_NAME" up -d --remove-orphans
   "$DOCKER_BIN" image prune -af >/dev/null 2>&1 || true
 }
 
