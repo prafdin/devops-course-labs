@@ -25,14 +25,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run unit tests
+      - name: Run tests
         run: |
           mkdir -p test-results
-          python -m pytest tests/test_unit.py --junitxml=test-results/unit.xml
+          python -m pytest tests --junitxml=test-results/tests.xml
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
         with:
           name: test_result
           path: test-results/*.xml
-
