@@ -10,7 +10,8 @@ COPY static/ ./static/
 COPY templates/ ./templates/
 COPY config.json .
 
-ENV DEPLOY_REF=manual-run
+ARG DEPLOY_REF
+ENV DEPLOY_REF=$DEPLOY_REF
 
 EXPOSE 8181
 
