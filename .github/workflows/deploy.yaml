@@ -61,7 +61,7 @@ jobs:
 
           docker rm -f catty-reminders-app || true
 
-          printf 'APP_IMAGE_TAG=%s\nDEPLOY_REF=%s\n' "$DEPLOY_SHA" "$DEPLOY_SHA" > "$DEPLOY_DIR/.env"
+          printf 'APP_IMAGE_TAG=%s\n' "$DEPLOY_SHA" > "$DEPLOY_DIR/.env"
 
           docker compose --env-file "$DEPLOY_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yaml" pull
           docker compose --env-file "$DEPLOY_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yaml" up -d

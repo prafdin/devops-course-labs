@@ -5,8 +5,6 @@ services:
     image: ghcr.io/an664/catty-reminders-app:${APP_IMAGE_TAG}
     pull_policy: always
     restart: unless-stopped
-    environment:
-      DEPLOY_REF: ${DEPLOY_REF}
     ports:
       - "8181:8181"
     depends_on:
