@@ -35,4 +35,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd "${{ secrets.APP_DIR }}"
-            APP_DIR="$PWD" APP_ENV_FILE="$PWD/.env" APP_SERVICE=none RUN_TESTS=1 ./scripts/deploy.sh lab2 ${{ github.sha }}
+            APP_DIR="$PWD" APP_ENV_FILE="$PWD/.env" APP_SERVICE=none APP_RESTART_COMMAND="./scripts/restart-local-app.sh" RUN_TESTS=1 ./scripts/deploy.sh lab2 ${{ github.sha }}
