@@ -63,6 +63,10 @@ jobs:
           "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
           "$VENV_DIR/bin/pip" install -r "$APP_DIR/requirements.txt"
 
+          if command -v docker >/dev/null 2>&1; then
+            docker rm -f catty-reminders-app catty-reminders-app-app-1 || true
+          fi
+
           printf 'DEPLOY_REF=%s\nPYTHONUNBUFFERED=1\n' "$DEPLOY_SHA" > /etc/catty-app.env
           systemctl restart catty-reminders-app.service
           REMOTE
