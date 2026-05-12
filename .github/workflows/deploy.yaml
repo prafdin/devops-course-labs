@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
@@ -17,10 +18,12 @@ jobs:
           port: 3121
           script: |
             cd ~/catty-reminders-app
-            
+
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+
             export DEPLOY_REF=${{ github.sha }}
-            
-            docker compose pull app
+
+            docker compose pull
             docker compose up -d --remove-orphans
+
+            docker ps
