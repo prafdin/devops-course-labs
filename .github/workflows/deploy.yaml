@@ -50,7 +50,7 @@ jobs:
           systemctl stop catty-reminders-app.service || true
           systemctl disable catty-reminders-app.service || true
 
-          docker rm -f catty-reminders-app || true
+          docker rm -f catty-reminders-app catty-reminders-app-app-1 || true
           docker run -d \
             --name catty-reminders-app \
             --restart always \
