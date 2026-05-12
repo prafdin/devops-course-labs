@@ -10,6 +10,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    secrets:
+      - mysql_root_password
 
   db:
     image: mysql:8.0
@@ -20,12 +22,14 @@ services:
       - --innodb-buffer-pool-size=64M
       - --max-connections=50
     environment:
-      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
       MYSQL_DATABASE: catty_reminders
     volumes:
       - catty-mysql-data:/var/lib/mysql
+    secrets:
+      - mysql_root_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pmypass"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$(cat /run/secrets/mysql_root_password)"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -33,3 +37,7 @@ services:
 
 volumes:
   catty-mysql-data:
+
+secrets:
+  mysql_root_password:
+    file: ./mysql_root_password.txt

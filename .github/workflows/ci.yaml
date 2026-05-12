@@ -55,6 +55,8 @@ jobs:
           path = Path("config.json")
           config = json.loads(path.read_text())
           config["db_config"]["host"] = "127.0.0.1"
+          config["db_config"]["password"] = "mypass"
+          config["db_config"].pop("password_file", None)
           path.write_text(json.dumps(config, indent=2) + "\n")
           PY
           uvicorn app.main:app --host 0.0.0.0 --port 8181 &

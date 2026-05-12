@@ -25,12 +25,18 @@ jobs:
           SSH_PORT: "26311"
           SSH_USER: root
           DEPLOY_DIR: /opt/catty-reminders-app
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
           set -Eeuo pipefail
+          : "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD secret is required}"
 
           key_file="$(mktemp)"
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$key_file"
           chmod 600 "$key_file"
+
+          secret_file="$(mktemp)"
+          printf '%s\n' "$MYSQL_ROOT_PASSWORD" > "$secret_file"
+          chmod 600 "$secret_file"
 
           ssh -i "$key_file" \
             -p "$SSH_PORT" \
@@ -46,6 +52,13 @@ jobs:
             docker-compose.yaml \
             "$SSH_USER@$SSH_HOST:$DEPLOY_DIR/docker-compose.yaml"
 
+          scp -i "$key_file" \
+            -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$secret_file" \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_DIR/mysql_root_password.txt"
+
           ssh -i "$key_file" \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
@@ -55,6 +68,8 @@ jobs:
           set -Eeuo pipefail
 
           printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io -u an664 --password-stdin
+
+          chmod 600 "$DEPLOY_DIR/mysql_root_password.txt"
 
           systemctl stop catty-reminders-app.service || true
           systemctl disable catty-reminders-app.service || true
