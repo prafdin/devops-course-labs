@@ -13,11 +13,11 @@ services:
       retries: 10
 
   app:
-    image: ghcr.io/sofiastepanova/catty-reminders-app:lab4
+    image: ghcr.io/sofiastepanova/catty-reminders-app:${DEPLOY_REF}
     ports:
       - "8181:8181"
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-local}
+      - DEPLOY_REF=${DEPLOY_REF}
     depends_on:
       db:
         condition: service_healthy
