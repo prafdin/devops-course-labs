@@ -46,6 +46,8 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p test-results
+          cp config.json /tmp/catty-config.json
+          trap 'cp /tmp/catty-config.json config.json' EXIT
           python - <<'PY'
           import json
           from pathlib import Path
