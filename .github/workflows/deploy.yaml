@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3105
           script: |
-            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
             CONTAINER_NAME="catty-container"
             
             echo "Logging in to GHCR..."
