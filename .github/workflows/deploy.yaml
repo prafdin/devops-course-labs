@@ -18,7 +18,7 @@ jobs:
 
       - name: Build on runner
         run: |
-          docker build -t ghcr.io/an664/catty-reminders-app:${{ github.sha }} .
+          docker build --build-arg DEPLOY_REF=${{ github.sha }} -t ghcr.io/an664/catty-reminders-app:${{ github.sha }} .
 
       - name: Deploy through SSH
         env:
@@ -55,6 +55,5 @@ jobs:
             --name catty-reminders-app \
             --restart always \
             -p 8181:8181 \
-            -e DEPLOY_REF="$DEPLOY_SHA" \
             "$IMAGE"
           REMOTE
