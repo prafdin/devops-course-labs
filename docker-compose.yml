@@ -21,7 +21,6 @@ services:
 
   app:
     build: .
-    image: catty-app:lab4
     container_name: catty-app
     restart: unless-stopped
     depends_on:
