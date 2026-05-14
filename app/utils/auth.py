@@ -1,5 +1,5 @@
 """
-This module provides security and authentication.
+This module handles authentication for the app.
 """
 
 # --------------------------------------------------------------------------------
@@ -8,100 +8,82 @@ This module provides security and authentication.
 
 import jwt
 import secrets
-
-from app import db_path, users, secret_key
+from app import users, secret_key, db_config
 from app.utils.exceptions import UnauthorizedException, UnauthorizedPageException
-from app.utils.storage import ReminderStorage
-
+from app.utils.mysql_storage import MySQLStorage
 from fastapi import Cookie, Depends, Form
 from fastapi.security import HTTPBasic
 from pydantic import BaseModel
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 from typing import Optional
-
-
-# --------------------------------------------------------------------------------
-# Globals
-# --------------------------------------------------------------------------------
-
-basic_auth = HTTPBasic(auto_error=False)
-auth_cookie_name = "reminders_session"
-
 
 # --------------------------------------------------------------------------------
 # Models
 # --------------------------------------------------------------------------------
 
 class AuthCookie(BaseModel):
-  name: str
-  token: str
-  username: str
-
+    username: str
 
 # --------------------------------------------------------------------------------
-# Serializers
+# Helper Functions
 # --------------------------------------------------------------------------------
 
-def serialize_token(username: str) -> str:
-  return jwt.encode({"username": username}, secret_key, algorithm="HS256")
+def generate_token(username: str) -> str:
+    """Generates a JWT token for the user."""
+    return jwt.encode({"username": username}, secret_key, algorithm="HS256")
 
+def decode_token(token: str) -> Optional[str]:
+    """Decodes a JWT token and returns the username if valid."""
+    try:
+        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        return payload.get("username")
+    except jwt.InvalidTokenError:
+        return None
 
-def deserialize_token(token: str) -> str:
-  try:
-    data = jwt.decode(token, secret_key, algorithms=["HS256"])
-    return data['username']
-  except:
+def get_auth_cookie(cookie: Optional[str] = Cookie(None, alias="auth")) -> Optional[AuthCookie]:
+    """Extracts the auth cookie from the request."""
+    if cookie:
+        username = decode_token(cookie)
+        if username:
+            return AuthCookie(username=username)
     return None
 
+def get_username_for_api(auth: Optional[AuthCookie] = Depends(get_auth_cookie)) -> str:
+    """Gets the username from the auth cookie for API routes."""
+    if not auth:
+        raise UnauthorizedException()
+    return auth.username
+
+def get_username_for_page(auth: Optional[AuthCookie] = Depends(get_auth_cookie)) -> str:
+    """Gets the username from the auth cookie for page routes."""
+    if not auth:
+        raise UnauthorizedPageException()
+    return auth.username
+
+def get_storage_for_api(username: str = Depends(get_username_for_api)) -> MySQLStorage:
+    """Returns a MySQL storage instance for API routes."""
+    return MySQLStorage(owner=username, db_config=db_config)
+
+def get_storage_for_page(username: str = Depends(get_username_for_page)) -> MySQLStorage:
+    """Returns a MySQL storage instance for page routes."""
+    return MySQLStorage(owner=username, db_config=db_config)
 
 # --------------------------------------------------------------------------------
-# Authentication Checkers
+# Login and Logout
 # --------------------------------------------------------------------------------
 
-def get_login_form_creds(username: str = Form(), password: str = Form()) -> Optional[AuthCookie]:
-  cookie = None
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    """Handles login form submission."""
+    if username in users and users[username] == password:
+        token = generate_token(username)
+        response = RedirectResponse(url="/reminders", status_code=303)
+        response.set_cookie(key="auth", value=token, httponly=True)
+        return response
+    return RedirectResponse(url="/login?error=Invalid credentials", status_code=303)
 
-  if username in users:
-    if secrets.compare_digest(password, users[username]):
-      token = serialize_token(username)
-      cookie = AuthCookie(
-        name=auth_cookie_name,
-        username=username,
-        token=token)
-
-  return cookie
-
-
-def get_auth_cookie(reminders_session: Optional[str] = Cookie(default=None)) -> Optional[AuthCookie]:
-  cookie = None
-
-  if reminders_session:
-    username = deserialize_token(reminders_session)
-    if username and username in users:
-      cookie = AuthCookie(
-        name=auth_cookie_name,
-        username=username,
-        token=reminders_session)
-  
-  return cookie
-
-
-def get_username_for_api(cookie: Optional[AuthCookie] = Depends(get_auth_cookie)) -> str:
-  if not cookie:
-    raise UnauthorizedException()
-  
-  return cookie.username
-
-
-def get_username_for_page(cookie: Optional[AuthCookie] = Depends(get_auth_cookie)) -> str:
-  if not cookie:
-    raise UnauthorizedPageException()
-  
-  return cookie.username
-
-
-def get_storage_for_api(username: str = Depends(get_username_for_api)) -> ReminderStorage:
-  return ReminderStorage(owner=username, db_path=db_path)
-
-
-def get_storage_for_page(username: str = Depends(get_username_for_page)) -> ReminderStorage:
-  return ReminderStorage(owner=username, db_path=db_path)
+async def logout(request: Request):
+    """Handles logout."""
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie("auth")
+    return response

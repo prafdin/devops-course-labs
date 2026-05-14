@@ -1,21 +1,45 @@
 name: CD
+
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy app via Docker
-        uses: appleboy/ssh-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Deploy via SSH with Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3167
           username: vano
+          port: 3167
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
             set -e
             cd /home/vano/catty-reminders-app
-            chmod +x ./deploy.sh
+            
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ivandelibaltov --password-stdin
-            ./deploy.sh "ghcr.io/ivandelibaltov/catty-reminders-app" "${{ github.sha }}"
+            
+            export IMAGE_NAME=ghcr.io/ivandelibaltov/catty-reminders-app
+            export IMAGE_TAG=${{ github.sha }}
+            
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans
+            
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
+                echo " App is healthy"
+                exit 0
+              fi
+              echo " Waiting for app... ($i/30)"
+              sleep 5
+            done
+            echo " App failed to start"
+            docker compose ps
+            docker compose logs app
+            docker compose logs db
+            exit 1

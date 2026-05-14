@@ -1,0 +1,32 @@
+name: catty-reminders
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: catty_reminders
+      MYSQL_USER: catty
+      MYSQL_PASSWORD: cattypass
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - catty-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucatty -pcattypass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/ivandelibaltov/catty-reminders-app:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
+
+volumes:
+  catty-db-data:
