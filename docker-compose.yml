@@ -18,7 +18,8 @@ services:
       retries: 5
 
   app:
-    image: ghcr.io/ivandelibaltov/catty-reminders-app:${IMAGE_TAG:-latest}
+    build: .
+    image: catty-app:lab4
     restart: unless-stopped
     depends_on:
       db:
