@@ -8,14 +8,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Deploy via SSH with Docker Compose
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy app via Docker Compose
+        uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
-          username: vano
           port: 3167
+          username: vano
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 30m
           script: |
@@ -24,22 +22,19 @@ jobs:
             
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ivandelibaltov --password-stdin
             
-            export IMAGE_NAME=ghcr.io/ivandelibaltov/catty-reminders-app
-            export IMAGE_TAG=${{ github.sha }}
-            
-            docker compose pull
+            docker compose down
+            docker compose build --no-cache
             docker compose up -d --force-recreate --remove-orphans
             
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
-                echo " App is healthy"
+                echo "✅ App is healthy"
                 exit 0
               fi
-              echo " Waiting for app... ($i/30)"
+              echo "⏳ Waiting for app... ($i/30)"
               sleep 5
             done
-            echo " App failed to start"
-            docker compose ps
+            
+            echo "❌ App failed to start"
             docker compose logs app
-            docker compose logs db
             exit 1

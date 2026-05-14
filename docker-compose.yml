@@ -16,10 +16,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
   app:
     build: .
     image: catty-app:lab4
+    container_name: catty-app
     restart: unless-stopped
     depends_on:
       db:
@@ -28,6 +31,12 @@ services:
       - "8181:8181"
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
+    networks:
+      - app-network
 
 volumes:
   catty-db-data:
+
+networks:
+  app-network:
+    driver: bridge

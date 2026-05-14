@@ -6,7 +6,6 @@ import jwt
 import secrets
 from fastapi import Cookie, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from starlette.responses import Response
 from typing import Optional
 
 from app import users, secret_key, db_config
@@ -64,6 +63,14 @@ def get_storage_for_api(username: str = Depends(get_username_for_api)) -> MySQLS
 
 def get_storage_for_page(username: str = Depends(get_username_for_page)) -> MySQLStorage:
     return MySQLStorage(owner=username, db_config=db_config)
+
+
+def serialize_token(username: str) -> str:
+    return generate_token(username)
+
+
+def deserialize_token(token: str) -> Optional[str]:
+    return decode_token(token)
 
 
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
