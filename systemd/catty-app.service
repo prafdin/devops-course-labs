@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=enjoyer
 WorkingDirectory=/home/enjoyer/my-app
+EnvironmentFile=/home/enjoyer/my-app/.env
 ExecStart=/home/enjoyer/my-app/venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 
