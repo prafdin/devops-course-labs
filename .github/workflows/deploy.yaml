@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy app via Docker Compose
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
@@ -19,13 +19,11 @@ jobs:
           script: |
             set -e
             cd /home/vano/catty-reminders-app
-            
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ivandelibaltov --password-stdin
-            
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
             docker compose down
-            docker compose build --no-cache
+            docker compose pull
             docker compose up -d --force-recreate --remove-orphans
-            
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
                 echo "✅ App is healthy"
@@ -34,7 +32,6 @@ jobs:
               echo "⏳ Waiting for app... ($i/30)"
               sleep 5
             done
-            
             echo "❌ App failed to start"
             docker compose logs app
             exit 1
