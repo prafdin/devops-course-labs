@@ -1,0 +1,12 @@
+[Unit]
+Description=GitHub Webhook Handler
+After=network.target
+
+[Service]
+User=enjoyer
+WorkingDirectory=/home/enjoyer
+ExecStart=/usr/bin/python3 /home/enjoyer/webhook_handler.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
