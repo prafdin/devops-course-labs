@@ -1,0 +1,16 @@
+[Unit]
+Description=Catty Reminders App
+After=network.target
+
+[Service]
+User=kali
+Group=kali
+WorkingDirectory=/home/kali/catty-reminders-app
+# Загружаем DEPLOY_REF из файла, который создаст твой скрипт
+EnvironmentFile=/home/kali/catty-reminders-app/.env
+# Используем Python из твоего виртуального окружения
+ExecStart=/home/kali/catty-reminders-app/venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
