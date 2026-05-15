@@ -7,3 +7,4 @@ requests==2.31.0
 tinydb==4.8.0
 uvicorn[standard]==0.22.0
 mysql-connector-python==8.0.33
+mysql-connector-python==8.0.33

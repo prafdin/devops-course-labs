@@ -16,8 +16,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
   app:
     build: .
@@ -32,12 +30,6 @@ services:
       - DEPLOY_REF=${DEPLOY_REF:-unknown}
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
-    networks:
-      - app-network
 
 volumes:
   catty-db-data:
-
-networks:
-  app-network:
-    driver: bridge
