@@ -15,6 +15,7 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 if [[ -n "$REQUESTED_SHA" ]]; then
     git reset --hard "$REQUESTED_SHA"
     echo "DEPLOY_REF=$REQUESTED_SHA" > .env
+    echo "DEPLOY_REF=$REQUESTED_SHA" > .env
 fi
 
 # Проверка venv
