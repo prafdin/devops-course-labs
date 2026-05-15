@@ -1,22 +1,4 @@
-name: catty-reminders
-
 services:
-  db:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: catty_reminders
-      MYSQL_USER: catty
-      MYSQL_PASSWORD: cattypass
-      MYSQL_ROOT_PASSWORD: rootpass
-    volumes:
-      - catty-db-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucatty -pcattypass"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
     container_name: catty-app
@@ -30,6 +12,31 @@ services:
       - DEPLOY_REF=${DEPLOY_REF:-unknown}
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: catty
+      MYSQL_PASSWORD: cattypass
+      MYSQL_DATABASE: catty_reminders
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucatty -pcattypass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
 
 volumes:
-  catty-db-data:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
