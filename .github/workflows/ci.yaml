@@ -8,22 +8,37 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.12"
           
       - name: Install dependencies
         run: |
-          pip install flask tinydb pytest uvicorn pytest-playwright
-          playwright install chromium --with-deps
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install chromium --with-deps
+          
+      - name: Start application & Health Check
+        run: |
+          # Запускаем приложение в фоне
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          # Ждем, пока оно реально начнет отвечать
+          for i in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8181/login >/dev/null && exit 0
+            sleep 1
+          done
+          echo "Application failed to start!"
+          exit 1
           
       - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          pytest > test_report.txt
+          python -m pytest -v --browser chromium --junitxml=test_result.xml tests
           
-      - name: Upload Report
+      - name: Upload test report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: test_report.txt
+          path: test_result.xml
