@@ -18,4 +18,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/enjoyer/my-app
+            chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
