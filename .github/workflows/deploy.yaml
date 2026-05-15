@@ -1,0 +1,25 @@
+name: CD Deploy
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: kali
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 2200
+          script: |
+            cd ~/catty-reminders-app
+            git fetch origin
+            git checkout lab2
+            git pull origin lab2
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart catty-app
