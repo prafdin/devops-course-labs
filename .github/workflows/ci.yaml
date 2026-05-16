@@ -4,8 +4,6 @@ on:
   push:
     branches: [ "**" ]
     tags: [ "**" ]
-  pull_request:
-    branches: [ "**" ]
 
 permissions:
   contents: read
@@ -57,14 +55,14 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=raw,value=latest
+          type=raw,value=${{ github.sha }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: |
-          ${{ steps.meta.outputs.tags }}
-          ghcr.io/${{ github.repository }}:${{ github.sha }}
-          ghcr.io/${{ github.repository }}:latest
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
