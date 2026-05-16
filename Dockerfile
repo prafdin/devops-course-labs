@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-ARG DEPLOY_REF
+ARG DEPLOY_REF=unknown
 
 ENV DEPLOY_REF=${DEPLOY_REF}
 
