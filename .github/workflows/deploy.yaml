@@ -1,17 +1,12 @@
 name: Docker CD Deployment
 
 on:
-  workflow_run:
-    workflows: ["Python CI and Docker Build"]
-    branches: [ lab3 ]
-    types:
-      - completed
+  release:
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Запускаем деплой только если CI тесты и сборка образа прошли успешно
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
     - name: Deploy via SSH Tunnel to Kali VM
@@ -24,24 +19,20 @@ jobs:
         script: |
           cd ~/catty-reminders-app
           
-          # Синхронизируем файлы конфигурации (включая .env.example)
-          git fetch origin lab3
-          git reset --hard origin/lab3
+          git fetch origin lab3 || git fetch origin main
+          git reset --hard FETCH_HEAD
           
-          # Авторизуемся в GitHub Container Registry на целевой машине
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # Скачиваем свежий образ контейнера, собранный на этапе CI
-          docker pull ghcr.io/${{ github.repository }}:lab3
+          docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
           
-          # Безопасно останавливаем и удаляем старый контейнер, если он существует
           docker stop catty-test || true
           docker rm catty-test || true
           
-          # Запускаем новый контейнер с подгрузкой локального файла .env
           docker run -d \
             -p 8181:8181 \
             --name catty-test \
             --env-file .env \
+            -e DEPLOY_REF=${{ github.sha }} \
             --restart unless-stopped \
-            ghcr.io/${{ github.repository }}:lab3
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
