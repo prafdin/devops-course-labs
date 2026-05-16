@@ -1,25 +1,62 @@
 #!/bin/bash
-set -x
 set -e
 
+if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
+    echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
+    exit 1
+fi
+
+if [ -z "$RELEASE_HASH" ]; then
+    echo "Error: RELEASE_HASH must be set"
+    exit 1
+fi
+
+if [ -z "$IMAGE_NAME" ] ; then
+    echo "Error: IMAGE_NAME must be set"
+    exit 1
+fi
+
+DEPLOY_PORT=${DEPLOY_PORT:-22}
 CONTAINER_NAME="catty-app"
-REGISTRY_IMAGE="ghcr.io/kuzminstanislav/catty-reminders-app"
-TARGET_COMMIT=$1
-PORT=8181
+PORT="8181"
+# Приводим к нижнему регистру для Docker
+IMAGE=$(echo "$IMAGE_NAME:sha-$RELEASE_HASH" | tr '[:upper:]' '[:lower:]')
 
-echo "> Deploying containerized app for commit: $TARGET_COMMIT"
+echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
+echo "User: $DEPLOY_USER"
+echo "Release hash: $RELEASE_HASH"
+echo "Image: $IMAGE"
 
-sudo docker stop $CONTAINER_NAME || true
-sudo docker rm $CONTAINER_NAME || true
-sudo docker pull ${REGISTRY_IMAGE}:sha-${TARGET_COMMIT}
+SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
-sudo docker run -d \
-  --name $CONTAINER_NAME \
-  --restart always \
-  -p ${PORT}:8181 \
-  -e DEPLOY_REF=${TARGET_COMMIT} \
-  ${REGISTRY_IMAGE}:sha-${TARGET_COMMIT}
+ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+    set -e
+    
+    echo ">Logging in to GitHub Container Registry..."
+    echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin 2>/dev/null || echo "$GITHUB_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-echo "DEPLOY_REF=${TARGET_COMMIT}" | sudo tee /home/qzm/Desktop/catty-reminders-app/.env.deploy
-
-echo "> Container deployed successfully!"
+    echo ">Pulling image: $IMAGE"
+    sudo docker pull $IMAGE
+    
+    echo ">Stopping old container if exists..."
+    sudo docker stop $CONTAINER_NAME || true
+    sudo docker rm $CONTAINER_NAME || true
+    
+    echo ">Starting new container..."
+    sudo docker run -d \
+        -p $PORT:$PORT \
+        --name $CONTAINER_NAME \
+        --restart unless-stopped \
+        -e DEPLOY_REF=$RELEASE_HASH \
+        $IMAGE
+    
+    sleep 4
+    
+    if sudo docker ps | grep -q $CONTAINER_NAME; then
+        echo "Deployment completed successfully"
+    else
+        echo "ERROR: Application failed to start"
+        sudo docker logs $CONTAINER_NAME
+        exit 1
+    fi
+EOF

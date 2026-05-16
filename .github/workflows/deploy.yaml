@@ -1,4 +1,4 @@
-name: CD - Deploy to Server
+name: Deploy
 
 on:
   release:
@@ -7,16 +7,32 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Executing remote ssh commands
-        uses: appleboy/ssh-action@v1
-        with:
-          host: course.prafdin.ru
-          username: qzm
-          port: 3149
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/qzm/Desktop/catty-reminders-app
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-list -n 1 $TAG)
+        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+        echo "Deploying release: $TAG"
+        echo "Commit hash: $HASH"
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+      run: |
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh
