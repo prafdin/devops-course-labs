@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ lab4* ]
+    branches: [ lab4*, lab4-3 ]
   pull_request:
-    branches: [ lab4* ]
+    branches: [ lab4*, lab4-3 ]
 
 jobs:
   lint-dockerfile:
