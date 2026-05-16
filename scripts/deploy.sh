@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-REQUESTED_SHA="${2:-}"
 APP_DIR="/home/kali/catty-reminders-app"
-
 echo "Deploying via Docker into '$APP_DIR'"
 cd "$APP_DIR"
 
-# Авторизация в реестре через переданный токен actions
+# Авторизация в реестре через переданный токен
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
 echo "Pulling Docker image: $IMAGE"
@@ -22,7 +20,7 @@ docker run -d \
   -p 8181:8181 \
   --name catty-test \
   --restart unless-stopped \
-  -e DEPLOY_REF="$REQUESTED_SHA" \
+  -e DEPLOY_REF="$DEPLOY_REF" \
   "$IMAGE"
 
 echo "Docker deployment completed successfully!"

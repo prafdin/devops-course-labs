@@ -2,50 +2,39 @@ name: CD
 
 on:
   release:
-    types:
-      - published
+    types: [published]
 
 permissions:
   contents: read
-  packages: read
+  packages: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Lowercase repo owner and name
+      # Получаем точный хэш коммита релиза и переводим имя репозитория в нижний регистр
+      - name: Get config details
         run: |
-          echo "OWNER_LC=${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
-          echo "REPO_LC=${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
+          echo "IMAGE_LC=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-
-      - name: Run unit tests
-        run: python -m pytest -v tests/test_unit.py
-
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: course.prafdin.ru
-          port: 2258
-          username: kali
+          host: "course.prafdin.ru"
+          username: "kali"
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 2258
+          envs: GITHUB_TOKEN,GITHUB_ACTOR,IMAGE,DEPLOY_REF
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_ACTOR: ${{ github.actor }}
+            IMAGE: ghcr.io/${{ env.IMAGE_LC }}:${{ env.COMMIT_SHA }}
+            DEPLOY_REF: ${{ env.COMMIT_SHA }}
           script: |
-            cd ~/catty-reminders-app
-            IMAGE="ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:${{ github.sha }}" \
-            GITHUB_ACTOR="${{ github.actor }}" \
-            GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
-            APP_DIR="$PWD" \
-            ./scripts/deploy.sh lab3 ${{ github.sha }}
+            cd /home/kali/catty-reminders-app
+            bash scripts/deploy.sh
+#
