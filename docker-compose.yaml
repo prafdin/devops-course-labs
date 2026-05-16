@@ -1,10 +1,11 @@
+name: catty-reminders
+
 services:
   db:
     image: mariadb:11
-    container_name: catty-db
     restart: unless-stopped
     environment:
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root_pass}
+      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_pass}
       - MARIADB_USER=${DB_USER:-user}
       - MARIADB_PASSWORD=${DB_PASS:-pass}
       - MARIADB_DATABASE=${DB_NAME:-catty_db}
@@ -15,7 +16,6 @@ services:
 
   catty-app:
     image: ${IMAGE:-catty-app-local}
-    container_name: catty-app
     build: .
     restart: unless-stopped
     environment:
