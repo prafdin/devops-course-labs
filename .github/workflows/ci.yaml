@@ -2,10 +2,10 @@ name: Python CI and Docker Build
 
 on:
   push:
-    branches: [ "master", "main", "lab3" ]
-    tags: [ "v*", "ci-*" ]
+    branches: [ "**" ]
+    tags: [ "**" ]
   pull_request:
-    branches: [ "master", "main", "lab3" ]
+    branches: [ "**" ]
 
 permissions:
   contents: read
