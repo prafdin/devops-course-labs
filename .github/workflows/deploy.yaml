@@ -20,7 +20,7 @@ jobs:
             cd /home/enjoyer/my-app
             chmod +x ./deploy.sh
 
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u NITSENSE --password-stdin
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u nitsense --password-stdin
 
             ./deploy.sh "ghcr.io/<ваш_github_логин>/catty-reminders-app" "${{ github.sha }}"
             
