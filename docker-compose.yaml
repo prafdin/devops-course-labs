@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/exhaustion666/catty-reminders-app:${DEPLOY_REF:-latest}
+    ports:
+      - "8181:8181"
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-mypass}
+      - DB_NAME=catty_reminders
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-mypass}
+      MARIADB_DATABASE: catty_reminders
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
