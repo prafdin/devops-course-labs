@@ -43,7 +43,8 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt uvicorn pytest playwright
           playwright install --with-deps chromium
-            - name: Wait for database
+      
+      - name: Wait for database
         run: |
           sudo apt-get update && sudo apt-get install -y mariadb-client
           for i in {1..30}; do
