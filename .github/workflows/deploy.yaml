@@ -7,25 +7,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Executing remote ssh commands
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
           username: qzm
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3149
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/qzm/Desktop/catty-reminders-app
-            sudo git fetch --all
-            
-            sudo git reset --hard ${{ github.sha }}
-            
-            DEPLOY_REF=$(git rev-parse HEAD)
-            echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee .env.deploy
-            sudo chmod 644 .env.deploy
-            sudo chown qzm:qzm .env.deploy
-            
-            sudo systemctl daemon-reload
-            sudo systemctl restart app.service
-            sleep 10
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}
