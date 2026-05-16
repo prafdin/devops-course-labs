@@ -13,13 +13,8 @@ services:
       - catty-network
 
   catty-app:
-    image: ghcr.io/exhaustion666/catty-reminders-app:latest
+    image: ${IMAGE}
     restart: unless-stopped
-    environment:
-      - DB_HOST=db
-      - DB_USER=user
-      - DB_PASS=pass
-      - DB_NAME=catty_db
     ports: 
       - "8181:8181"
     depends_on:
@@ -30,5 +25,6 @@ services:
 networks:
   catty-network:
     driver: bridge
+
 volumes:
   db_data:

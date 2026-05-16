@@ -8,30 +8,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Prepare Image Name
-      id: prep
-      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      - name: Prepare Repository Name to Lowercase
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          set -e
-          cd /home/nightainted/catty-reminders-app
-          
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u exhaustion666 --password-stdin
-          
-          echo "IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}" > .env
-          
-          docker compose pull catty-app
-          
-          docker compose up -d --force-recreate
-          
-          docker image prune -f
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            cd /home/nightainted/catty-reminders-app
+            
+            echo "IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}" > .env
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u exhaustion666 --password-stdin
+            
+            sudo docker compose down --remove-orphans
+            
+            sudo docker compose up -d --force-recreate --pull always
+            
+            sudo docker image prune -f
