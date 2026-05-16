@@ -1,4 +1,5 @@
-name: Deploy
+name: CD
+
 on:
   release:
     types: [published]
@@ -7,41 +8,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Prepare Image Name
-        id: prep
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
-      
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy via Docker Compose
+        uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
           username: vboxuser
-          port: 3128
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3128
           script: |
-            bash -c '
-              set -e
-              cd /home/vboxuser/lab3/catty-reminders-app
-              OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
-              
-              export DEPLOY_REF=${{ github.sha }}
-              export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
-              
-              export DB_CONTAINER_NAME=catty-db
-              export APP_CONTAINER_NAME=catty-app
-              export MARIADB_ROOT_PASSWORD=mypass
-              export MARIADB_USER=vboxuser
-              export MARIADB_PASSWORD=mypass
-              export MARIADB_DATABASE=catty_reminders
-              export HOST_DB_PORT=3306
-              export CONTEINER_DB_PORT=3306
-              export HOST_APP_PORT=8181
-              export CONTEINER_APP_PORT=8181
-
-              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-              docker compose up -d --pull always --remove-orphans --force-recreate 
-            '
+            cd /home/vboxuser/lab3/catty-reminders-app
+            git fetch origin
+            git reset --hard origin/lab4
+            export APP_IMAGE=ghcr.io/vissstu/catty-reminders-app:${{ github.sha }}
+            export MYSQL_ROOT_PASSWORD=mypass
+            export MYSQL_DATABASE=catty_reminders
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose up -d --pull always --remove-orphans --force-recreate
+            docker image prune -f
