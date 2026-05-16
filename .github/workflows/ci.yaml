@@ -63,10 +63,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Lowercase repo owner and name
+      # Безопасное приведение всего пути репозитория к нижнему регистру
+      - name: Set lowercase image name
         run: |
-          echo "OWNER_LC=${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
-          echo "REPO_LC=${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
+          echo "IMAGE_LC=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -83,6 +83,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.OWNER_LC }}/${{ env.REPO_LC }}:${{ github.sha }}
+          tags: ghcr.io/${{ env.IMAGE_LC }}:${{ github.sha }}
           build-args: |
             DEPLOY_REF=${{ github.sha }}
