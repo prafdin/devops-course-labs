@@ -15,7 +15,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          username: nyanya
           port: 3132
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
