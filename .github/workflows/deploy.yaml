@@ -22,7 +22,7 @@ jobs:
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u nitsense --password-stdin
 
-            ./deploy.sh "ghcr.io/<ваш_github_логин>/catty-reminders-app" "${{ github.sha }}"
+            ./deploy.sh "ghcr.io/nitsense/catty-reminders-app" "${{ github.sha }}"
             
             sleep 3
             curl -s -o /dev/null -w "%{http_code}" http://localhost:8181 | grep -q "200\|302" && echo "App is reachable" || echo "Error!"
