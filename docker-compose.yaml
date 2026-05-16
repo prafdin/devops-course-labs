@@ -19,7 +19,6 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-unknown}
       - DB_HOST=db
       - DB_USER=${DB_USER:-user}
       - DB_PASS=${DB_PASS:-pass}
