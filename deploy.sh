@@ -12,6 +12,7 @@ cd "$REPO_DIR"
 sudo git reset --hard HEAD || true
 
 sudo git fetch origin
+
 sudo git checkout -f "$TARGET_COMMIT"
 
 DEPLOY_REF=$(git rev-parse HEAD)
@@ -21,17 +22,14 @@ sudo chown qzm:qzm "$REPO_DIR/.env.deploy"
 
 echo "> Deploy ref updated to: $DEPLOY_REF"
 
-if [ ! -d ".venv" ]; then
-    echo "> Virtual environment was not found, creating..."
-    python3 -m venv .venv
-fi
-
-source .venv/bin/activate
-
-if [ -f "requirements.txt" ]; then
-    echo "> Installing/Updating requirements"
-    pip install --upgrade pip
-    pip install -r requirements.txt
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+    if [ -f "requirements.txt" ]; then
+        echo "> Updating requirements..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    fi
+    deactivate
 fi
 
 echo "> Restarting app.service..."
