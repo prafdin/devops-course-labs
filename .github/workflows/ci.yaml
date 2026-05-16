@@ -75,7 +75,7 @@ jobs:
           MYSQL_DATABASE: catty_reminders
       
       - name: Run tests
-        run: pytest --junitxml=test_results.xml
+        run: pytest --junitxml=test_result.xml
         env:
           PYTHONPATH: ${{ github.workspace }}
       
@@ -84,7 +84,7 @@ jobs:
         if: always()
         with:
           name: test-result
-          path: test_results.xml
+          path: test_result.xml
 
   build:
     runs-on: ubuntu-latest
