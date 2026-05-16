@@ -1,29 +1,25 @@
 #!/bin/bash
 set -x
+set -e
 
-REPO_DIR="/home/qzm/Desktop/catty-reminders-app"
+CONTAINER_NAME="catty-app"
+REGISTRY_IMAGE="ghcr.io/kuzminstanislav/catty-reminders-app"
 TARGET_COMMIT=$1
+PORT=8181
 
-cd "$REPO_DIR"
-sudo git reset --hard HEAD
-sudo git fetch --all
+echo "> Deploying containerized app for commit: $TARGET_COMMIT"
 
-if ! sudo git checkout -f "$TARGET_COMMIT"; then
-    echo "ERROR: Failed to checkout commit $TARGET_COMMIT."
-    exit 1
-fi
+sudo docker stop $CONTAINER_NAME || true
+sudo docker rm $CONTAINER_NAME || true
+sudo docker pull ${REGISTRY_IMAGE}:sha-${TARGET_COMMIT}
 
-DEPLOY_REF=$(sudo git rev-parse HEAD)
-echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee "$REPO_DIR/.env.deploy"
-sudo chmod 644 "$REPO_DIR/.env.deploy"
-sudo chown qzm:qzm "$REPO_DIR/.env.deploy"
+sudo docker run -d \
+  --name $CONTAINER_NAME \
+  --restart always \
+  -p ${PORT}:8181 \
+  -e DEPLOY_REF=${TARGET_COMMIT} \
+  ${REGISTRY_IMAGE}:sha-${TARGET_COMMIT}
 
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
-    pip install -r requirements.txt || echo "Warning..."
-    deactivate
-fi
+echo "DEPLOY_REF=${TARGET_COMMIT}" | sudo tee /home/qzm/Desktop/catty-reminders-app/.env.deploy
 
-sudo systemctl daemon-reload
-sudo systemctl restart app.service
-echo "> Done!"
+echo "> Container deployed successfully!"
