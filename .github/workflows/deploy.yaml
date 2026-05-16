@@ -1,48 +1,37 @@
-name: Deploy to Server
+name: CD
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Prepare image name
-        id: prep
-        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-      
-      - name: Deploy via SSH
+      - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: course.prafdin.ru
-          username: nyanya
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
           script: |
-            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-            CONTAINER_NAME="catty-container"
+            set -e
             
-            # Логинимся в GitHub Container Registry
+            cd /home/nyanya/catty-reminders-app
+            
+            REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            IMAGE_FULL="ghcr.io/${REPO_OWNER}/catty-reminders-app:${{ github.sha }}"
+            
+            # .env лежит на сервере, меняем в нём только IMAGE
+            sed -i "s|IMAGE=.*|IMAGE=${IMAGE_FULL}|" .env
+            
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Скачиваем свежий образ
-            docker pull $IMAGE
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans
             
-            # Удаляем старый контейнер, если есть
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-            
-            # Запускаем новый контейнер
-            docker run -d \
-              --name $CONTAINER_NAME \
-              -p 8181:8181 \
-              --restart unless-stopped \
-              $IMAGE
-            
-            # Чистим мусор
-            docker image prune -f
+            docker system prune -f
