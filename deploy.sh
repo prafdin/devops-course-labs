@@ -1,40 +1,33 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
+
+IMAGE_NAME="$1"
+DEPLOY_REF="$2"
+IMAGE_FULL="${IMAGE_NAME}:${DEPLOY_REF}"
 
 APP_DIR="/home/enjoyer/my-app"
-ENV_FILE="$APP_DIR/.env"
-DEPLOY_COMMIT="${1:-}"
+ENV_FILE="$APP_DIR/.env.deploy"
+CONTAINER_NAME="catty-reminders-app"
+PORT=8181
 
-echo "🚀 Deploying Catty..."
-cd "$APP_DIR"
-git fetch origin
+echo "Deploying: $IMAGE_FULL"
+echo "DEPLOY_REF: $DEPLOY_REF"
 
-if [ -n "$DEPLOY_COMMIT" ]; then
-  echo "🎯 Deploying specific commit: $DEPLOY_COMMIT"
-  git checkout -qf "$DEPLOY_COMMIT"
-else
-  echo "🎯 Deploying latest from lab2"
-  git checkout lab2
-  git pull origin lab2
-fi
+echo "Cleaning..."
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
-source venv/bin/activate
-pip install -r requirements.txt
+echo "Pulling..."
+docker pull "$IMAGE_FULL"
 
-DEPLOY_REF="$(git rev-parse HEAD)"
-echo "DEPLOY_REF=$DEPLOY_REF" > "$ENV_FILE"
+printf 'DEPLOY_REF=%s\n' "$DEPLOY_REF" > "$ENV_FILE"
+echo "Saved DEPLOY_REF=$DEPLOY_REF to $ENV_FILE"
 
-echo "🔄 Restarting catty-app..."
-sudo systemctl restart catty-app
+echo "Starting container..."
+docker run -d \
+    -p "$PORT":"$PORT" \
+    --name "$CONTAINER_NAME" \
+    --restart unless-stopped \
+    "$IMAGE_FULL"
 
-echo "⏳ Waiting for service to become active..."
-for i in {1..15}; do
-  if sudo systemctl is-active --quiet catty-app; then
-    echo "✅ Service restarted successfully"
-    exit 0
-  fi
-  sleep 1
-done
-
-echo "❌ Service failed to become active after 15 seconds!"
-exit 1
+echo "Deploy complete!"
