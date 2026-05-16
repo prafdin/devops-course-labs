@@ -19,6 +19,8 @@ jobs:
             set -e
             cd /home/enjoyer/my-app
             chmod +x ./deploy.sh
+            
+            sudo systemctl stop catty-app || true
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u nitsense --password-stdin
 
