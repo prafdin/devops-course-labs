@@ -1,4 +1,4 @@
-name: CD Deployment
+name: CD
 
 on:
   release:
@@ -7,9 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy to VM via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -17,6 +16,13 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cd /home/enjoyer/my-app
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            chmod +x ./deploy.sh
+
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u NITSENSE --password-stdin
+
+            ./deploy.sh "ghcr.io/<ваш_github_логин>/catty-reminders-app" "${{ github.sha }}"
+            
+            sleep 3
+            curl -s -o /dev/null -w "%{http_code}" http://localhost:8181 | grep -q "200\|302" && echo "App is reachable" || echo "Error!"
