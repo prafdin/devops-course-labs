@@ -1,32 +1,33 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: mariadb:11
     container_name: catty-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-catty_db}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root_pass}
+      - MARIADB_USER=${DB_USER:-user}
+      - MARIADB_PASSWORD=${DB_PASS:-pass}
+      - MARIADB_DATABASE=${DB_NAME:-catty_db}
     volumes:
-      - catty_db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
     networks:
       - catty-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   catty-app:
-    image: ${IMAGE:-ghcr.io/exhaustion666/catty-reminders-app:latest}
+    image: ${IMAGE:-catty-app-local}
     container_name: catty-app
+    build: .
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-catty_db}
       - DEPLOY_REF=${DEPLOY_REF:-unknown}
+      - DB_HOST=db
+      - DB_USER=${DB_USER:-user}
+      - DB_PASS=${DB_PASS:-pass}
+      - DB_NAME=${DB_NAME:-catty_db}
+    ports: 
+      - "8181:8181"
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     networks:
       - catty-network
 
@@ -35,4 +36,4 @@ networks:
     driver: bridge
 
 volumes:
-  catty_db_data:
+  db_data:
