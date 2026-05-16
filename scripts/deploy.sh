@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-BRANCH="${1:-lab3}"
 REQUESTED_SHA="${2:-}"
 APP_DIR="/home/kali/catty-reminders-app"
 
-echo "Deploying branch '$BRANCH' via Docker into '$APP_DIR'"
-
+echo "Deploying via Docker into '$APP_DIR'"
 cd "$APP_DIR"
-git fetch origin
-git checkout -B "$BRANCH" "origin/$BRANCH"
 
-if [[ -n "$REQUESTED_SHA" ]]; then
-    git reset --hard "$REQUESTED_SHA"
-fi
-
+# Авторизация в реестре через переданный токен actions
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
 echo "Pulling Docker image: $IMAGE"
