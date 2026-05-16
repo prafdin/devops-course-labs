@@ -22,13 +22,16 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: |
+          set -e
           cd /home/nightainted/catty-reminders-app
-
-          echo "IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}" > .env
-          echo "DEPLOY_REF=${{ github.sha }}" >> .env
-
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-          sudo docker compose down --remove-orphans
-          sudo docker compose up -d --force-recreate --pull always
-          sudo docker image prune -f
+          
+          
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u exhaustion666 --password-stdin
+          
+          OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+          
+          export DEPLOY_REF=${{ github.sha }}
+          export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
+          
+          docker compose up -d --pull always --remove-orphans --force-recreate
+          
