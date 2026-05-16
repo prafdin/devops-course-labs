@@ -3,8 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - "lab4"
-      - "lab4*""
+     - [ "lab4*" ]
 
 jobs:
   test:
