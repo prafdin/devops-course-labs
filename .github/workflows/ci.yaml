@@ -3,10 +3,7 @@ name: Python CI and Docker Build
 on:
   push:
     branches: [ lab3 ]
-  pull_request:
-    branches: [ lab3 ]
 
-# Даем права на загрузку пакетов (Docker образов) в GitHub Packages
 permissions:
   contents: read
   packages: write
@@ -39,8 +36,14 @@ jobs:
         name: test_result
         path: test_result.txt
 
-    # --- НОВЫЕ ШАГИ ДЛЯ DOCKER ИЗ 3 ЛАБЫ ---
+    # --- ОПЦИОНАЛЬНОЕ ЗАДАНИЕ: Линтер Hadolint ---
+    - name: Lint Dockerfile (Hadolint)
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: Dockerfile
+      continue-on-error: true
 
+    # --- СБОРКА И ПУШ ОБРАЗА В REGISTRY ---
     - name: Log in to the Container registry
       uses: docker/login-action@v3
       with:
