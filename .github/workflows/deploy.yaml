@@ -1,4 +1,5 @@
 name: CD Pipeline
+
 on:
   release:
     types: [published]
@@ -7,13 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Prepare Image Name
-      id: prep
-      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
     - name: Deploy to Server via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -25,13 +19,8 @@ jobs:
           set -e
           cd /home/nightainted/catty-reminders-app
           
-          
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u exhaustion666 --password-stdin
           
-          OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-          
-          export DEPLOY_REF=${{ github.sha }}
-          export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
-          
-          docker compose up -d --pull always --remove-orphans --force-recreate
-          
+          docker compose pull catty-app
+          docker compose up -d --force-recreate
+          docker image prune -f

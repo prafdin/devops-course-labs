@@ -1,28 +1,25 @@
-name: catty-reminders
-
 services:
   db:
     image: mariadb:11
     restart: unless-stopped
     environment:
-      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_pass}
-      - MARIADB_USER=${DB_USER:-user}
-      - MARIADB_PASSWORD=${DB_PASS:-pass}
-      - MARIADB_DATABASE=${DB_NAME:-catty_db}
+      - MARIADB_ROOT_PASSWORD=root_pass
+      - MARIADB_USER=user
+      - MARIADB_PASSWORD=pass
+      - MARIADB_DATABASE=catty_db
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - catty-network
 
   catty-app:
-    image: ${IMAGE:-catty-app-local}
-    build: .
+    image: ghcr.io/exhaustion666/catty-reminders-app:latest
     restart: unless-stopped
     environment:
       - DB_HOST=db
-      - DB_USER=${DB_USER:-user}
-      - DB_PASS=${DB_PASS:-pass}
-      - DB_NAME=${DB_NAME:-catty_db}
+      - DB_USER=user
+      - DB_PASS=pass
+      - DB_NAME=catty_db
     ports: 
       - "8181:8181"
     depends_on:
@@ -33,6 +30,5 @@ services:
 networks:
   catty-network:
     driver: bridge
-
 volumes:
   db_data:
