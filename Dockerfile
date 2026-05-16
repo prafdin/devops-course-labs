@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY static/ ./static/
 COPY templates/ ./templates/
-COPY config.json .
 
 # Прослушиваемый порт приложения
 EXPOSE 8181
