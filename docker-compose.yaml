@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: catty-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-catty_db}
+    volumes:
+      - catty_db_data:/var/lib/postgresql/data
+    networks:
+      - catty-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  catty-app:
+    image: ${IMAGE:-ghcr.io/exhaustion666/catty-reminders-app:latest}
+    container_name: catty-app
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-catty_db}
+      - DEPLOY_REF=${DEPLOY_REF:-unknown}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  catty_db_data:
