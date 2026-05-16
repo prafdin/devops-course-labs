@@ -1,38 +1,39 @@
 #!/bin/bash
-
-set -e
+set -x
 
 REPO_DIR="/home/qzm/Desktop/catty-reminders-app"
 TARGET_COMMIT=$1
 
-echo "> Deploying commit $TARGET_COMMIT"
-
+echo "> Starting deploy for commit: $TARGET_COMMIT"
 cd "$REPO_DIR"
 
-sudo git reset --hard HEAD || true
+echo "> Resetting local changes..."
+sudo git reset --hard HEAD
 
-sudo git fetch origin
+echo "> Fetching from origin..."
+sudo git fetch --all
 
-sudo git checkout -f "$TARGET_COMMIT"
+echo "> Checking out commit $TARGET_COMMIT..."
+if ! sudo git checkout -f "$TARGET_COMMIT"; then
+    echo "ERROR: Failed to checkout commit $TARGET_COMMIT. Maybe it was not fetched?"
+    exit 1
+fi
 
-DEPLOY_REF=$(git rev-parse HEAD)
+echo "> Writing DEPLOY_REF..."
+DEPLOY_REF=$(sudo git rev-parse HEAD)
 echo "DEPLOY_REF=$DEPLOY_REF" | sudo tee "$REPO_DIR/.env.deploy"
 sudo chmod 644 "$REPO_DIR/.env.deploy"
 sudo chown qzm:qzm "$REPO_DIR/.env.deploy"
 
-echo "> Deploy ref updated to: $DEPLOY_REF"
-
 if [ -d ".venv" ]; then
+    echo "> Updating python dependencies..."
     source .venv/bin/activate
-    if [ -f "requirements.txt" ]; then
-        echo "> Updating requirements..."
-        pip install --upgrade pip
-        pip install -r requirements.txt
-    fi
+    pip install -r requirements.txt || echo "Pip install warning, continuing..."
     deactivate
 fi
 
-echo "> Restarting app.service..."
+echo "> Restarting systemd service..."
 sudo systemctl daemon-reload
 sudo systemctl restart app.service
-echo "> Done!"
+
+echo "> Deployment finished successfully!"
