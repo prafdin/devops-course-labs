@@ -37,4 +37,4 @@ jobs:
         GITHUB_ACTOR: ${{ github.actor }}
       run: |
         chmod +x deploy.sh
-        ./scripts/deploy.sh
+        ./deploy.sh
