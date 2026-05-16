@@ -11,7 +11,7 @@ if [ -z "$RELEASE_HASH" ]; then
     exit 1
 fi
 
-if [ -z "$IMAGE_NAME" ] ; then
+if [ -z "$IMAGE_NAME" ]; then
     echo "Error: IMAGE_NAME must be set"
     exit 1
 fi
@@ -19,8 +19,10 @@ fi
 DEPLOY_PORT=${DEPLOY_PORT:-22}
 CONTAINER_NAME="catty-app"
 PORT="8181"
-# Приводим к нижнему регистру для Docker
-IMAGE=$(echo "$IMAGE_NAME:sha-$RELEASE_HASH" | tr '[:upper:]' '[:lower:]')
+
+# Переводим имя образа в нижний регистр, так как GHCR не любит заглавные буквы
+LOW_IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+IMAGE="$LOW_IMAGE_NAME:sha-$RELEASE_HASH"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
 echo "User: $DEPLOY_USER"
@@ -33,12 +35,12 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
     
     echo ">Logging in to GitHub Container Registry..."
-    echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin 2>/dev/null || echo "$GITHUB_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+    echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
     echo ">Pulling image: $IMAGE"
     sudo docker pull $IMAGE
     
-    echo ">Stopping old container if exists..."
+    echo ">Stopping old container..."
     sudo docker stop $CONTAINER_NAME || true
     sudo docker rm $CONTAINER_NAME || true
     
