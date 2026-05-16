@@ -15,7 +15,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Получаем точный хэш коммита релиза и переводим имя репозитория в нижний регистр
+      # Собираем данные и приводим название репозитория к нижнему регистру
       - name: Get config details
         run: |
           echo "IMAGE_LC=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -23,17 +23,18 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        # env должен быть строго на уровне шага, а не внутри with
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          IMAGE: ghcr.io/${{ env.IMAGE_LC }}:${{ env.COMMIT_SHA }}
+          DEPLOY_REF: ${{ env.COMMIT_SHA }}
         with:
           host: "course.prafdin.ru"
           username: "kali"
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2258
           envs: GITHUB_TOKEN,GITHUB_ACTOR,IMAGE,DEPLOY_REF
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GITHUB_ACTOR: ${{ github.actor }}
-            IMAGE: ghcr.io/${{ env.IMAGE_LC }}:${{ env.COMMIT_SHA }}
-            DEPLOY_REF: ${{ env.COMMIT_SHA }}
           script: |
             cd /home/kali/catty-reminders-app
             bash scripts/deploy.sh
