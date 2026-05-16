@@ -9,10 +9,10 @@ token = "devops"
 name = "app-kruglovdev"
 type = "http"
 localPort = 8181
-customDomains = ["app.kruglovdev.course.prafdin.ru"]
+customDomains = ["app-kruglovdev.course.prafdin.ru"]
 
 [[proxies]]
 name = "ssh-kruglovdev"
 type = "tcp"
 localPort = 22
-remotePort = 2200
+remotePort = 2258
