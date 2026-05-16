@@ -48,23 +48,31 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y mariadb-client
           for i in {1..30}; do
-            if mariadb -h 127.0.0.1 -P 3306 -u root -pmypass -e "SELECT 1" &>/dev/null; then
-              echo "Database is ready"
+            if mariadb -h 127.0.0.1 -P 3306 -u root -pmypass -e "USE catty_reminders" 2>/dev/null; then
+              echo "Database catty_reminders is ready"
               break
             fi
             echo "Waiting for database... $i"
             sleep 2
           done
       
-      - name: Fix config for CI (use localhost instead of db)
+      - name: Fix config for CI
         run: |
           sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
+          sed -i 's/"host": "database"/"host": "127.0.0.1"/g' config.json
+          echo "=== Fixed config.json ==="
           cat config.json
       
       - name: Start application
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: mypass
+          MYSQL_DATABASE: catty_reminders
       
       - name: Run tests
         run: pytest --junitxml=test_results.xml
