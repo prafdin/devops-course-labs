@@ -3,6 +3,7 @@
 # Скрипт автоматического развертывания
 # Завершаем скрипт при любой ошибке
 set -e
+echo "Current directory is $(pwd)"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
@@ -14,7 +15,7 @@ echo "=== Starting deployment for branch $BRANCH at $(date) ==="
 echo "1. Pulling latest code..."
 git fetch origin
 git checkout -B "$BRANCH" "origin/$BRANCH"
-git pull origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
 
 # 2. Настройка виртуального окружения и обновление зависимостей
 echo "2. Setting up dependencies..."
