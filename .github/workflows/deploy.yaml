@@ -16,6 +16,7 @@ jobs:
           username: ${{ vars.DEPLOY_USER }}
           port: ${{ vars.DEPLOY_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: ""
           script: |
             set -e
             
