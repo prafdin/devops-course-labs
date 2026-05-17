@@ -19,5 +19,7 @@ jobs:
           script: |
             docker stop catty-container || true
             docker rm catty-container || true
-            docker pull ghcr.io/seredovasophia/catty-reminders-app:latest
-            docker run -d --name catty-container -p 8181:8181 ghcr.io/seredovasophia/catty-reminders-app:latest
+            docker pull ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
+            docker run -d --name catty-container -p 8181:8181 \
+              -e DEPLOY_REF=${{ github.sha }} \
+              ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
