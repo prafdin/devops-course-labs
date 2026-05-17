@@ -41,23 +41,23 @@ jobs:
             "$SERVER_USER@$SERVER_HOST" \
             "RELEASE_HASH=$RELEASE_HASH GHCR_USER=$GHCR_USER GHCR_TOKEN=$GHCR_TOKEN bash -s" << 'EOF'
 
-          set -e
+set -e
 
-          APP_DIR="/home/vboxuser/catty-reminders-app"
-          cd "$APP_DIR"
+APP_DIR="/home/vboxuser/catty-reminders-app"
+cd "$APP_DIR"
 
-          echo "Deploying $RELEASE_HASH"
+echo "Deploying $RELEASE_HASH"
 
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-          docker-compose down || true
+docker-compose down || true
 
-          docker pull ghcr.io/vadimkadkdoofjf/catty-reminders-app:$RELEASE_HASH
+docker pull ghcr.io/vadimkadkdoofjf/catty-reminders-app:$RELEASE_HASH
 
-          docker-compose up -d --force-recreate
+docker-compose up -d --force-recreate
 
-          docker image prune -af || true
+docker image prune -af || true
 
-          docker ps
+docker ps
 
 EOF
