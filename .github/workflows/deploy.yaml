@@ -7,37 +7,33 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Get release commit hash
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-list -n 1 $TAG)
-        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-        echo "Deploying release: $TAG"
-        echo "Commit hash: $HASH"
-    
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-    - name: Deploy to server
-      env:
-        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        IMAGE_NAME: "ghcr.io/kuzminstanislav/catty-reminders-app"
-        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_ACTOR: ${{ github.actor }}
-      run: |
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy deploy script to server via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          port: ${{ vars.DEPLOY_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy.sh"
+          target: "./"
+
+      - name: Execute Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          port: ${{ vars.DEPLOY_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+            IMAGE_PATH="ghcr.io/$OWNER/$REPO_NAME"
+            
+            chmod +x ./deploy.sh
+            ./deploy.sh $IMAGE_PATH ${{ github.sha }}

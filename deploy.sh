@@ -1,57 +1,37 @@
 #!/bin/bash
 set -e
 
-if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
-    echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
-    exit 1
-fi
+IMAGE_NAME=$1
+DEPLOY_REF=$2
 
-if [ -z "$RELEASE_HASH" ] || [ -z "$IMAGE_NAME" ]; then
-    echo "Error: RELEASE_HASH and IMAGE_NAME must be set"
-    exit 1
-fi
-
-DEPLOY_PORT=${DEPLOY_PORT:-22}
+HOST_PORT=8181
+CONTAINER_PORT=8181
 CONTAINER_NAME="catty-app"
-PORT="8181"
-IMAGE="${IMAGE_NAME,,}:$RELEASE_HASH"
+IMAGE="$IMAGE_NAME:$DEPLOY_REF"
 
-echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
-echo "User: $DEPLOY_USER"
-echo "Release hash: $RELEASE_HASH"
-echo "Image: $IMAGE"
+echo "=== DEPLOY релиза ==="
+echo "Текущий SHA релиза: $DEPLOY_REF"
 
-# Безопасные опции для твоей виртуалки
-SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
+echo "=== Подтягиваю новый образ ==="
+docker pull $IMAGE
 
-ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-    set -e
-    
-    echo "Logging in to GitHub Container Registry..."
-    echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+echo "=== Останавливаю старый контейнер ==="
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
 
-    echo "Pulling image: $IMAGE"
-    docker pull $IMAGE
-    
-    echo "Stopping old container..."
-    docker stop $CONTAINER_NAME || true
-    docker rm $CONTAINER_NAME || true
-    
-    echo "Starting new container..."
-    docker run -d \
-        -p $PORT:$PORT \
-        --name $CONTAINER_NAME \
-        --restart unless-stopped \
-        -e DEPLOY_REF=$RELEASE_HASH \
-        $IMAGE
-    
-    sleep 4
-    
-    if docker ps | grep -q $CONTAINER_NAME; then
-        echo "Deployment completed successfully"
-    else
-        echo "ERROR: Application failed to start"
-        docker logs $CONTAINER_NAME
-        exit 1
-    fi
-EOF
+echo "=== Запускаю новый контейнер ==="
+docker run -d \
+    -p $HOST_PORT:$CONTAINER_PORT \
+    --name $CONTAINER_NAME \
+    --restart unless-stopped \
+    -e DEPLOY_REF=$DEPLOY_REF \
+    $IMAGE
+
+sleep 4
+if docker ps | grep -q $CONTAINER_NAME; then
+    echo "Deployment completed successfully"
+else
+    echo "ERROR: Application failed to start"
+    docker logs $CONTAINER_NAME
+    exit 1
+fi
