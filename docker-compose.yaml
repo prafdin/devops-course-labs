@@ -1,29 +1,38 @@
 services:
-  db:
-    image: mariadb:10.11
-    container_name: catty_db
+  catty-app:
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    restart: always
     environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: catty_reminders
-    ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  backend:
-    build: .
-    container_name: catty_backend
-    ports:
-      - "8181:8181"
+      - DEPLOY_REF=${DEPLOY_REF}
+    ports: 
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    networks:
+      - catty-network
+  
+  db:
+    image: mysql:latest
+    container_name: ${DB_CONTAINER_NAME}
+    restart: always
     environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: catty_reminders
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8181
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
+
+volumes:
+  db_data:
