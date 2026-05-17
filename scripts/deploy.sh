@@ -1,42 +1,41 @@
 #!/bin/bash
 set -e
 
-TARGET_PORT="${SERVER_PORT:-22}"
-
-echo "Deploying..."
-
-ssh -p "$TARGET_PORT" \
-  -o StrictHostKeyChecking=no \
-  "${SERVER_USER}@${SERVER_HOST}" "export RELEASE_HASH='${RELEASE_HASH}' MYSQL_ROOT_PASSWORD='${MYSQL_ROOT_PASSWORD}' MYSQL_USER='${MYSQL_USER}' MYSQL_PASSWORD='${MYSQL_PASSWORD}' GHCR_USER='${GHCR_USER}' GHCR_TOKEN='${GHCR_TOKEN}'; bash -s" << 'EOF'
-
-set -e
-
-mkdir -p /home/vboxuser/catty-reminders-app
-cd /home/vboxuser/catty-reminders-app
-
-COMPOSE_FILE="docker-compose.yaml"
-if [ ! -f "docker-compose.yaml" ] && [ -f "docker-compose.yml" ]; then
-    COMPOSE_FILE="docker-compose.yml"
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
+    echo "CRITICAL: Missing required variables."
+    exit 1
 fi
 
-cat > .env << EOL
-RELEASE_HASH=$RELEASE_HASH
-MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-MYSQL_USER=$MYSQL_USER
-MYSQL_PASSWORD=$MYSQL_PASSWORD
-EOL
+TARGET_PORT="${SERVER_PORT:-22}"
+REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 
-echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
 
-docker-compose -f $COMPOSE_FILE --env-file .env down || true
-docker-compose -f $COMPOSE_FILE --env-file .env pull
-docker-compose -f $COMPOSE_FILE --env-file .env up -d --force-recreate
+echo "Deploying via Docker Compose..."
 
-echo "Waiting for database initialization..."
-sleep 10
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+    set -e
 
-docker-compose -f $COMPOSE_FILE --env-file .env up -d catty_backend
+    export REPO_LOWER="${REPO_LOWER}"
+    export RELEASE_HASH="${RELEASE_HASH}"
+    export MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}"
+    export MYSQL_USER="${MYSQL_USER}"
+    export MYSQL_PASSWORD="${MYSQL_PASSWORD}"
 
-docker image prune -af || true
-docker ps
-EOF
+    echo "--> Navigating to application directory"
+    cd ${APP_DIR}
+
+    echo "--> Stopping old compose stack"
+    docker compose down
+
+    echo "--> Pulling latest images"
+    docker compose pull
+
+    echo "--> Starting containers"
+    docker compose up -d
+
+    echo "--> Cleaning up old unused images"
+    docker image prune -af || true
+    
+    echo "--> Deployment finished successfully"
+REMRE_SCRIPT

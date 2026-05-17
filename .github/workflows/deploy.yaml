@@ -7,55 +7,36 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: read
-
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 
-
-      - name: Get release commit hash
-        run: |
-          TARGET="${{ github.event.release.target_commitish }}"
-          echo "Release target_commitish is: $TARGET"
-          
-          HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
-          
-          echo "Calculated RELEASE_HASH: $HASH"
-          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Copy docker-compose.yaml
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-        run: |
-          scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml \
-          $SERVER_USER@$SERVER_HOST:/home/vboxuser/catty-reminders-app/docker-compose.yaml
-
-      - name: Deploy to server
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-
-          RELEASE_HASH: ${{ env.RELEASE_HASH }}
-
-          GHCR_USER: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || 'root' }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER || 'ct' }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD || 'ctpass' }}
-        run: |
-          chmod +x scripts/deploy.sh
-          ./scripts/deploy.sh
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        BRANCH=${{ github.event.release.target_commitish }}
+        HASH=$(git rev-parse "origin/$BRANCH" 2>/dev/null || git rev-parse "$TAG" 2>/dev/null || git rev-list -n 1 $TAG)
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        REPO_NAME: ${{ github.repository }}
+        MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || 'root' }}
+        MYSQL_USER: ${{ secrets.MYSQL_USER || 'ct' }}
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD || 'ctpass' }}
+      run: |
+        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/killa123/Desktop/devopss/catty-reminders-app/docker-compose.yaml
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh
