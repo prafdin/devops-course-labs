@@ -4,8 +4,6 @@ set -e
 APP_DIR="/home/vboxuser/catty-reminders-app"
 TARGET_PORT="${SERVER_PORT:-22}"
 
-REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
-
 echo "Deploying..."
 
 ssh -p "$TARGET_PORT" \
@@ -18,7 +16,6 @@ cd $APP_DIR
 
 cat > .env << EOL
 RELEASE_HASH=$RELEASE_HASH
-REPO_LOWER=$REPO_LOWER
 EOL
 
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
