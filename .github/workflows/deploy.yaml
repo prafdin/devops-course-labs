@@ -12,10 +12,19 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0     
+        fetch-depth: 0
+    
     - name: Get release commit hash
       run: |
-        HASH=$(git rev-parse origin/lab4 2>/dev/null || git rev-parse lab4 2>/dev/null || echo "${{ github.sha }}")
+        TARGET="${{ github.event.release.target_commitish }}"
+        echo "Event target_commitish: $TARGET"
+        
+        if [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
+          HASH="$TARGET"
+        else
+          HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
+        fi
+        
         echo "Calculated RELEASE_HASH: $HASH"
         echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
     
