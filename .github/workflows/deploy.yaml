@@ -54,10 +54,6 @@ jobs:
 
           docker pull ghcr.io/vadimkadkdoofjf/catty-reminders-app:$RELEASE_HASH
 
-          cat > .env <<EOL
-RELEASE_HASH=$RELEASE_HASH
-EOL
-
           docker-compose up -d --force-recreate
 
           docker image prune -af || true
