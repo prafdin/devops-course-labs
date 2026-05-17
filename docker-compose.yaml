@@ -21,7 +21,7 @@ services:
     image: ${CATTY_IMAGE:-catty-reminders-app:local}
     container_name: catty-reminders-app
     restart: unless-stopped
-    pull_policy: always
+    pull_policy: missing
     depends_on:
       database:
         condition: service_healthy
