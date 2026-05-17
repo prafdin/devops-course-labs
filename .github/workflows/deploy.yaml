@@ -17,7 +17,7 @@ jobs:
           username: user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo docker stop catty-container || true
-            sudo docker rm catty-container || true
-            sudo docker pull ghcr.io/seredovasophia/catty-reminders-app:latest
-            sudo docker run -d --name catty-container -p 8181:8181 ghcr.io/seredovasophia/catty-reminders-app:latest
+            docker stop catty-container || true
+            docker rm catty-container || true
+            docker pull ghcr.io/seredovasophia/catty-reminders-app:latest
+            docker run -d --name catty-container -p 8181:8181 ghcr.io/seredovasophia/catty-reminders-app:latest
