@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VM
+      - name: Deploy to VM via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: course.prafdin.ru
@@ -17,7 +17,7 @@ jobs:
           username: user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/user/catty-reminders-app
-            git pull origin lab2
-            echo "DEPLOY_REF=${{ github.sha }}" > .env
-            sudo systemctl restart catty-app
+            sudo docker stop catty-container || true
+            sudo docker rm catty-container || true
+            sudo docker pull ghcr.io/seredovasophia/catty-reminders-app:latest
+            sudo docker run -d --name catty-container -p 8181:8181 ghcr.io/seredovasophia/catty-reminders-app:latest
