@@ -10,38 +10,48 @@ jobs:
     permissions:
       packages: write
       contents: read
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Copy docker-compose file
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "docker-compose.yaml"
-        target: "/home/${{ secrets.SSH_USER }}/catty-app"
+      - name: Convert repository name to lowercase
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          export DEPLOY_REF="${{ github.sha }}"
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u exhaustion666 --password-stdin
-          
-          cd /home/${{ secrets.SSH_USER }}/catty-app
-          
-          docker compose down || true
-          
-          docker compose pull
-          docker compose up -d
-          
-          docker image prune -af || true
+      - name: Copy docker-compose file to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "docker-compose.yaml"
+          target: "/home/${{ secrets.SSH_USER }}/catty-app"
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e 
+
+            export DEPLOY_REF="${{ github.sha }}"
+
+            echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u exhaustion666 --password-stdin
+
+            cd /home/${{ secrets.SSH_USER }}/catty-app
+
+            docker compose ps
+
+            docker compose down || true
+
+            docker compose pull --policy always
+
+            docker compose up -d --force-recreate
+
+
+
