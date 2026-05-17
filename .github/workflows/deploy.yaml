@@ -18,8 +18,8 @@ jobs:
 
       - name: Get release commit hash
         run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          TAG="${{ github.event.release.tag_name }}"
+          HASH=$(git rev-parse "$TAG^{commit}" 2>/dev/null || git rev-list -n 1 "$TAG" 2>/dev/null || echo "${{ github.sha }}")
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
       - name: Setup SSH Agent
@@ -47,9 +47,9 @@ jobs:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || 'root' }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER || 'vboxuser' }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD || 'ctpass' }}
 
         run: |
           chmod +x scripts/deploy.sh
