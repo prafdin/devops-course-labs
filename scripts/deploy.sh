@@ -112,8 +112,8 @@ publish_compose_stack() {
   remove_legacy_containers
 
   export CATTY_IMAGE="$CATTY_IMAGE"
-  stack compose -f "$COMPOSE_SPEC" --project-name "$STACK_NAME" pull
-  stack compose -f "$COMPOSE_SPEC" --project-name "$STACK_NAME" up -d --remove-orphans
+  stack -f "$COMPOSE_SPEC" --project-name "$STACK_NAME" pull
+  stack -f "$COMPOSE_SPEC" --project-name "$STACK_NAME" up -d --remove-orphans
   docker_with_config image prune -af >/dev/null 2>&1 || true
 }
 
