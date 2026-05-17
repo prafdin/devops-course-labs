@@ -12,13 +12,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 
-    
+        fetch-depth: 0     
     - name: Get release commit hash
       run: |
-        TAG=${{ github.event.release.tag_name }}
-        BRANCH=${{ github.event.release.target_commitish }}
-        HASH=$(git rev-parse "origin/$BRANCH" 2>/dev/null || git rev-parse "$TAG" 2>/dev/null || git rev-list -n 1 $TAG)
+        HASH=$(git rev-parse origin/lab4 2>/dev/null || git rev-parse lab4 2>/dev/null || echo "${{ github.sha }}")
+        echo "Calculated RELEASE_HASH: $HASH"
         echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
     
     - name: Setup SSH Agent
