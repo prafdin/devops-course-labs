@@ -3,36 +3,28 @@ name: Deploy
 on:
   release:
     types: [published]
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  workflow_call: 
+    inputs:
+      commit_sha:
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run == null || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
     
     - name: Get release commit hash
       run: |
-        if [ "${{ github.event_name }}" = "workflow_run" ]; then
-          HASH="${{ github.event.workflow_run.head_sha }}"
+        if [ -n "${{ inputs.commit_sha }}" ]; then
+          HASH="${{ inputs.commit_sha }}"
         else
           TARGET="${{ github.event.release.target_commitish }}"
-          if [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
-            HASH="$TARGET"
-          else
-            HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
-          fi
+          HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
         fi
-        
-        echo "Calculated RELEASE_HASH: $HASH"
         echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
     
     - name: Setup SSH Agent
