@@ -11,8 +11,7 @@ jobs:
       - name: Prepare Image Name
         id: prep
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+          echo "repo_lower=shureevk/catty-reminders-app" >> $GITHUB_OUTPUT
 
       - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
