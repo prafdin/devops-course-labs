@@ -9,7 +9,7 @@ fi
 TARGET_PORT="${SERVER_PORT:-22}"
 REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 
-APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
+APP_DIR="/home/vboxuser/catty-reminders-app"
 
 echo "Deploying via Docker Compose..."
 
