@@ -25,9 +25,6 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     echo "--> Creating application directory if it doesn't exist: \$APP_DIR"
     mkdir -p \$APP_DIR
 
-    echo "--> Moving docker-compose.yaml to target directory"
-    mv ~/docker-compose.yaml \$APP_DIR/docker-compose.yaml
-
     echo "--> Navigating to application directory"
     cd \$APP_DIR
 
