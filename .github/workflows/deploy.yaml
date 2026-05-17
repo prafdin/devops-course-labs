@@ -26,15 +26,15 @@ jobs:
         DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
         DEPLOY_USER: ${{ vars.DEPLOY_USER }}
         DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        RELEASE_HASH: ${{ env.RELEASE_ENV || env.RELEASE_HASH }}
         IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
         DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_ACTOR: ${{ github.actor }}
         SSH_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
         mkdir -p ~/.ssh
-        echo "$SSH_KEY_BASE64" | base64 -d > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
+        echo "$SSH_KEY_BASE64" | base64 -d > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
         
         ssh-keyscan -p ${DEPLOY_PORT} ${DEPLOY_HOST} >> ~/.ssh/known_hosts
         chmod +x deploy.sh
