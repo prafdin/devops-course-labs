@@ -3,7 +3,6 @@
 # Catty: The Reminders App
 
 *Catty* is a small demo web app for tracking reminders
-
 It uses:
 * [Python](https://www.python.org/) as the main programming language
 * [FastAPI](https://fastapi.tiangolo.com/) for the backend
