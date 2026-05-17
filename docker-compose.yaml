@@ -22,8 +22,6 @@ services:
     image: ${IMAGE}
     container_name: ${NAME_APP}
     restart: unless-stopped
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF}
     ports: 
       - "${APP_PORT}:${APP_PORT}"
     depends_on:

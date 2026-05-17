@@ -1,5 +1,9 @@
 FROM python:3.14-slim
 
+ARG DEPLOY_REF
+
+ENV DEPLOY_REF=${DEPLOY_REF}
+
 WORKDIR /catty-reminders-app
 
 COPY requirements.txt .
