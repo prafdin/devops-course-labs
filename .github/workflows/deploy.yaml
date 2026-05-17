@@ -1,3 +1,4 @@
+# lab4: final version with MySQL and Docker Compose
 name: CD
 
 on:
