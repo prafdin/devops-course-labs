@@ -8,15 +8,15 @@ class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/webhook':
             print("Получен webhook запрос от GitHub!")
-            
+
             # 1. Обновляем код
             print("  → Обновление кода из репозитория...")
             subprocess.run(["git", "-C", APP_DIR, "pull"], check=False)
-            
+
             # 2. Устанавливаем зависимости
             print("  → Установка зависимостей...")
-            subprocess.run(["pip3", "install", "-r", f"{APP_DIR}/requirements.txt"], check=False)
-            
+            subprocess.run(["pip3", "install", "-r", f"{APP_DIR}/requirements.txt", "--break-system-packages"], check=False)
+
             # 3. Запускаем тесты
             print("  → Запуск тестов...")
             result = subprocess.run(["python3", f"{APP_DIR}/test_app.py"], capture_output=True, text=True)
@@ -28,13 +28,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(b'Tests failed')
                 return
-            
+
             print("  ✅ Тесты прошли успешно!")
-            
+
             # 4. Перезапускаем приложение
             print("  → Перезапуск приложения...")
             subprocess.run(["sudo", "systemctl", "restart", "catty-app"], check=False)
-            
+
             print("✅ Webhook обработан успешно!")
             self.send_response(200)
             self.end_headers()

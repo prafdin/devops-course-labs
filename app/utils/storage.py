@@ -215,3 +215,6 @@ class ReminderStorage:
       reminder_lists = self._lists_table.all()
       list_id = reminder_lists[0].doc_id if reminder_lists else None
       self.set_selected_list(list_id)
+
+from fastapi.templating import Jinja2Templates
+templates = Jinja2Templates(directory="templates")
