@@ -12,25 +12,24 @@ services:
       - db
 
     environment:
-      - MYSQL_HOST=db
-      - MYSQL_PORT=3306
-      - MYSQL_DATABASE=catty_reminders
-      - MYSQL_USER=ct
-      - MYSQL_PASSWORD=ctpass
-      - DEPLOY_REF=${RELEASE_HASH}
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: catty_reminders
+      MYSQL_USER: ct
+      MYSQL_PASSWORD: ctpass
+      DEPLOY_REF: ${RELEASE_HASH}
 
   db:
     image: mariadb:10.11
-
     container_name: catty_db
 
     restart: always
 
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=catty_reminders
-      - MYSQL_USER=ct
-      - MYSQL_PASSWORD=ctpass
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: catty_reminders
+      MYSQL_USER: ct
+      MYSQL_PASSWORD: ctpass
 
     volumes:
       - db_data:/var/lib/mysql
