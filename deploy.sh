@@ -21,6 +21,7 @@ echo "User: $DEPLOY_USER"
 echo "Release hash: $RELEASE_HASH"
 echo "Image: $IMAGE"
 
+# Безопасные опции для твоей виртуалки
 SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
 
 ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
@@ -48,7 +49,6 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     
     if docker ps | grep -q $CONTAINER_NAME; then
         echo "Deployment completed successfully"
-        exit 0
     else
         echo "ERROR: Application failed to start"
         docker logs $CONTAINER_NAME
