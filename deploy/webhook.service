@@ -1,0 +1,13 @@
+[Unit]
+Description=GitHub Webhook Deployment Server
+After=network.target
+
+[Service]
+User=yarik
+WorkingDirectory=/home/yarik/Desktop/catty-reminders-app/deploy
+ExecStart=/home/yarik/Desktop/catty-reminders-app/venv/bin/python webhook_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
