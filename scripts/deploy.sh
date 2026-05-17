@@ -37,6 +37,12 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     echo "--> Starting containers"
     docker-compose up -d
 
+    echo "--> Waiting for database container to initialize..."
+    sleep 10
+
+    echo "--> Ensuring backend is connected to the database..."
+    docker-compose up -d --force-recreate catty_backend
+
     echo "--> Cleaning up old unused images"
     docker image prune -af || true
     
