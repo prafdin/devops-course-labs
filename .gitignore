@@ -130,4 +130,4 @@ dmypy.json
 .pyre/
 
 # Databases
-*db.json
+*db.json__pycache__/
