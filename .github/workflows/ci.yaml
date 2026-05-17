@@ -45,7 +45,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: seredovasophia
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
@@ -54,5 +54,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.actor }}/catty-reminders-app:latest
-            ghcr.io/${{ github.actor }}/catty-reminders-app:${{ github.sha }}
+            ghcr.io/seredovasophia/catty-reminders-app:latest
+            ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
