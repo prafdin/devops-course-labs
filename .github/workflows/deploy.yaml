@@ -1,0 +1,24 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3178
+          username: user
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/user/catty-reminders-app
+            git pull origin lab2
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            echo "DEPLOY_REF=${CURRENT_COMMIT}" > .env
+            sudo systemctl restart catty-app
