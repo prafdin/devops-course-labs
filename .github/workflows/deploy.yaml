@@ -15,10 +15,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
 
       - name: Get release commit hash
         run: |
-          echo "RELEASE_HASH=${{ github.sha }}" >> $GITHUB_ENV
+          TARGET="${{ github.event.release.target_commitish }}"
+          echo "Release target_commitish is: $TARGET"
+          
+          HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
+          
+          echo "Calculated RELEASE_HASH: $HASH"
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
@@ -48,7 +56,6 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || 'root' }}
           MYSQL_USER: ${{ secrets.MYSQL_USER || 'ct' }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD || 'ctpass' }}
-
         run: |
           chmod +x scripts/deploy.sh
           ./scripts/deploy.sh
