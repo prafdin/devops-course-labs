@@ -1,35 +1,8 @@
-# Python
 __pycache__/
-*.py[cod]
-*.so
-.Python
-venv/
-env/
-ENV/
-.venv
-*.egg-info/
-dist/
-build/
-
-# Logs
-*.log
-deploy.log
-
-# Environment variables
+*.pyc
 .env
-.envrc
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS junk
+venv/
 .DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.bak
-*.pid
+*.log
+test_result.xml
+FETCH_HEAD
