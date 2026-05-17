@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Скрипт автоматического развертывания
-# Завершаем скрипт при любой ошибке
+
 set -e
 echo "Current directory is $(pwd)"
 
@@ -17,7 +16,7 @@ git fetch origin
 git checkout -B "$BRANCH" "origin/$BRANCH"
 git reset --hard "origin/$BRANCH"
 
-# 2. Настройка виртуального окружения и обновление зависимостей
+
 echo "2. Setting up dependencies..."
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
@@ -28,11 +27,11 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# ДОБАВЛЕНО: Устанавливаем браузер Chromium для UI-тестов
+
 echo "Installing Playwright browsers..."
 python -m playwright install chromium
 
-# 3. Запуск тестов
+
 echo "3. Running tests..."
 
 if ! python -m pytest tests/; then
