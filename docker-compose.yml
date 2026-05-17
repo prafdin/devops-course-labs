@@ -7,6 +7,11 @@ services:
         condition: service_healthy
     ports:
       - "8181:8181"
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=catty
+      - MYSQL_PASSWORD=cattypass
+      - MYSQL_DATABASE=catty_reminders
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
     networks:
