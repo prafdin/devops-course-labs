@@ -93,7 +93,7 @@ jobs:
 
   call-deploy:
     needs: pipeline
-    uses: ./.github/workflows/deploy.yaml@lab4 
+    uses: ./.github/workflows/deploy.yaml
     with:
       commit_sha: ${{ github.sha }}
     secrets: inherit
