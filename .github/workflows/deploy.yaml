@@ -3,6 +3,9 @@ name: Deploy
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - lab4 
 
 jobs:
   deploy:
@@ -17,12 +20,15 @@ jobs:
     - name: Get release commit hash
       run: |
         TARGET="${{ github.event.release.target_commitish }}"
-        echo "Event target_commitish: $TARGET"
         
-        if [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
-          HASH="$TARGET"
+        if [ -n "$TARGET" ]; then
+          if [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
+            HASH="$TARGET"
+          else
+            HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
+          fi
         else
-          HASH=$(git rev-parse "origin/$TARGET" 2>/dev/null || git rev-parse "$TARGET" 2>/dev/null || echo "${{ github.sha }}")
+          HASH="${{ github.sha }}"
         fi
         
         echo "Calculated RELEASE_HASH: $HASH"
