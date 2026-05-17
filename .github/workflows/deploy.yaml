@@ -1,4 +1,4 @@
-name: Docker CD
+name: CD
 
 on:
   release:
@@ -8,7 +8,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VM via SSH
+      - name: Prepare image name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+
+      - name: Remote deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -16,7 +22,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
           script: |
-            docker pull ghcr.io/${{ github.repository }}:latest
-            docker stop catty-app-container || true
-            docker rm catty-app-container || true
-            docker run -d --name catty-app-container -p 8181:8181 ghcr.io/${{ github.repository }}:latest
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            docker pull $IMAGE
+            docker stop catty-container || true
+            docker rm catty-container || true
+            docker run -d --name catty-container -p 8181:8181 $IMAGE
