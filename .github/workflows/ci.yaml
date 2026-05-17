@@ -68,7 +68,6 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # Учтено замечание преподавателя: используем встроенный токен
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker meta
