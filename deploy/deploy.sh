@@ -28,6 +28,10 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# ДОБАВЛЕНО: Устанавливаем браузер Chromium для UI-тестов
+echo "Installing Playwright browsers..."
+python -m playwright install chromium
+
 # 3. Запуск тестов
 echo "3. Running tests..."
 
@@ -45,7 +49,6 @@ echo "4. Updating DEPLOY_REF..."
 echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
 
 echo "5. Restarting main application service..."
-
 sudo systemctl restart app.service
 
 echo "=== Deployment finished successfully ==="
