@@ -14,7 +14,7 @@ from app.utils.exceptions import UnauthorizedPageException
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from typing import Optional
-
+DEPLOY_REF = "ec836fe"
 
 # --------------------------------------------------------------------------------
 # Router
