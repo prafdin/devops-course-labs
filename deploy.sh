@@ -6,14 +6,22 @@ if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
     exit 1
 fi
 
+if [ -z "$RELEASE_HASH" ] || [ -z "$IMAGE_NAME" ]; then
+    echo "Error: RELEASE_HASH and IMAGE_NAME must be set"
+    exit 1
+fi
+
 DEPLOY_PORT=${DEPLOY_PORT:-22}
 CONTAINER_NAME="catty-app"
 PORT="8181"
-# Переводим имя образа в нижний регистр, чтобы ghcr не ругался
 IMAGE="${IMAGE_NAME,,}:$RELEASE_HASH"
 
 echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
-SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
+echo "User: $DEPLOY_USER"
+echo "Release hash: $RELEASE_HASH"
+echo "Image: $IMAGE"
+
+SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no -o IdentitiesOnly=yes"
 
 ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     set -e
@@ -39,7 +47,7 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
     sleep 4
     
     if docker ps | grep -q $CONTAINER_NAME; then
-        echo "Deployment completed successfully!"
+        echo "Deployment completed successfully"
         exit 0
     else
         echo "ERROR: Application failed to start"
