@@ -1,22 +1,19 @@
 name: CD Pipeline
 
 on:
-  push:
-    branches:
-      - lab4
-      - lab4_autotests*
   release:
     types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     permissions:
-      packages: write
       contents: read
+      packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Copy docker-compose.yaml
@@ -26,33 +23,41 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+
           source: "docker-compose.yaml"
+
           target: "/home/${{ secrets.SSH_USER }}/catty-app"
 
-      - name: Deploy to Server
+      - name: Deploy application
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+
           script: |
             export DEPLOY_REF="${{ github.sha }}"
 
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
+
             echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u exhaustion666 --password-stdin
 
-            cd /home/${{ secrets.SSH_USER }}/catty-app
-
-            docker compose down || true
-            docker rm -f catty-reminders-app-backend-1 catty-app-backend-1 backend || true
-            sudo fuser -k 8181/tcp || true
+            cd /home/${{ secrets.SSH_USER }}/catty-reminders-app
 
             for i in {1..30}; do
-              if docker pull ghcr.io/exhaustion666/catty-reminders-app:${DEPLOY_REF} >/dev/null 2>&1; then
+              if docker pull ghcr.io/exhaustion666/catty-reminders-app:${DEPLOY_REF}; then
                 break
               fi
+
+
               sleep 10
             done
 
-            docker compose pull --policy always
+            docker compose down || true
+
+            docker compose pull
+
             docker compose up -d --force-recreate
+
+            docker image prune -af || true
