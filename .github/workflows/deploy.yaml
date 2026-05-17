@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Workflow
 
 on:
   release:
@@ -7,36 +7,28 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Get release commit hash
-      id: release_vars
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-parse "$TAG^{commit}" 2>/dev/null || git rev-parse "$TAG")
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-    
-    - name: Deploy to server via Native SSH (Base64 Fix)
-      env:
-        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_ENV || env.RELEASE_HASH }}
-        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_ACTOR: ${{ github.actor }}
-        SSH_KEY_BASE64: ${{ secrets.SSH_PRIVATE_KEY }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_KEY_BASE64" | base64 -d > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        ssh-keyscan -p ${DEPLOY_PORT} ${DEPLOY_HOST} >> ~/.ssh/known_hosts
-        chmod +x deploy.sh
-        
-        SSH_AUTH_SOCK="" exec ssh -i ~/.ssh/id_rsa -p ${DEPLOY_PORT} -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} "bash -s" < deploy.sh
+      - name: Deploy via SSH Action
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          port: ${{ vars.DEPLOY_PORT || 22 }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            IMAGE_TAG=${{ github.sha }}
+            
+            echo "> Trying to pull: ghcr.io/${{ github.repository_owner }}/catty-reminders-app:$IMAGE_TAG"
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            docker pull ghcr.io/${{ github.repository_owner }}/catty-reminders-app:$IMAGE_TAG
+            docker stop catty-app || true
+            docker rm catty-app || true
+            
+            docker run -d \
+              --name catty-app \
+              -p 8181:8181 \
+              --restart always \
+              -e DEPLOY_REF=$IMAGE_TAG \
+              ghcr.io/${{ github.repository_owner }}/catty-reminders-app:$IMAGE_TAG
+            
+            echo "> Deploy of $IMAGE_TAG successful!"
