@@ -54,5 +54,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.actor }}/catty-reminders-app:latest
-            ghcr.io/${{ github.actor }}/catty-reminders-app:${{ github.sha }}
+            ghcr.io/seredovasophia/catty-reminders-app:latest
+            ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
