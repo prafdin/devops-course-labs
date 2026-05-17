@@ -1,6 +1,9 @@
 name: CD
 
 on:
+  push:
+    branches:
+      - lab4*
   release:
     types: [published]
 
@@ -37,7 +40,7 @@ jobs:
 
             export IMAGE_NAME=ghcr.io/nitsense/catty-reminders-app
             export IMAGE_TAG=${{ github.sha }}
-            
+
             docker compose pull
             docker compose up -d --force-recreate --remove-orphans
 
