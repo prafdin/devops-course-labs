@@ -6,10 +6,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Get commit SHA
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
-          DEPLOY_SHA: ${{ github.event.release.target_commitish }}
+          DEPLOY_SHA: ${{ steps.sha.outputs.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ github.actor }}
         with:
