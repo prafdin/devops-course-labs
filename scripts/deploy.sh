@@ -11,19 +11,19 @@ ssh -p "$TARGET_PORT" \
   "${SERVER_USER}@${SERVER_HOST}" "export RELEASE_HASH='${RELEASE_HASH}' MYSQL_ROOT_PASSWORD='${MYSQL_ROOT_PASSWORD}' MYSQL_USER='${MYSQL_USER}' MYSQL_PASSWORD='${MYSQL_PASSWORD}' GHCR_USER='${GHCR_USER}' GHCR_TOKEN='${GHCR_TOKEN}'; bash -s" << 'EOF'
 
 set -e
+mkdir -p $APP_DIR
 cd $APP_DIR
 
-cat > .env << EOL
-RELEASE_HASH=$RELEASE_HASH
-MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
-MYSQL_USER=$MYSQL_USER
-MYSQL_PASSWORD=$MYSQL_PASSWORD
-EOL
+COMPOSE_FILE="docker-compose.yaml"
+if [ ! -f "docker-compose.yaml" ] && [ -f "docker-compose.yml" ]; then
+    COMPOSE_FILE="docker-compose.yml"
+fi
 
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-docker-compose --env-file .env down || true
-docker-compose --env-file .env pull
-docker-compose --env-file .env up -d --force-recreate
+
+docker-compose -f \$COMPOSE_FILE --env-file .env down || true
+docker-compose -f \$COMPOSE_FILE --env-file .env pull
+docker-compose -f \$COMPOSE_FILE --env-file .env up -d --force-recreate
 docker image prune -af || true
 docker ps
 EOF
