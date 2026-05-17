@@ -19,7 +19,7 @@ jobs:
       - name: Get release commit hash
         run: |
           TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-list -n 1 $TAG)
+          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
           echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
       - name: Setup SSH Agent
@@ -27,37 +27,30 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Copy docker-compose.yaml
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml \
+          $SERVER_USER@$SERVER_HOST:/home/vboxuser/catty-reminders-app/docker-compose.yaml
+
       - name: Deploy to server
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
+
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
+
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+
         run: |
-          ssh -p "$SERVER_PORT" \
-            -o StrictHostKeyChecking=no \
-            "$SERVER_USER@$SERVER_HOST" \
-            "RELEASE_HASH=$RELEASE_HASH GHCR_USER=$GHCR_USER GHCR_TOKEN=$GHCR_TOKEN bash -s" << 'EOF'
-
-set -e
-
-APP_DIR="/home/vboxuser/catty-reminders-app"
-cd "$APP_DIR"
-
-echo "Deploying $RELEASE_HASH"
-
-echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-
-docker-compose down || true
-
-docker pull ghcr.io/vadimkadkdoofjf/catty-reminders-app:$RELEASE_HASH
-
-docker-compose up -d --force-recreate
-
-docker image prune -af || true
-
-docker ps
-
-EOF
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
