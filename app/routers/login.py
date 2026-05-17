@@ -34,7 +34,12 @@ async def get_login(
         'logged_out': logged_out,
         'unauthorized': unauthorized
     }
-    return templates.TemplateResponse("pages/login.html", context)
+    response = templates.TemplateResponse("pages/login.html", context)
+    # Отключаем кэширование, чтобы GitHub Actions всегда видел свежий deployref
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @router.post("/login")
 async def post_login(cookie: Optional[AuthCookie] = Depends(get_login_form_creds)):
