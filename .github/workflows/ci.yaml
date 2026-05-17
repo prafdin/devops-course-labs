@@ -2,12 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - lab4
-      - lab4/*
-      - lab4-*
-  pull_request:
-    branches:
-      - lab4
+      - '**'
 jobs:
   test:
     runs-on: ubuntu-latest
