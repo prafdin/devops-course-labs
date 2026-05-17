@@ -1,9 +1,6 @@
 name: CD
 
 on:
-  push:
-    branches:
-      - lab4*
   release:
     types: [published]
 
