@@ -19,6 +19,5 @@ jobs:
           script: |
             cd /home/user/catty-reminders-app
             git pull origin lab2
-            CURRENT_COMMIT=$(git rev-parse HEAD)
-            echo "DEPLOY_REF=${CURRENT_COMMIT}" > .env
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
             sudo systemctl restart catty-app
