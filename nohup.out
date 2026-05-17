@@ -1,0 +1,17 @@
+INFO:     Started server process [27873]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8181 (Press CTRL+C to quit)
+INFO:     127.0.0.1:40710 - "GET / HTTP/1.1" 302 Found
+INFO:     127.0.0.1:35054 - "GET / HTTP/1.1" 302 Found
+INFO:     80.234.76.176:0 - "GET / HTTP/1.1" 302 Found
+INFO:     80.234.76.176:0 - "GET /login HTTP/1.1" 200 OK
+INFO:     80.234.76.176:0 - "GET /css/shared.css HTTP/1.1" 200 OK
+INFO:     80.234.76.176:0 - "GET /css/login.css HTTP/1.1" 200 OK
+INFO:     80.234.76.176:0 - "GET /img/logos/catty-100px.png HTTP/1.1" 200 OK
+INFO:     80.234.76.176:0 - "GET /font/PlayfairDisplay-Italic-VariableFont_wght.ttf HTTP/1.1" 200 OK
+INFO:     80.234.76.176:0 - "GET /font/PlayfairDisplay-VariableFont_wght.ttf HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27873]
