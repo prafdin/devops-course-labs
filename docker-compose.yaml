@@ -20,7 +20,7 @@ services:
     container_name: ${APP_CONTAINER_NAME}
     restart: unless-stopped
     ports: 
-      - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
+      - "${HOST_APP_PORT}:${CONTAINER_APP_PORT}"
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
