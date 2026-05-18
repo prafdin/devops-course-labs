@@ -1,33 +1,33 @@
 name: CD
-
 on:
   release:
     types: [published]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare image name
-        id: prep
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
-
       - name: Remote deploy
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+          DEPLOY_SHA: ${{ github.sha }}
         with:
           host: course.prafdin.ru
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
+          envs: GH_TOKEN,GH_ACTOR,DEPLOY_SHA
           script: |
-            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            IMAGE="ghcr.io/shureevk/catty-reminders-app:latest"
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
             docker pull $IMAGE
             docker stop catty-container || true
             docker rm catty-container || true
             docker run -d \
               --name catty-container \
               -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
+              -e DEPLOY_REF=$DEPLOY_SHA \
+              --restart unless-stopped \
               $IMAGE
+            docker image prune -f
