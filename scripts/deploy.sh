@@ -36,18 +36,6 @@ mkdir -p \$APP_DIR
 echo "--> Entering app directory"
 cd \$APP_DIR
 
-echo "--> Current directory:"
-pwd
-
-echo "--> Docker Compose file:"
-ls -la
-
-echo "--> Docker version:"
-docker --version
-
-echo "--> Docker Compose version:"
-docker-compose --version
-
 echo "--> Logging into GHCR"
 echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
 
