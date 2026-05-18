@@ -91,9 +91,3 @@ jobs:
           build-args: |
             DEPLOY_REF=${{ github.sha }}
 
-  call-deploy:
-    needs: pipeline
-    uses: ./.github/workflows/deploy.yaml
-    with:
-      commit_sha: ${{ github.sha }}
-    secrets: inherit
