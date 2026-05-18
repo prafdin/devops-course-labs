@@ -40,7 +40,7 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_USER: vboxuser
+          MYSQL_USER: ct
           MYSQL_PASSWORD: ctpass
 
         run: |
