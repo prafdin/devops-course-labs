@@ -11,7 +11,6 @@ jobs:
       - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
-          DEPLOY_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ github.actor }}
         with:
@@ -19,7 +18,7 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
-          envs: DEPLOY_SHA,GH_TOKEN,GH_ACTOR
+          envs: GH_TOKEN,GH_ACTOR
           script: |
             IMAGE="ghcr.io/shureevk/catty-reminders-app:latest"
             CONTAINER_NAME="catty-container"
