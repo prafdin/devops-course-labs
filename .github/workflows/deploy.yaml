@@ -21,7 +21,7 @@ jobs:
             git reset --hard origin/lab4
             export APP_IMAGE=ghcr.io/vissstu/catty-reminders-app:${{ github.sha }}
             export DEPLOY_REF=${{ github.sha }}
-            export MYSQL_ROOT_PASSWORD=mypass
+            export MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             export MYSQL_DATABASE=catty_reminders
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose up -d --pull always --remove-orphans --force-recreate
