@@ -2,21 +2,15 @@ name: CD
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name }}
-      - name: Get commit SHA
-        id: sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
-          DEPLOY_SHA: ${{ steps.sha.outputs.sha }}
+          DEPLOY_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ github.actor }}
         with:
@@ -28,14 +22,19 @@ jobs:
           script: |
             IMAGE="ghcr.io/shureevk/catty-reminders-app:latest"
             CONTAINER_NAME="catty-container"
+
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+
             docker pull $IMAGE
+
             docker stop $CONTAINER_NAME || true
             docker rm $CONTAINER_NAME || true
+
             docker run -d \
               --name $CONTAINER_NAME \
               -p 8181:8181 \
               -e DEPLOY_REF=$DEPLOY_SHA \
               --restart unless-stopped \
               $IMAGE
+
             docker image prune -f
