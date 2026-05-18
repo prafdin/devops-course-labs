@@ -1,61 +1,48 @@
-name: Deploy
+name: CD
 
 on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Create .env file
-      run: |
-        # app env vars
-        echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
-        echo "DEPLOY_REF=${{ github.sha }}" >> .env
-        echo "APP_PORT=8181" >> .env
-        echo "APP_CONTAINER_NAME=catty-app" >> .env
-        # database env vars
-        echo "DB_CONTAINER_NAME=catty_db" >> .env
-        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD}}" >> .env
-        echo "MYSQL_USER=ct" >> .env
-        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD}}" >> .env
-        echo "MYSQL_DATABASE=catty_reminders" >> .env
-        echo "DB_PORT=3306" >> .env
-    
-    - name: Copy .env to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./.env
-        target: /home/vboxuser/catty-compose
-    
-    - name: Copy docker-compose.yaml to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./docker-compose.yaml
-        target: /home/vboxuser/catty-compose
-
-    - name: Deploy to server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          set -x
-          cd /home/vboxuser/catty-compose
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          sudo docker compose up -d --pull always --remove-orphans --force-recreate
+      - name: Deploy via Docker Compose
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3155
+          username: anzorcode
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 30m
+          script: |
+            set -e
+            cd /home/vboxuser/catty-reminders-app
+            echo "=== Docker Compose deployment started ==="
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export DEPLOY_REF=${{ github.sha }}
+            export DB_ROOT_PASSWORD=rootpass
+            export DB_DATABASE=catty_reminders
+            export DB_USER=catty_user
+            export DB_PASSWORD=catty_pass
+            docker compose down --remove-orphans
+            docker system prune -f
+            docker compose pull
+            docker compose up -d --force-recreate
+            sleep 5
+            if docker compose ps | grep -q "Up"; then
+              echo "Stack started successfully"
+              echo "=== Current DEPLOY_REF ==="
+              docker exec catty-app printenv | grep DEPLOY_REF || echo "DEPLOY_REF not set"
+            else
+              echo "Error: stack failed to start"
+              docker compose logs
+              exit 1
+            fi
+            echo "=== Deployment completed successfully ==="

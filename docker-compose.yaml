@@ -1,32 +1,30 @@
+name: catty-reminders
+
 services:
-  catty-app:
-    image: ${APP_IMAGE}
-    container_name: ${APP_CONTAINER_NAME}
-    restart: always
+  db:
+    image: mariadb:11
+    container_name: catty-db
+    restart: unless-stopped
     environment:
-      - DEPLOY_REF=${DEPLOY_REF}
-    ports: 
-      - "${APP_PORT}:${APP_PORT}"
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MARIADB_DATABASE: ${DB_DATABASE:-catty_reminders}
+      MARIADB_USER: ${DB_USER:-catty_user}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-catty_pass}
     volumes:
-      - ./config.json:/catty-reminders-app/config.json:ro
-    depends_on:
-      - db
+      - mariadb_data:/var/lib/mysql
     networks:
       - catty-network
-  
-  db:
-    image: mysql:latest
-    container_name: ${DB_CONTAINER_NAME}
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
+
+  app:
+    image: ghcr.io/vadimkadkdoofjf/catty-reminders-app:${DEPLOY_REF:-latest}
+    container_name: catty-app
+    restart: unless-stopped
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - "8181:8181"
     volumes:
-      - db_data:/var/lib/mysql
+      - ./config.json:/app/config.json:ro
+    depends_on:
+      - db
     networks:
       - catty-network
 
@@ -35,4 +33,4 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
+  mariadb_data:
