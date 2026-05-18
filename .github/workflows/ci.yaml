@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "lab3" ]
+    branches: [ lab3 ]
 
 jobs:
   tests:
