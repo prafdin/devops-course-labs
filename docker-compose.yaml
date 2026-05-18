@@ -1,0 +1,39 @@
+
+services:
+  # Наше Python-приложение (Backend)
+  app:
+    image: ghcr.io/andreykruglovres/catty-reminders-app:${DEPLOY_REF:-latest}
+    container_name: catty-app
+    ports:
+      - "8181:8181"
+    environment:
+      - DATABASE_URL=mysql+pymysql://catty_user:catty_password@db:3306/catty_db
+      - DEPLOY_REF=${DEPLOY_REF:-local}
+    # Ждем, пока MySQL не просто запустится, а станет полностью работоспособным
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # База данных (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: catty-db
+    environment:
+      MYSQL_DATABASE: catty_db
+      MYSQL_USER: catty_user
+      MYSQL_PASSWORD: catty_password
+      MYSQL_ROOT_PASSWORD: root_root_password
+    volumes:
+      - catty_db_data:/var/lib/mysql
+    # Проверка готовности базы для app
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_root_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+# Объявляем именованный том для сохранения данных БД на жестком диске Kali
+volumes:
+  catty_db_data:

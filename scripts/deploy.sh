@@ -2,25 +2,23 @@
 set -Eeuo pipefail
 
 APP_DIR="/home/kali/catty-reminders-app"
-echo "Deploying via Docker into '$APP_DIR'"
+echo "Deploying multi-container stack into '$APP_DIR'"
 cd "$APP_DIR"
 
-# Авторизация в реестре через переданный токен
+# 1. Сбрасываем локальные изменения на Kali и подтягиваем свежий коммит/docker-compose.yaml
+git fetch origin lab4
+git checkout lab4
+git reset --hard origin/lab4
+
+# 2. Авторизуемся в реестре GitHub Packages (ghcr.io)
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-echo "Pulling Docker image: $IMAGE"
-docker pull "$IMAGE"
+# 3. Останавливаем текущий стек (если он запущен)
+docker compose down --remove-orphans
 
-echo "Stopping old container..."
-docker stop catty-test || true
-docker rm catty-test || true
+# 4. Скачиваем свежие образы из GHCR и запускаем стек в фоновом режиме
+export DEPLOY_REF="$DEPLOY_REF"
+docker compose pull
+docker compose up -d
 
-echo "Starting new Docker container..."
-docker run -d \
-  -p 8181:8181 \
-  --name catty-test \
-  --restart unless-stopped \
-  -e DEPLOY_REF="$DEPLOY_REF" \
-  "$IMAGE"
-
-echo "Docker deployment completed successfully!"
+echo "Docker Compose deployment completed successfully!"
