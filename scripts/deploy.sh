@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
@@ -8,27 +7,26 @@ if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
 fi
 
 TARGET_PORT="${SERVER_PORT:-22}"
-
 REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 
 echo "Deploying via Docker Compose..."
 echo "Release hash: $RELEASE_HASH"
 echo "Repository: $REPO_LOWER"
 
+scp -P "$TARGET_PORT" \
+    -o StrictHostKeyChecking=no \
+    docker-compose.yaml \
+    "${SERVER_USER}@${SERVER_HOST}:/home/vboxuser/catty-reminders-app/docker-compose.yaml"
+
 ssh -p "$TARGET_PORT" \
     -o StrictHostKeyChecking=no \
-    "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+    "${SERVER_USER}@${SERVER_HOST}" "bash -s" << EOF
 
 set -e
 
-export REPO_LOWER="${REPO_LOWER}"
-export RELEASE_HASH="${RELEASE_HASH}"
+export RELEASE_HASH="$RELEASE_HASH"
 
-export MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}"
-export MYSQL_USER="${MYSQL_USER}"
-export MYSQL_PASSWORD="${MYSQL_PASSWORD}"
-
-APP_DIR="\$HOME/catty-reminders-app"
+APP_DIR="/home/vboxuser/catty-reminders-app"
 
 echo "--> Creating application directory if needed"
 mkdir -p \$APP_DIR
@@ -37,7 +35,7 @@ echo "--> Entering app directory"
 cd \$APP_DIR
 
 echo "--> Logging into GHCR"
-echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
 
 echo "--> Pulling exact release image"
 docker pull ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
@@ -51,21 +49,36 @@ docker-compose pull
 echo "--> Starting database"
 docker-compose up -d db
 
-echo "--> Waiting for database startup..."
-sleep 10
+echo "--> Waiting for MariaDB readiness"
+
+until docker exec catty_db mariadb-admin ping \
+    -h localhost \
+    -uroot \
+    -proot --silent; do
+    echo "MariaDB is unavailable - sleeping"
+    sleep 3
+done
+
+echo "--> Database is ready"
 
 echo "--> Starting backend"
-docker-compose up -d --force-recreate catty_backend
+docker-compose up -d catty_backend
+
+echo "--> Waiting backend startup"
+sleep 10
+
+echo "--> Backend health check"
+curl http://localhost:8181/login
 
 echo "--> Running containers:"
 docker ps
 
 echo "--> Backend logs:"
-docker logs catty_backend --tail 50 || true
+docker logs catty_backend --tail 50
 
 echo "--> Cleaning unused images"
 docker image prune -af || true
 
 echo "--> Deployment finished successfully"
 
-REMOTE_SCRIPT
+EOF
