@@ -18,24 +18,31 @@ jobs:
         with:
           host: course.prafdin.ru
           port: 3155
-          username: anzorcode
+          username: vboxuser   
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 30m
           script: |
             set -e
+
             cd /home/vboxuser/catty-reminders-app
+
             echo "=== Docker Compose deployment started ==="
+
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
             export DEPLOY_REF=${{ github.sha }}
             export DB_ROOT_PASSWORD=rootpass
             export DB_DATABASE=catty_reminders
             export DB_USER=catty_user
             export DB_PASSWORD=catty_pass
+
             docker compose down --remove-orphans
             docker system prune -f
             docker compose pull
             docker compose up -d --force-recreate
+
             sleep 5
+
             if docker compose ps | grep -q "Up"; then
               echo "Stack started successfully"
               echo "=== Current DEPLOY_REF ==="
@@ -45,4 +52,5 @@ jobs:
               docker compose logs
               exit 1
             fi
+
             echo "=== Deployment completed successfully ==="
