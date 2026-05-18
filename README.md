@@ -1,6 +1,6 @@
 ![Catty Logo](static/img/logos/catty-100px.png)
 
-Тест автоматического деплоя
+Еще один тестик
 
 # Catty: The Reminders App
 
