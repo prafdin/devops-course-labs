@@ -38,7 +38,7 @@ if ! python -m pytest tests/; then
     echo "ERROR: Tests failed! Performing rollback to the previous version..."
     git reset --hard ORIG_HEAD
     echo "Restarting main application service to apply rollback..."
-    sudo systemctl restart app.service
+    sudo /bin/systemctl restart app.service
     exit 1
 fi
 
@@ -48,6 +48,6 @@ echo "4. Updating DEPLOY_REF..."
 echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
 
 echo "5. Restarting main application service..."
-sudo systemctl restart app.service
+sudo /bin/systemctl restart app.service
 
 echo "=== Deployment finished successfully ==="
