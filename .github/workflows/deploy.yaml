@@ -1,33 +1,40 @@
 name: CD
+
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Remote deploy
+      - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
+          DEPLOY_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ github.actor }}
-          DEPLOY_SHA: ${{ github.sha }}
         with:
           host: course.prafdin.ru
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
-          envs: GH_TOKEN,GH_ACTOR,DEPLOY_SHA
+          envs: DEPLOY_SHA,GH_TOKEN,GH_ACTOR
           script: |
             IMAGE="ghcr.io/shureevk/catty-reminders-app:latest"
+            CONTAINER_NAME="catty-container"
+
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+
             docker pull $IMAGE
-            docker stop catty-container || true
-            docker rm catty-container || true
+
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
             docker run -d \
-              --name catty-container \
+              --name $CONTAINER_NAME \
               -p 8181:8181 \
-              -e DEPLOY_REF=$DEPLOY_SHA \
               --restart unless-stopped \
               $IMAGE
+
             docker image prune -f
