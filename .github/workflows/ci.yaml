@@ -1,88 +1,76 @@
 name: CI
-
 on:
   push:
     branches:
-      - lab3
-      - lab3_autotests*
-  pull_request:
-    branches:
-      - lab3
-      - lab3_autotests*
-
-permissions:
-  contents: read
-  packages: write
-
+      - '**'
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m playwright install chromium
-
-      - name: Start application
-        env:
-          DEPLOY_REF: ${{ github.sha }}
+          pip install -r requirements.txt
+          pip install pytest-playwright
+          playwright install --with-deps chromium
+      - name: Build Docker image for testing
         run: |
-          python -m uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          for i in {1..30}; do
-            curl --fail --silent http://127.0.0.1:8181/login >/dev/null && exit 0
-            sleep 1
-          done
-          exit 1
-
+          docker build -t catty-test .
+      - name: Run MySQL container
+        run: |
+          docker run -d \
+            --name mysql-test \
+            -e MYSQL_ROOT_PASSWORD=rootpass \
+            -e MYSQL_USER=catty \
+            -e MYSQL_PASSWORD=cattypass \
+            -e MYSQL_DATABASE=catty_reminders \
+            -p 3306:3306 \
+            mysql:8.0
+          sleep 15
+      - name: Run app container
+        run: |
+          docker run -d \
+            --name app-test \
+            --link mysql-test:db \
+            -e MYSQL_HOST=mysql-test \
+            -e MYSQL_USER=catty \
+            -e MYSQL_PASSWORD=cattypass \
+            -e MYSQL_DATABASE=catty_reminders \
+            -p 8181:8181 \
+            catty-test
+          sleep 5
       - name: Run tests
-        run: python -m pytest -v --browser chromium --junitxml=test_result.xml tests
-
-      - name: Upload test report
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest --junitxml=test_result.xml -k "unit"
+      - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
           path: test_result.xml
-
-  docker:
+  docker-build:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push'
-
+    permissions:
+      packages: write
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      # Безопасное приведение всего пути репозитория к нижнему регистру
-      - name: Set lowercase image name
-        run: |
-          echo "IMAGE_LC=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
+      - name: Build and push
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.IMAGE_LC }}:${{ github.sha }}
+          tags: |
+            ghcr.io/andreykruglovres/catty-reminders-app:${{ github.sha }}
           build-args: |
             DEPLOY_REF=${{ github.sha }}

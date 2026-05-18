@@ -1,38 +1,49 @@
 name: CD
-
 on:
   release:
     types: [published]
-
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      # Извлекаем точный хэш коммита релиза
-      - name: Get config details
-        run: |
-          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          DEPLOY_REF: ${{ env.COMMIT_SHA }}
+        uses: appleboy/ssh-action@v1
         with:
-          host: "course.prafdin.ru"
-          username: "kali"
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: course.prafdin.ru
           port: 2258
-          envs: GITHUB_TOKEN,GITHUB_ACTOR,DEPLOY_REF
+          username: kali
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
-            cd /home/kali/catty-reminders-app
-            bash scripts/deploy.sh
-#
+            set -e
+            cd /home/kali/catty-reminders-app || exit 1
+            
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u andreykruglovres --password-stdin
+            
+            # Останавливаем и удаляем старые контейнеры стека
+            docker compose down || true
+            
+            # На всякий случай вычищаем одиночные контейнеры, если они занимают порты
+            docker stop catty-reminders-app 2>/dev/null || true
+            docker rm catty-reminders-app 2>/dev/null || true
+            docker stop catty-test 2>/dev/null || true
+            docker rm catty-test 2>/dev/null || true
+            
+            # Поднимаем новый чистый стек через Compose
+            docker compose up -d --remove-orphans
+            
+           
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
+                echo "App is healthy"
+                exit 0
+              fi
+              echo "Waiting for app... ($i/30)"
+              sleep 5
+            done
+            
+            echo "App failed to start"
+            docker compose logs app
+            exit 1

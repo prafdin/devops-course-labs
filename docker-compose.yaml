@@ -1,39 +1,46 @@
-
 services:
-  # Наше Python-приложение (Backend)
   app:
     image: ghcr.io/andreykruglovres/catty-reminders-app:${DEPLOY_REF:-latest}
-    container_name: catty-app
-    ports:
-      - "8181:8181"
-    environment:
-      - DATABASE_URL=mysql+pymysql://catty_user:catty_password@db:3306/catty_db
-      - DEPLOY_REF=${DEPLOY_REF:-local}
-    # Ждем, пока MySQL не просто запустится, а станет полностью работоспособным
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    ports:
+      - "8181:8181"
+    env_file:
+      - .env
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=catty
+      - MYSQL_PASSWORD=cattypass
+      - MYSQL_DATABASE=catty_reminders
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json:ro
+    networks:
+      - app-network
 
-  # База данных (MySQL)
   db:
     image: mysql:8.0
-    container_name: catty-db
+    restart: always
     environment:
-      MYSQL_DATABASE: catty_db
-      MYSQL_USER: catty_user
-      MYSQL_PASSWORD: catty_password
-      MYSQL_ROOT_PASSWORD: root_root_password
-    volumes:
-      - catty_db_data:/var/lib/mysql
-    # Проверка готовности базы для app
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: catty
+      MYSQL_PASSWORD: cattypass
+      MYSQL_DATABASE: catty_reminders
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_root_password"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucatty -pcattypass"]
       interval: 5s
       timeout: 5s
-      retries: 5
-    restart: unless-stopped
+      retries: 10
+      start_period: 20s
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
 
-# Объявляем именованный том для сохранения данных БД на жестком диске Kali
 volumes:
-  catty_db_data:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
