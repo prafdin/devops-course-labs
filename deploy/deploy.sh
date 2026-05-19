@@ -1,21 +1,23 @@
 #!/bin/bash
 
-
 set -e
 echo "Current directory is $(pwd)"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-BRANCH="${1:-lab1}"
+COMMIT_HASH="$1"
 
-echo "=== Starting deployment for branch $BRANCH at $(date) ==="
+if [ -z "$COMMIT_HASH" ]; then
+    echo "ERROR: Commit hash is not provided!"
+    exit 1
+fi
+
+echo "=== Starting deployment for commit $COMMIT_HASH at $(date) ==="
 
 echo "1. Pulling latest code..."
 git fetch origin
-git checkout -B "$BRANCH" "origin/$BRANCH"
-git reset --hard "origin/$BRANCH"
-
+git checkout "$COMMIT_HASH"
 
 echo "2. Setting up dependencies..."
 if [ ! -d "venv" ]; then
@@ -27,16 +29,13 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-
 echo "Installing Playwright browsers..."
-python -m playwright install chromium
-
+python3 -m playwright install chromium
 
 echo "3. Running tests..."
-
-if ! python -m pytest tests/; then
+if ! python3 -m pytest tests/; then
     echo "ERROR: Tests failed! Performing rollback to the previous version..."
-    git reset --hard ORIG_HEAD
+    git checkout -
     echo "Restarting main application service to apply rollback..."
     sudo /bin/systemctl restart app.service
     exit 1
@@ -45,7 +44,7 @@ fi
 echo "Tests passed successfully!"
 
 echo "4. Updating DEPLOY_REF..."
-echo "DEPLOY_REF=$(git rev-parse HEAD)" > .env
+echo "DEPLOY_REF=$COMMIT_HASH" > .env
 
 echo "5. Restarting main application service..."
 sudo /bin/systemctl restart app.service
