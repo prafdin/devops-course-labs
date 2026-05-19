@@ -6,7 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Remote Docker Deploy
+      - name: Deploy app via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -17,16 +17,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3181
           envs: GH_TOKEN,GH_ACTOR
+          timeout: 30m
           script: |
-            IMAGE="ghcr.io/shureevk/catty-reminders-app:latest"
-            CONTAINER_NAME="catty-container"
+            set -e
+            cd ~/catty-reminders-app
+            git fetch origin
+            git checkout lab4
+            git pull origin lab4
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
-            docker pull $IMAGE
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-            docker run -d \
-              --name $CONTAINER_NAME \
-              -p 8181:8181 \
-              --restart unless-stopped \
-              $IMAGE
-            docker image prune -f
+            docker compose up -d --pull always --remove-orphans --force-recreate
