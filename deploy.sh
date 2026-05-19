@@ -1,11 +1,21 @@
 #!/bin/bash
 set -e
 
+REF="$1"
+COMMIT_SHA="$2"
+
 cd /home/vboxuser/catty-reminders-app
 
 git fetch origin
-git checkout lab1
-git pull origin lab1
+
+if [ -n "$REF" ]; then
+    BRANCH="${REF#refs/heads/}"
+    git checkout "$BRANCH"
+    git reset --hard "$COMMIT_SHA"
+else
+    git checkout lab1
+    git pull origin lab1
+fi
 
 git rev-parse HEAD > deployref.txt
 
