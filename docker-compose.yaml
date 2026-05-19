@@ -4,8 +4,6 @@ services:
     image: ${APP_IMAGE:-ghcr.io/vissstu/catty-reminders-app:latest}
     container_name: catty-app
     restart: unless-stopped
-    environment:
-  
     ports:
       - "8181:8181"
     volumes:
