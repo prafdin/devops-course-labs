@@ -21,7 +21,7 @@ from typing import Optional
 
 def get_deploy_ref() -> str:
     try:
-        with open("deployref.txt", "r") as f:
+        with open("/home/vboxuser/catty-reminders-app/deployref.txt", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         return "NA"
