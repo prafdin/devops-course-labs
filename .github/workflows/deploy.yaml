@@ -2,21 +2,18 @@ name: CD
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy app via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_ACTOR: ${{ github.actor }}
         with:
           host: course.prafdin.ru
+          port: 3181
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3181
-          envs: GH_TOKEN,GH_ACTOR
           timeout: 30m
           script: |
             set -e
@@ -25,5 +22,5 @@ jobs:
             git checkout lab4
             git pull origin lab4
             echo "DEPLOY_REF=${{ github.sha }}" > .env
-            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose up -d --pull always --remove-orphans --force-recreate
