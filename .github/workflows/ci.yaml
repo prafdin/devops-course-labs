@@ -1,10 +1,25 @@
 name: CI
 on:
   push:
-    branches: [ lab4* ]
+    branches: [ lab3*, lab4* ]
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: mypass
+          MYSQL_USER: user
+          MYSQL_PASSWORD: mypass
+          MYSQL_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pmypass"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
