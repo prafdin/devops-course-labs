@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=rave
 WorkingDirectory=/home/rave/catty-reminders-app
+EnvironmentFile=-/home/rave/catty-reminders-app/.env
 ExecStart=/home/rave/catty-reminders-app/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8181
 Restart=always
 
