@@ -1,49 +1,48 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import subprocess
-import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
-HOST = "0.0.0.0"
-PORT = 8080
 
-
-def run_deploy(ref: str, commit_sha: str):
-    subprocess.run(
-        ["bash", "/home/vboxuser/catty-reminders-app/deploy.sh", ref, commit_sha]
-    )
-
-
-class Handler(BaseHTTPRequestHandler):
+class GitHubWebhookHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
         self.wfile.write(b"ok")
 
     def do_POST(self):
-        event = self.headers.get("X-GitHub-Event", "")
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
 
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"ok")
-
-        if event != "push":
-            return
+        event = self.headers.get("X-GitHub-Event", "unknown")
+        delivery = self.headers.get("X-GitHub-Delivery", "unknown")
 
         try:
-            payload = json.loads(body.decode("utf-8"))
-            ref = payload.get("ref", "")
-            commit_sha = payload.get("after", "")
-        except Exception:
+            payload = json.loads(body.decode("utf-8")) if body else {}
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "invalid json"}).encode("utf-8"))
             return
 
-        if ref and commit_sha:
-            threading.Thread(
-                target=run_deploy,
-                args=(ref, commit_sha),
-                daemon=True
-            ).start()
+        print(f"GitHub event: {event}")
+        print(f"Delivery ID: {delivery}")
+        print("Payload:")
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
+
+    def log_message(self, format, *args):
+        return
 
 
-HTTPServer((HOST, PORT), Handler).serve_forever()
+if __name__ == "__main__":
+    host = "0.0.0.0"
+    port = 8080
+
+    server = HTTPServer((host, port), GitHubWebhookHandler)
+    print(f"Server started on http://{host}:{port}")
+    server.serve_forever()
