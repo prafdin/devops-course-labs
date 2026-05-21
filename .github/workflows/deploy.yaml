@@ -48,8 +48,8 @@ jobs:
 
             export MARIADB_ROOT_PASSWORD=${{ secrets.DB_PASS }}
             export MARIADB_USER=vboxuser
-            export MARIADB_PASSWORD=${{ secrets.DB_PASS }}
-            export MARIADB_DATABASE=catty_reminders
+            export MARIADB_PASSWORD=ctpass
+            export MARIADB_DATABASE=catty
 
             export HOST_DB_PORT=3306
             export CONTAINER_DB_PORT=3306
@@ -61,9 +61,11 @@ jobs:
               -u ${{ github.actor }} \
               --password-stdin
 
-            echo "Pulling images..."
+            echo "Pulling app image..."
+            docker pull $IMAGE
 
-            docker compose pull
+            echo "Pulling db image..."
+            docker pull mariadb:11
 
             echo "Starting containers..."
 
