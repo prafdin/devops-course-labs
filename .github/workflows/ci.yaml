@@ -23,7 +23,7 @@ jobs:
     - name: Run Pytest
       # Запускаем юнит-тесты и перенаправляем весь вывод в файл test_result.txt
       run: |
-        python -m pytest tests/test_unit.py > test_result.txt
+        python -m pytest tests/test_unit.py --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -31,4 +31,4 @@ jobs:
       if: always()
       with:
         name: test_result
-        path: test_result.txt
+        path: test_result.xml
