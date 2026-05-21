@@ -9,75 +9,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Copy files via SCP
-        uses: appleboy/scp-action@v0.1.7
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
         with:
-          host: course.prafdin.ru
-          username: vboxuser
-          port: 3155
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yaml,config.json"
-          target: "/home/vboxuser/catty-reminders-app"
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: course.prafdin.ru
-          username: vboxuser
-          port: 3155
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 20m
-          timeout: 30s
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -p 3155 petrov.course.prafdin.ru >> ~/.ssh/known_hosts
 
-          script: |
+      - name: Deploy application
+        run: |
+          ssh -p 3155 vboxuser@petrov.course.prafdin.ru << EOF
             set -e
 
-            mkdir -p /home/vboxuser/catty-reminders-app
+            mkdir -p ~/catty-reminders-app
+            cd ~/catty-reminders-app
 
-            cd /home/vboxuser/catty-reminders-app
+            cat > docker-compose.yml << COMPOSE
+            services:
+              db:
+                image: mariadb:11
+                container_name: catty-db
+                restart: always
+                environment:
+                  MARIADB_ROOT_PASSWORD: ${{ secrets.DB_PASS }}
+                  MARIADB_DATABASE: catty
+                  MARIADB_USER: vboxuser
+                  MARIADB_PASSWORD: ctpass
+                ports:
+                  - "3306:3306"
+                volumes:
+                  - db_data:/var/lib/mysql
 
-            OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
+              app:
+                image: ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
+                container_name: catty-app
+                restart: always
+                depends_on:
+                  - db
+                environment:
+                  RELEASE_HASH: ${{ github.sha }}
+                  DB_HOST: db
+                  DB_PORT: 3306
+                  DB_NAME: catty
+                  DB_USER: vboxuser
+                  DB_PASS: ctpass
+                ports:
+                  - "8181:8181"
 
-            export DEPLOY_REF=${{ github.sha }}
-            export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
+            volumes:
+              db_data:
+            COMPOSE
 
-            export DB_CONTAINER_NAME=catty-db
-            export APP_CONTAINER_NAME=catty-app
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u ${{ github.actor }} \
+              --password-stdin
 
-            export MARIADB_ROOT_PASSWORD=${{ secrets.DB_PASS }}
-            export MARIADB_USER=vboxuser
-            export MARIADB_PASSWORD=ctpass
-            export MARIADB_DATABASE=catty
+            IMAGE="ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}"
 
-            export HOST_DB_PORT=3306
-            export CONTAINER_DB_PORT=3306
+            echo "Pulling image: \$IMAGE"
 
-            export HOST_APP_PORT=8181
-            export CONTAINER_APP_PORT=8181
+            for i in 1 2 3 4 5; do
+              docker pull "\$IMAGE" && break
 
-            docker logout ghcr.io || true
-
-            echo "Login to GHCR..."
-
-            for i in 1 2 3; do
-              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
-                -u ${{ github.actor }} \
-                --password-stdin && break
-
-              echo "Retry $i failed..."
+              echo "Pull failed. Retry \$i..."
               sleep 10
             done
 
-            echo "Pulling app image..."
-            docker pull $IMAGE
-
-            echo "Pulling db image..."
             docker pull mariadb:11
 
-            echo "Starting containers..."
+            docker compose down || true
 
-            docker compose up -d --remove-orphans --force-recreate
+            docker compose up -d --force-recreate --remove-orphans
+
+            docker image prune -af || true
 
             docker ps
+          EOF
