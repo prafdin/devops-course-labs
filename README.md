@@ -1,7 +1,5 @@
 ![Catty Logo](static/img/logos/catty-100px.png)
 
-Еще один тестик
-
 # Catty: The Reminders App
 
 *Catty* is a small demo web app for tracking reminders.
