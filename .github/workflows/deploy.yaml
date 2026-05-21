@@ -57,9 +57,18 @@ jobs:
             export HOST_APP_PORT=8181
             export CONTAINER_APP_PORT=8181
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
-              -u ${{ github.actor }} \
-              --password-stdin
+            docker logout ghcr.io || true
+
+            echo "Login to GHCR..."
+
+            for i in 1 2 3; do
+              echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+                -u ${{ github.actor }} \
+                --password-stdin && break
+
+              echo "Retry $i failed..."
+              sleep 10
+            done
 
             echo "Pulling app image..."
             docker pull $IMAGE
