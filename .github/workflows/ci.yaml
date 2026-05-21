@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - lab2
+      - lab2_autotests*
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov playwright
+          playwright install --with-deps chromium
+
+      - name: Start app in background
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > server.log 2>&1 &
+          echo "Waiting for app to start..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8181/login | grep -q "Catty"; then
+              echo "✅ App is ready!"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run tests with JUnit report
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BASE_URL: http://127.0.0.1:8181
+        run: |
+          pytest tests/ --junitxml=test_result.xml -v --tb=short || true
+          if [ -f test_result.xml ] && [ -s test_result.xml ]; then
+            echo "✅ test_result.xml created successfully"
+            head -30 test_result.xml
+          else
+            echo "❌ test_result.xml is missing or empty!"
+            exit 1
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_result.xml
+          retention-days: 1
