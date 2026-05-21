@@ -4,7 +4,6 @@ import threading
 import logging
 from flask import Flask, request, jsonify
 
-# Пути под твоего пользователя
 REPO_DIR = "/home/vboxuser/catty-reminders-app"
 ENV_FILE = "/etc/catty-app-env"
 SERVICE = "catty"
@@ -14,13 +13,10 @@ logging.basicConfig(filename="/home/vboxuser/deploy.log", level=logging.INFO)
 
 def run_deploy(sha):
     try:
-        # 1. Обновляем код
         subprocess.run(["git", "-C", REPO_DIR, "fetch", "--all"], check=True)
         subprocess.run(["git", "-C", REPO_DIR, "reset", "--hard", sha], check=True)
-        # 2. Пишем хэш для GitHub Actions
         with open(ENV_FILE, "w") as f:
             f.write(f"DEPLOY_REF={sha}\n")
-        # 3. Перезапускаем сайт
         subprocess.run(["sudo", "systemctl", "restart", SERVICE], check=True)
         logging.info(f"Success: {sha}")
     except Exception as e:
