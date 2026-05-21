@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 APP_DIR = "/home/vboxuser/catty-reminders-app"
-APP_SERVICE = "catty"
+APP_SERVICE = "catty-reminders"
 ENV_FILE = "/home/vboxuser/catty-reminders-app/.env"
 
 @app.route('/', methods=['GET', 'POST'])
