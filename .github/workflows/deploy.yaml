@@ -10,53 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          python-version: "3.11"
-
-      - name: Build on runner
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          python -m compileall app
-
-      - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT }}" "${{ vars.SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Deploy files and restart app
-        run: |
-          set -euxo pipefail
-
-          rsync -az --delete \
-            --exclude ".git" \
-            --exclude ".github" \
-            --exclude "venv" \
-            --exclude "reminder_db.json" \
-            --exclude ".env" \
-            -e "ssh -p ${{ vars.SSH_PORT }}" \
-            ./ "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/home/semen/catty-reminders-app/"
-
-          ssh -p "${{ vars.SSH_PORT }}" "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" << 'REMOTE'
-          set -e
-          cd /home/semen/catty-reminders-app
-          grep -v '^DEPLOY_REF=' /home/semen/catty-app-env > /tmp/catty-app-env || true
-          echo "DEPLOY_REF=${{ github.sha }}" >> /tmp/catty-app-env
-          sudo -n cp /tmp/catty-app-env /home/semen/catty-app-env
-          python3 -m venv venv
-          ./venv/bin/pip install --upgrade pip
-          ./venv/bin/pip install -r requirements.txt
-          sudo -n systemctl restart catty-app
-          sleep 3
-          sudo -n systemctl is-active catty-app
-          REMOTE
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT }}
+          script: |
+            bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
