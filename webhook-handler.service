@@ -1,0 +1,13 @@
+[Unit]
+Description=Webhook Handler for Lab1
+After=network.target
+
+[Service]
+User=dmitri
+WorkingDirectory=/home/dmitri/webhook-handler
+ExecStart=/home/dmitri/webhook-handler/venv/bin/python /home/dmitri/webhook-handler/logic.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
