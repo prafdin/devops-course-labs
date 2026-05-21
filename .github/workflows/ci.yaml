@@ -52,6 +52,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
+          tags: |
+            ghcr.io/seredovasophia/catty-reminders-app:${{ github.sha }}
+            ghcr.io/seredovasophia/catty-reminders-app:latest
           build-args: |
             DEPLOY_REF=${{ github.sha }}
