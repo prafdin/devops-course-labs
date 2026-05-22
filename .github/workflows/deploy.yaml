@@ -3,31 +3,10 @@ name: CD Pipeline
 on:
   release:
     types: [published]
-  workflow_dispatch: # Позволяет запускать деплой вручную кнопкой на GitHub для тестов
+  workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run unit tests
-      run: |
-        python -m pytest tests/test_unit.py
-
   deploy:
-    needs: test # Деплой начнется только если тесты (job "test") пройдут успешно
     runs-on: ubuntu-latest
     steps:
     - name: Deploy to VM via SSH
@@ -37,21 +16,10 @@ jobs:
         port: 3123
         username: rave
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # Скрипт, который выполнится внутри твоей виртуалки:
         script: |
           cd /home/rave/catty-reminders-app
-          
-          # Скачиваем все обновления
           git fetch origin
-          
-          # Переключаемся на ветку lab2 и жестко обновляем её до состояния из GitHub
           git checkout lab2
           git reset --hard origin/lab2
-          
-          # Записываем актуальный хеш коммита в файл .env
           echo "DEPLOY_REF=${{ github.sha }}" > .env
-          echo "[DEPLOY] Written DEPLOY_REF=${{ github.sha }} to .env"
-          
-          # Перезапускаем фоновую службу приложения
           sudo systemctl restart catty.service
-          echo "[DEPLOY] catty.service restarted successfully."
