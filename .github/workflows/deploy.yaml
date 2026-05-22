@@ -22,4 +22,6 @@ jobs:
           git checkout lab2
           git reset --hard origin/lab2
           echo "DEPLOY_REF=${{ github.sha }}" > .env
+          echo "Wrote DEPLOY_REF=${{ github.sha }} to .env"
           sudo systemctl restart catty.service
+          echo "catty.service restarted successfully."
