@@ -1,0 +1,16 @@
+serverAddr = "course.prafdin.ru"
+serverPort = 7000
+auth.method = "token"
+auth.token = "devops"
+
+[[proxies]]
+name = "hook-tsvetkov"
+type = "http"
+localPort = 8080
+customDomains = ["webhook.tsvetkov.course.prafdin.ru"]
+
+[[proxies]]
+name = "app-tsvetkov"
+type = "http"
+localPort = 8181
+customDomains = ["app.tsvetkov.course.prafdin.ru"]
