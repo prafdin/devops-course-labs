@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=kali
+WorkingDirectory=/home/kali/webhook-handler
+ExecStart=/home/kali/webhook-handler/venv/bin/python logic.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
