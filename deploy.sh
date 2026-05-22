@@ -1,39 +1,116 @@
 #!/bin/bash
-set -e
 
-APP_DIR="/home/vboxuser/catty-reminders-app"
+set -Eeuo pipefail
 
-REF="$1"          # например, refs/heads/lab1
-COMMIT_SHA="$2"   # SHA из payload (after)
+(
+flock -n 9 || {
+    echo "[DEPLOY] Deployment already running"
+    exit 1
+}
 
-cd "$APP_DIR"
+LOG_FILE="$HOME/catty-reminders-app/deploy.log"
+
+exec >> "$LOG_FILE" 2>&1
+
+echo "========================================"
+echo "[DEPLOY] $(date)"
+
+BRANCH="${1:-lab1}"
+
+PROJECT_DIR="$HOME/catty-reminders-app"
+
+echo "[DEPLOY] Project dir: $PROJECT_DIR"
+echo "[DEPLOY] Branch: $BRANCH"
+
+cd "$PROJECT_DIR"
+
+echo "[DEPLOY] Fetching changes"
 
 git fetch origin
 
-if [ -n "$REF" ]; then
-    BRANCH="${REF#refs/heads/}"
-    git checkout "$BRANCH"
-else
-    BRANCH="lab1"
-    git checkout "$BRANCH"
+# Проверяем существование ветки
+if ! git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+    echo "[DEPLOY] Branch '$BRANCH' does not exist"
+    exit 1
 fi
 
-if [ -n "$COMMIT_SHA" ]; then
-    git reset --hard "$COMMIT_SHA"
+echo "[DEPLOY] Checkout branch"
+
+git checkout "$BRANCH"
+
+echo "[DEPLOY] Resetting repository state"
+
+git reset --hard "origin/$BRANCH"
+
+echo "[DEPLOY] Cleaning repository"
+
+git clean -fd
+
+# Создание .env
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    echo "[DEPLOY] Creating .env"
+
+    cp .env.example .env
 fi
 
-# Обновляем DEPLOY_REF для сервиса
-echo "DEPLOY_REF=$(git rev-parse HEAD)" | sudo tee /etc/catty.env > /dev/null
+# Создание virtualenv
+if [ ! -d "venv" ]; then
+    echo "[DEPLOY] Creating virtualenv"
 
-# Устанавливаем зависимости при необходимости
-if [ -f requirements.txt ]; then
-    python3 -m pip install --break-system-packages -r requirements.txt
+    python3 -m venv venv
 fi
 
-# Запускаем тесты, если есть
+echo "[DEPLOY] Activating virtualenv"
+
+source venv/bin/activate
+
+echo "[DEPLOY] Upgrading pip"
+
+pip install --upgrade pip
+
+echo "[DEPLOY] Installing dependencies"
+
+pip install -r requirements.txt
+
+# Проверка Python syntax
+echo "[DEPLOY] Running syntax checks"
+
+find . -type f -name "*.py" \
+    -not -path "./venv/*" \
+    -exec python3 -m py_compile {} \;
+
+# Установка playwright browser
+if [ ! -d "$HOME/.cache/ms-playwright" ]; then
+    echo "[DEPLOY] Installing Playwright Chromium"
+
+    playwright install --with-deps chromium
+fi
+
+echo "[DEPLOY] Restarting application"
+
+sudo systemctl restart catty
+
+echo "[DEPLOY] Waiting for startup"
+
+sleep 5
+
+echo "[DEPLOY] Running healthcheck"
+
+if ! curl -fsS http://127.0.0.1:8181 >/dev/null; then
+    echo "[DEPLOY] Healthcheck failed"
+
+    sudo systemctl status catty --no-pager
+
+    exit 1
+fi
+
+# Тесты
 if [ -d tests ]; then
-    python3 -m unittest discover tests
+    echo "[DEPLOY] Running tests"
+
+    python3 -m pytest -v
 fi
 
-sudo systemctl daemon-reload
-sudo systemctl restart catty.service
+echo "[DEPLOY] Deployment completed successfully"
+
+) 9>/tmp/catty-deploy.lock
