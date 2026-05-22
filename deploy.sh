@@ -46,13 +46,6 @@ echo "[DEPLOY] Cleaning repository"
 
 git clean -fd
 
-# Создание .env
-if [ ! -f ".env" ] && [ -f ".env.example" ]; then
-    echo "[DEPLOY] Creating .env"
-
-    cp .env.example .env
-fi
-
 # Создание virtualenv
 if [ ! -d "venv" ]; then
     echo "[DEPLOY] Creating virtualenv"
