@@ -11,7 +11,7 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmypass"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
 
   app:
     image: ghcr.io/sofiastepanova/catty-reminders-app:${DEPLOY_REF}
@@ -23,6 +23,11 @@ services:
       db:
         condition: service_healthy
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/login"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   db_data:
