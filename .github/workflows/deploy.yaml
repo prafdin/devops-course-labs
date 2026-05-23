@@ -13,7 +13,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: password-123
+          username: stepanova
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3121
           script: |
