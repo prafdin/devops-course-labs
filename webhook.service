@@ -1,0 +1,14 @@
+[Unit]
+Description=Webhook Listener Service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/alexander
+ExecStart=/usr/bin/python3 /home/alexander/webhook_server.py
+Restart=always
+RestartSec=10
+SyslogIdentifier=webhook-server
+User=alexander
+
+[Install]
+WantedBy=multi-user.target
