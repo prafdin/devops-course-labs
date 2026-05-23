@@ -1,21 +1,16 @@
 FROM python:3.12-slim
 
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Копируем зависимости
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем код приложения
 COPY app/ ./app/
 COPY static/ ./static/
 COPY templates/ ./templates/
 COPY config.json .
 
-HEALTHCHECK --interval=1s --timeout=2s --retries=5 CMD curl --fail http://localhost:8181/login || exit 1
-
-# Открываем порт 8181
-EXPOSE 8181
-
-# Команда запуска
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
+# Ждем базу перед стартом
+CMD sh -c "while ! nc -z db 3306; do echo 'Waiting for DB...'; sleep 2; done; uvicorn app.main:app --host 0.0.0.0 --port 8181"
