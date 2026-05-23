@@ -1,6 +1,7 @@
 services:
   db:
     image: mysql:8.0
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: mypass
       MYSQL_DATABASE: catty_reminders
@@ -8,9 +9,9 @@ services:
       - db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmypass"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
     image: ghcr.io/sofiastepanova/catty-reminders-app:${DEPLOY_REF}
