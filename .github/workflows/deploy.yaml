@@ -1,4 +1,4 @@
-name: Deploy
+name: CD
 
 on:
   release:
@@ -7,8 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
+<<<<<<< HEAD
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -24,11 +24,24 @@ jobs:
       - name: Deploy application
         run: |
           ssh -p 3155 vboxuser@petrov.course.prafdin.ru << EOF
+=======
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          port: 3155
+          username: kali
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+>>>>>>> d8cc141 (test: trigger deploy pipeline)
             set -e
+            cd /home/vboxuser/catty-reminders-app || exit 1
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            mkdir -p ~/catty-reminders-app
-            cd ~/catty-reminders-app
+            sudo env DEPLOY_REF=${{ github.sha }} docker compose pull app || true
 
+<<<<<<< HEAD
             cat > docker-compose.yml << COMPOSE
             services:
               db:
@@ -90,3 +103,20 @@ jobs:
 
             docker ps
           EOF
+=======
+            sudo env DEPLOY_REF=${{ github.sha }} docker compose down || true
+            sudo env DEPLOY_REF=${{ github.sha }} docker compose up -d --remove-orphans
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
+                echo "App is healthy"
+                exit 0
+              fi
+              echo "Waiting for app... ($i/30)"
+              sleep 5
+            done
+
+            echo "App failed to start"
+            sudo docker compose logs app
+            exit 1
+>>>>>>> d8cc141 (test: trigger deploy pipeline)
