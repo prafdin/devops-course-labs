@@ -51,6 +51,29 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      - name: Setup config
+        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/' config.json
+
+      - name: Initialize Database and Create User
+        run: |
+          python3 -c "
+          import sys
+          import os
+          sys.path.append(os.getcwd())
+          from app.database import SessionLocal, engine, Base
+          from app.models import User
+          from app.utils.auth import get_password_hash
+          
+          Base.metadata.create_all(bind=engine)
+          
+          db = SessionLocal()
+          users = [('heisenberg', 'P@ssw0rd'), ('tester', 'foobar123')]
+          for u, p in users:
+              db.add(User(username=u, password=get_password_hash(p)))
+          db.commit()
+          db.close()
+          "
+
       - name: Start app
         run: |
           DB_HOST=127.0.0.1 nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app.log 2>&1 &
