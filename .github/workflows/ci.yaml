@@ -2,61 +2,42 @@ name: CI
 
 on:
   push:
-    branches:
-      - lab4*
+    branches: [lab4*]
   pull_request:
-    branches:
-      - lab4*
+    branches: [lab4*]
 
 jobs:
   pipeline:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:latest
+        image: mariadb:10.11
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: mypass
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: 'pip'
 
-      - name: Temporary swap config for tests
-        run: |
-          sed -i 's/"host": "127.0.0.1"/"host": "db"/' config.json
+      - name: Swap config to localhost for tests
+        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/' config.json
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
-        
-        - name: Seed database
-        run: |
-          sleep 15
-          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -e "CREATE DATABASE IF NOT EXISTS catty_reminders; GRANT ALL PRIVILEGES ON catty_reminders.* TO 'root'@'%' IDENTIFIED BY '${{ secrets.MYSQL_ROOT_PASSWORD }}'; FLUSH PRIVILEGES;"
-          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders <<EOF
-          CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL
-          );
-          INSERT IGNORE INTO users (username, password) VALUES ('testuser', 'testpassword');
-          EOF
 
       - name: Start app
         run: |
@@ -66,30 +47,15 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app.log && exit 1)
+        run: pytest --junitxml=test_result.xml
 
-      - name: Revert config swap before build
+      - name: Revert config
         if: always()
-        run: |
-          git checkout config.json
+        run: git checkout config.json
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test_result
-          path: test_result.xml
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
+      - name: Build and push
+        if: success()
         uses: docker/build-push-action@v5
         with:
-          context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/catty-reminders:${{ github.sha }}
