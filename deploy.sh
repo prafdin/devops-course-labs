@@ -1,14 +1,33 @@
 #!/bin/bash
 set -e
 
-APP_DIR="/home/qzm/catty-compose"
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" || -z "$REPO_NAME" ]]; then
+    echo "CRITICAL: Missing required variables."
+    exit 1
+fi
 
-echo "Deploying..."
+TARGET_PORT="${SERVER_PORT:-22}"
+REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+APP_DIR="/home/qzm/Desktop/catty-reminders-app"
 
-ssh -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << REMOTE_SCRIPT
+echo "Deploying via Docker Compose..."
+
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << REMOTE_SCRIPT
+    set -e
+
     cd ${APP_DIR}
+
+    echo "--> Stopping old compose stack"
     docker compose down --remove-orphans
-    docker compose pull
-    docker compose up -d
-    docker image prune -af
+
+    echo "--> Pulling latest images"
+    REPO_LOWER=${REPO_LOWER} RELEASE_HASH=${RELEASE_HASH} docker compose pull
+    
+    echo "--> Starting containers"
+    REPO_LOWER=${REPO_LOWER} RELEASE_HASH=${RELEASE_HASH} docker compose up -d
+
+    echo "--> Cleaning up old unused images"
+    docker image prune -af || true
+    
+    echo "--> Deployment finished successfully"
 REMOTE_SCRIPT
