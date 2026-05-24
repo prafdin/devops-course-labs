@@ -15,7 +15,8 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3158
+          envs: GITHUB_SHA
           script: |
             cd /home/vboxuser/catty-reminders-app
             chmod +x deploy.sh
-            ./deploy.sh lab2 ${{ github.sha }}
+            ./deploy.sh lab2 $GITHUB_SHA
