@@ -53,7 +53,7 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml
+        run: pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat nohup.out && exit 1)
 
       - name: Revert config swap before build
         if: always()
