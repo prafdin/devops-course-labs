@@ -3,7 +3,6 @@ version: '3.8'
 services:
   db:
     image: mariadb:10.11
-    container_name: catty_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: mypass
@@ -12,8 +11,7 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
-    container_name: catty_backend
+    image: ghcr.io/kuzminstanislav/catty-reminders-app:latest
     restart: unless-stopped
     ports:
       - "8181:8181"
