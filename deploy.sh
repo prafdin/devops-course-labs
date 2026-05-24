@@ -4,7 +4,8 @@ set -e
 
 cd /home/vboxuser/catty-reminders-app
 
-COMMIT_HASH="$1"
+BRANCH="$1"
+COMMIT_HASH=$(git rev-parse "origin/$BRANCH")
 
 if [ -z "$COMMIT_HASH" ]; then
     echo "ERROR: Commit hash is not provided!"
