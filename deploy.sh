@@ -12,8 +12,16 @@ if [ $? -eq 0 ]; then
     echo "3. Building and publishing the application..."
     dotnet publish -c Release -o /home/alexander/app ExampleWebService/ExampleWebService.csproj
     
-    # 3.1 Получаем хэш последнего коммита и записываем его в файл окружения
-    COMMIT_HASH=$(git rev-parse HEAD)
+    # Если скрипту передан аргумент (хэш из вебхука), используем его. 
+    # Если нет — берем локальный хэш из git rev-parse.
+    if [ -n "$1" ]; then
+        COMMIT_HASH="$1"
+        echo "Using commit SHA from webhook payload: $COMMIT_HASH"
+    else
+        COMMIT_HASH=$(git rev-parse HEAD)
+        echo "Using local git commit SHA: $COMMIT_HASH"
+    fi
+    
     echo "DEPLOY_REF=$COMMIT_HASH" > /home/alexander/app/csharp.env
     echo "Saved commit hash ($COMMIT_HASH) to environment file."
     
