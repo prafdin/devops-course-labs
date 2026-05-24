@@ -13,12 +13,12 @@ echo "=== DEPLOY ветки $BRANCH ==="
 
 cd $APP_DIR
 
-# Обновляем код до последнего коммита ветки
+# Обновляем код
 git fetch origin
 git checkout -B $BRANCH origin/$BRANCH
 git reset --hard origin/$BRANCH
 
-# Получаем текущий SHA для деплоя
+# Получаем текущий SHA
 CURRENT_SHA=$(git rev-parse HEAD)
 echo "DEPLOY_REF=$CURRENT_SHA" > "$APP_DIR/.env"
 echo "DEPLOY_TIME=$(date -Iseconds)" >> "$APP_DIR/.env"
@@ -32,48 +32,49 @@ if [ -f "requirements.txt" ]; then
     fi
     source venv/bin/activate
     echo "=== Установка зависимостей ==="
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install --upgrade pip > /dev/null 2>&1 || true
+    pip install -r requirements.txt > /dev/null 2>&1 || pip install -r requirements.txt
     
-    # Устанавливаем Playwright браузер если нужно
-    if pip list | grep -q playwright; then
+    # Устанавливаем Playwright браузер
+    if pip list 2>/dev/null | grep -q playwright; then
         echo "=== Установка Playwright браузеров ==="
-        playwright install chromium
+        playwright install chromium > /dev/null 2>&1 || true
     fi
 fi
 
-# Исправляем права на .env файл
-sudo chown ubuntu:ubuntu "$APP_DIR/.env" 2>/dev/null || true
-chmod 644 "$APP_DIR/.env" 2>/dev/null || true
-
-# Перезапускаем через systemd
+# Перезапускаем сервис
 echo "=== Перезапуск сервиса ==="
 sudo systemctl daemon-reload
 sudo systemctl restart app.service
 
-# Проверяем что сервис успешно запустился
+# Проверяем что сервис запустился
 sleep 3
 if sudo systemctl is-active --quiet app.service; then
     echo "✅ Сервис успешно запущен"
-    echo "=== Статус сервиса ==="
-    sudo systemctl status app.service --no-pager --lines 0
 else
     echo "❌ Сервис не запустился"
     sudo systemctl status app.service --no-pager
-    echo "=== Логи сервиса ==="
-    sudo journalctl -u app.service -n 30 --no-pager
     exit 1
 fi
 
-# Дополнительная проверка что приложение отвечает
+# Проверяем что приложение отвечает
 sleep 2
-if curl -s http://127.0.0.1:8181/ > /dev/null 2>&1; then
-    echo "✅ Приложение отвечает на запросы"
-else
-    echo "⚠️ Сервис запущен, но приложение не отвечает"
-    echo "=== Логи приложения ==="
-    sudo journalctl -u app.service -n 20 --no-pager
-fi
+MAX_RETRIES=10
+for i in $(seq 1 $MAX_RETRIES); do
+    if curl -s -f http://127.0.0.1:8181/login > /dev/null 2>&1; then
+        echo "✅ Приложение отвечает на запросы"
+        break
+    fi
+    echo "   Ожидаем запуск приложения... (попытка $i/$MAX_RETRIES)"
+    sleep 2
+    
+    if [ $i -eq $MAX_RETRIES ]; then
+        echo "❌ Приложение не отвечает после перезапуска"
+        echo "=== Логи приложения ==="
+        sudo journalctl -u app.service -n 30 --no-pager
+        exit 1
+    fi
+done
 
 echo "=== Деплой ветки $BRANCH завершен ==="
 echo "✅ Деплой SHA: $CURRENT_SHA"

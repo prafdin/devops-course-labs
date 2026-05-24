@@ -13,7 +13,7 @@ echo "=== Запуск тестов проекта ветки $BRANCH ==="
 
 cd "$APP_DIR"
 
-# Обновляем код до последнего коммита ветки
+# Обновляем код
 git fetch origin
 git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || git checkout "$BRANCH"
 git pull origin "$BRANCH"
@@ -31,34 +31,27 @@ fi
 
 source venv/bin/activate
 
-# Устанавливаем зависимости
+# Устанавливаем зависимости (убираем -q чтобы избежать ошибок)
 if [ -f "requirements.txt" ]; then
     echo "=== Установка зависимостей ==="
-    pip install -q -r requirements.txt
+    pip install --upgrade pip > /dev/null 2>&1 || true
+    pip install -r requirements.txt > /dev/null 2>&1 || pip install -r requirements.txt
 fi
 
-# Устанавливаем Playwright браузер если нужно
-if pip list | grep -q playwright; then
+# Устанавливаем Playwright браузер
+if pip list 2>/dev/null | grep -q playwright; then
     echo "=== Устанавливаем Playwright браузер ==="
-    playwright install chromium
+    playwright install chromium > /dev/null 2>&1 || true
 fi
 
-# Проверяем что сервис приложения работает
+# Проверяем что приложение работает
 echo "=== Проверка работающего приложения ==="
-if curl -s http://127.0.0.1:8181/ > /dev/null 2>&1; then
+if curl -s -f http://127.0.0.1:8181/login > /dev/null 2>&1; then
     echo "✅ Приложение доступно"
 else
-    echo "⚠️ Приложение не отвечает, проверяем статус сервиса..."
+    echo "❌ Приложение не доступно"
     sudo systemctl status app.service --no-pager
-    echo "Пытаемся перезапустить сервис..."
-    sudo systemctl restart app.service
-    sleep 5
-    if curl -s http://127.0.0.1:8181/ > /dev/null 2>&1; then
-        echo "✅ Приложение восстановлено"
-    else
-        echo "❌ Приложение не доступно"
-        exit 1
-    fi
+    exit 1
 fi
 
 # Запускаем тесты
