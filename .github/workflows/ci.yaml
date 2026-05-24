@@ -74,7 +74,7 @@ jobs:
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 5
+          sleep 10
 
       - name: Run tests
         env:
