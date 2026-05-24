@@ -3,20 +3,28 @@ name: CI
 on:
   push:
     branches:
-      - 'lab3*'
+      - lab4*
   pull_request:
     branches:
-      - 'lab3*'
+      - lab4*
 
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -29,15 +37,15 @@ jobs:
 
       - name: Start app
         run: |
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8181 &
-          sleep 5
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 4
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
 
-      - name: Upload results
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -47,20 +55,15 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     needs: pipeline
-
+    if: success()
     permissions:
       contents: read
       packages: write
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Prepare image name
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
-
+      
       - name: Get commit hash
         id: vars
         run: |
@@ -68,8 +71,8 @@ jobs:
           echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
           echo "Image tag: $COMMIT_HASH"
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -79,12 +82,12 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ env.REPO_LOWER }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
           tags: |
             type=raw,value=${{ steps.vars.outputs.commit_hash }}
 
-      - name: Build and push image
-        uses: docker/build-push-action@v5
+      - name: Build and push
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
