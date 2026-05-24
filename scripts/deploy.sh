@@ -17,7 +17,7 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
     sudo systemctl stop app.service || true
     sudo systemctl disable app.service || true
 
-    docker pull \${IMAGE_NAME}
+    docker pull ${IMAGE_NAME}
 
     docker stop catty-app || true
     docker rm catty-app || true
@@ -26,9 +26,8 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
       --name catty-app \
       --restart always \
       -p 8181:8181 \
-      -e DEPLOY_REF=${RELEASE_HASH} \
       --env-file /home/yarik/Desktop/catty-reminders-app/.env \
-      \${IMAGE_NAME}
+      ${IMAGE_NAME}
 
     sleep 5
 
