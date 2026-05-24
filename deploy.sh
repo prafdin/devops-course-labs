@@ -1,83 +1,38 @@
 #!/bin/bash
-
 set -e
 
-if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
-    echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" || -z "$REPO_NAME" ]]; then
+    echo "CRITICAL: Missing required variables."
     exit 1
 fi
 
-if [ -z "$RELEASE_HASH" ]; then
-    echo "Error: RELEASE_HASH must be set"
-    exit 1
-fi
+REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 
-if [ -z "$IMAGE_NAME" ]; then
-    echo "Error: IMAGE_NAME must be set"
-    exit 1
-fi
+TARGET_PORT="${SERVER_PORT:-22}"
+APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
 
-if [ -z "$DOCKER_TOKEN" ] || [ -z "$GITHUB_ACTOR" ]; then
-    echo "Error: DOCKER_TOKEN and GITHUB_ACTOR must be set"
-    exit 1
-fi
+echo "Deploying image: ghcr.io/$REPO_LOWER:$RELEASE_HASH"
 
-DEPLOY_PORT=${DEPLOY_PORT:-22}
-CONTAINER_NAME="catty-app"
-PORT="8181"
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+    set -e
 
-IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
-IMAGE="$IMAGE_NAME:$RELEASE_HASH"
+    export REPO_LOWER="${REPO_LOWER}"
+    export RELEASE_HASH="${RELEASE_HASH}"
 
-echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
-echo "User: $DEPLOY_USER"
-echo "Release hash: $RELEASE_HASH"
-echo "Image: $IMAGE"
+    echo "--> Navigating to application directory"
+    cd ${APP_DIR}
 
-SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
+    echo "--> Stopping old compose stack"
+    docker compose down
 
-ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" "
-DOCKER_TOKEN='$DOCKER_TOKEN' \
-GITHUB_ACTOR='$GITHUB_ACTOR' \
-RELEASE_HASH='$RELEASE_HASH' \
-IMAGE_NAME='$IMAGE_NAME' \
-IMAGE='$IMAGE' \
-PORT='$PORT' \
-CONTAINER_NAME='$CONTAINER_NAME' \
-bash -s
-" << 'EOF'
+    echo "--> Pulling latest images"
+    docker compose pull
 
-set -e
+    echo "--> Starting containers"
+    docker compose up -d
 
-: "${PORT:?PORT is empty}"
-: "${CONTAINER_NAME:?CONTAINER_NAME is empty}"
-
-echo "> Logging in to GitHub Container Registry..."
-echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-
-echo "> Pulling image: $IMAGE"
-sudo docker pull "$IMAGE"
-
-echo "> Stopping old container..."
-sudo docker stop "$CONTAINER_NAME" || true
-sudo docker rm "$CONTAINER_NAME" || true
-
-echo "> Starting new container..."
-sudo docker run -d \
-    -p "$PORT:$PORT" \
-    --name "$CONTAINER_NAME" \
-    --restart unless-stopped \
-    -e DEPLOY_REF="$RELEASE_HASH" \
-    "$IMAGE"
-
-sleep 4
-
-if sudo docker ps | grep -q "$CONTAINER_NAME"; then
-    echo "Deployment completed successfully"
-else
-    echo "ERROR: Application failed to start"
-    sudo docker logs "$CONTAINER_NAME"
-    exit 1
-fi
-
-EOF
+    echo "--> Cleaning up old unused images"
+    docker image prune -af || true
+    
+    echo "--> Deployment finished successfully"
+REMOTE_SCRIPT
