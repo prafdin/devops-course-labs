@@ -52,7 +52,13 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Setup config
-        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/' config.json
+        run: |
+          python3 -c "
+          import json
+          with open('config.json', 'r') as f:
+              data = json.load(f)
+          data['host'] = '127.0.0.1'
+          with open('config.json', 'w') as f:
 
       - name: Initialize Database and Create User
         run: |
