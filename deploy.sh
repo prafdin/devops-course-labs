@@ -1,12 +1,42 @@
 #!/bin/bash
 
-BRANCH="${1:-lab1}"
-cd "$HOME/catty-reminders-app"
+set -e
+echo "Current directory is $(pwd)"
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+COMMIT_HASH="$1"
+
+if [ -z "$COMMIT_HASH" ]; then
+    echo "ERROR: Commit hash is not provided!"
+    exit 1
+fi
 
 git fetch origin
+git checkout "$COMMIT_HASH"
 
-git checkout -B "$BRANCH" "origin/$BRANCH"
+echo "2. Setting up dependencies..."
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
 
-git reset --hard "origin/$BRANCH"
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 
-sudo systemctl restart catty
+python3 -m playwright install chromium
+
+if ! python3 -m pytest tests/; then
+    echo "ERROR: Tests failed! Performing rollback to the previous version..."
+    git checkout -
+    echo "Restarting main application service to apply rollback..."
+    sudo systemctl restart caddy
+    exit 1
+fi
+
+echo "DEPLOY_REF=$COMMIT_HASH" > .env
+
+sudo systemctl restart caddy
+
