@@ -44,6 +44,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
+        
+        - name: Seed database
+        run: |
+          sleep 15
+          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -e "CREATE DATABASE IF NOT EXISTS catty_reminders; GRANT ALL PRIVILEGES ON catty_reminders.* TO 'root'@'%' IDENTIFIED BY '${{ secrets.MYSQL_ROOT_PASSWORD }}'; FLUSH PRIVILEGES;"
+          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders <<EOF
+          CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL
+          );
+          INSERT IGNORE INTO users (username, password) VALUES ('testuser', 'testpassword');
+          EOF
 
       - name: Start app
         run: |
