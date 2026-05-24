@@ -42,7 +42,7 @@ jobs:
 
       - name: Generate config.json for CI
         run: |
-          cat <<EOF > config.json
+          cat <<EOF_JSON > config.json
           {
             "db_config": {
               "host": "127.0.0.1",
@@ -51,24 +51,25 @@ jobs:
               "password": "${{ secrets.MYSQL_ROOT_PASSWORD }}",
               "database": "catty_reminders"
             },
+            "db_path": "sqlite:///./test.db",
             "users": {
               "testuser": "testpassword"
             },
             "secret_key": "super-secret-key-for-testing"
           }
-          EOF
+          EOF_JSON
 
       - name: Seed database
         run: |
-          sleep 5
-          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders <<EOF
+          sleep 10
+          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders <<EOF_SQL
           CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(255) NOT NULL,
+            username VARCHAR(255) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL
           );
-          INSERT INTO users (username, password) VALUES ('testuser', 'testpassword');
-          EOF
+          INSERT IGNORE INTO users (username, password) VALUES ('testuser', 'testpassword');
+          EOF_SQL
 
       - name: Start app
         run: |
@@ -104,7 +105,6 @@ jobs:
         run: |
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
-          echo "Image tag: $COMMIT_HASH"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
