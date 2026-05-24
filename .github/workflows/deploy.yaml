@@ -15,7 +15,7 @@ jobs:
           username: ilya
           port: 3120
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-script: |
+          script: |
             bash -c '
               set -e
               cd /home/ilya/catty-reminders-app
