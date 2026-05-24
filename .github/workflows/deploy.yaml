@@ -49,7 +49,7 @@ jobs:
         port: ${{ vars.DEPLOY_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: ".env,docker-compose.yaml,config.json"
-        target: /home/qzm/catty-compose
+        target: /home/qzm/Desktop/catty-reminders-app
 
     - name: Deploy to server
       uses: appleboy/ssh-action@master
