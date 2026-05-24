@@ -47,13 +47,13 @@ jobs:
 
       - name: Start app
         run: |
-          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > app.log 2>&1 &
           sleep 10
 
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat nohup.out && exit 1)
+        run: pytest --junitxml=test_result.xml || (echo "--- APP LOGS ---" && cat app.log && exit 1)
 
       - name: Revert config swap before build
         if: always()
