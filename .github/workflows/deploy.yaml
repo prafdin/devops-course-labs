@@ -36,10 +36,11 @@ jobs:
           },
           "users": {
             "admin": "admin"
-          }
+          },
+          "secret_key": "very-secret-production-key"
         }
         EOF
-    
+
     - name: Copy files to server
       uses: appleboy/scp-action@master
       with:

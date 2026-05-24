@@ -53,7 +53,8 @@ jobs:
             },
             "users": {
               "testuser": "testpassword"
-            }
+            },
+            "secret_key": "super-secret-key-for-testing"
           }
           EOF
 
