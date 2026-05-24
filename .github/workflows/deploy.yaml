@@ -27,7 +27,7 @@ jobs:
         
         cat <<EOF > config.json
         {
-          "database": {
+          "db_config": {
             "host": "db",
             "port": 3306,
             "user": "ct",
