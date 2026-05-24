@@ -61,7 +61,14 @@ jobs:
       - name: Seed database
         run: |
           sleep 5
-          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders -e "INSERT INTO users (username, password) VALUES ('testuser', 'testpassword');" || echo "Table might not exist yet, assuming app handles schema migration"
+          mysql -h 127.0.0.1 -u root -p"${{ secrets.MYSQL_ROOT_PASSWORD }}" -D catty_reminders <<EOF
+          CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL,
+            password VARCHAR(255) NOT NULL
+          );
+          INSERT INTO users (username, password) VALUES ('testuser', 'testpassword');
+          EOF
 
       - name: Start app
         run: |
