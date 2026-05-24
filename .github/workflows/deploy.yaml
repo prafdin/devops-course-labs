@@ -1,0 +1,21 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3158
+          script: |
+            cd /home/vboxuser/catty-reminders-app
+            chmod +x deploy.sh
+            ./deploy.sh lab2 ${{ github.sha }}
