@@ -12,15 +12,15 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: ilya
-          port: 3120
+          username: ubu
+          port: 3145
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             bash -c '
               set -e
-              cd /home/ilya/catty-reminders-app
+              cd /home/ubu/catty-reminders-app
               
-              # ВАЖНО: Подтягиваем свежие конфигурационные файлы из репозитория на ВМ
+              # Подтягиваем свежие конфигурационные файлы из репозитория на ВМ
               git fetch origin
               git checkout lab4
               git pull origin lab4
@@ -33,7 +33,7 @@ jobs:
               export DB_CONTAINER_NAME=catty-db
               export APP_CONTAINER_NAME=catty-app
               export MARIADB_ROOT_PASSWORD=mypass
-              export MARIADB_USER=ilya
+              export MARIADB_USER=ubu
               export MARIADB_PASSWORD=mypass
               export MARIADB_DATABASE=catty_reminders
               export HOST_DB_PORT=3306
@@ -42,5 +42,4 @@ jobs:
               export CONTEINER_APP_PORT=8181
 
               echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-              docker compose up -d --pull always --remove-orphans --force-recreate 
-            '
+              docker c
