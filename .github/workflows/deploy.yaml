@@ -12,7 +12,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Create .env file
+    - name: Create .env and config.json
       run: |
         echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
         echo "DEPLOY_REF=${{ github.sha }}" >> .env
@@ -24,25 +24,27 @@ jobs:
         echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD}}" >> .env
         echo "MYSQL_DATABASE=catty_reminders" >> .env
         echo "DB_PORT=3306" >> .env
+        
+        cat <<EOF > config.json
+        {
+          "database": {
+            "host": "db",
+            "port": 3306,
+            "user": "ct",
+            "password": "${{ secrets.MYSQL_PASSWORD }}",
+            "database": "catty_reminders"
+          }
+        }
+        EOF
     
-    - name: Copy .env to server
+    - name: Copy files to server
       uses: appleboy/scp-action@master
       with:
         host: ${{ vars.DEPLOY_HOST }}
         username: ${{ vars.DEPLOY_USER }}
         port: ${{ vars.DEPLOY_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./.env
-        target: /home/qzm/catty-compose
-    
-    - name: Copy docker-compose.yaml to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ./docker-compose.yaml
+        source: ".env,docker-compose.yaml,config.json"
         target: /home/qzm/catty-compose
 
     - name: Deploy to server
