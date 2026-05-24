@@ -7,49 +7,34 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Execute Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER }}
-          port: ${{ vars.DEPLOY_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          key_path: ""
-          script: |
-            set -e
-            
-            OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
-            IMAGE_PATH="ghcr.io/$OWNER/$REPO_NAME"
-            
-            CONTAINER_NAME="catty-app"
-            HOST_PORT=8181
-            CONTAINER_PORT=8181
-            IMAGE="$IMAGE_PATH:${{ github.sha }}"
-            
-            echo "=== ПОДКЛЮЧЕНИЕ УСПЕШНО ==="
-            echo "Pulling image: $IMAGE"
-            docker pull $IMAGE
-            
-            echo "=== Stopping old container ==="
-            docker stop $CONTAINER_NAME || true
-            docker rm $CONTAINER_NAME || true
-            
-            echo "=== Starting new container ==="
-            docker run -d \
-                -p $HOST_PORT:$CONTAINER_PORT \
-                --name $CONTAINER_NAME \
-                --restart unless-stopped \
-                -e DEPLOY_REF=${{ github.sha }} \
-                $IMAGE
-            
-            sleep 4
-            if docker ps | grep -q $CONTAINER_NAME; then
-                echo "Deployment completed successfully!"
-            else
-                echo "ERROR: Application failed to start"
-                docker logs $CONTAINER_NAME
-                exit 1
-            fi
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-list -n 1 $TAG)
+        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+        echo "Deploying release: $TAG"
+        echo "Commit hash: $HASH"
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.repository_owner }}
+      run: |
+        chmod +x deploy.sh
+        ./deploy.sh
