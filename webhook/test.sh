@@ -13,7 +13,8 @@ echo "🧪 Running tests for branch: $BRANCH_NAME"
 
 cd "$PROJECT_DIR"
 
-git fetch --all
+# ЗАБИРАЕМ ВСЕ ВЕТКИ (включая новые от GitHub Actions)
+git fetch --all --prune
 git checkout -B "$BRANCH_NAME" "origin/$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
 git pull origin "$BRANCH_NAME"
 
