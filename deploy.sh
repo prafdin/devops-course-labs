@@ -1,10 +1,8 @@
 #!/bin/bash
 
 set -e
-echo "Current directory is $(pwd)"
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$PROJECT_ROOT"
+cd /home/vboxuser/catty-reminders-app
 
 COMMIT_HASH="$1"
 
@@ -16,7 +14,6 @@ fi
 git fetch origin
 git checkout "$COMMIT_HASH"
 
-echo "2. Setting up dependencies..."
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv venv
@@ -32,11 +29,11 @@ if ! python3 -m pytest tests/; then
     echo "ERROR: Tests failed! Performing rollback to the previous version..."
     git checkout -
     echo "Restarting main application service to apply rollback..."
-    sudo systemctl restart caddy
+    sudo systemctl restart catty
     exit 1
 fi
 
 echo "DEPLOY_REF=$COMMIT_HASH" > .env
 
-sudo systemctl restart caddy
+sudo systemctl restart catty
 
