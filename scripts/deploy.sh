@@ -27,6 +27,7 @@ ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}
       --restart always \
       -p 8181:8181 \
       --env-file /home/yarik/Desktop/catty-reminders-app/.env \
+      -e DEPLOY_REF=${RELEASE_HASH} \
       ${IMAGE_NAME}
 
     sleep 5
