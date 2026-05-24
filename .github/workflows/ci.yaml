@@ -59,6 +59,8 @@ jobs:
               data = json.load(f)
           data['host'] = '127.0.0.1'
           with open('config.json', 'w') as f:
+              json.dump(data, f, indent=4)
+          "
 
       - name: Initialize Database and Create User
         run: |
