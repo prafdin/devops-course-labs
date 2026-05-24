@@ -1,0 +1,28 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to VM via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: course.prafdin.ru
+        username: golosov
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 3107
+        script: |
+          cd ~/catty-reminders-app
+
+          git fetch --all
+          git checkout lab2
+          git pull origin lab2
+
+          echo "DEPLOY_REF=${{ github.event.release.tag_name }}" | sudo tee /etc/catty-app-env
+
+          sudo systemctl restart catty.service
