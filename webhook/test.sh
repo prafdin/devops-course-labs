@@ -1,21 +1,21 @@
 #!/bin/bash
 set -e
 
-BRANCH=$1
-APP_DIR="/home/ubuntu/devops/catty-reminders-app"
+PROJECT_DIR="/home/ubuntu/devops/catty-reminders-app"
+BRANCH_NAME=$1
 
-if [ -z "$BRANCH" ]; then
+if [ -z "$BRANCH_NAME" ]; then
     echo "❌ No branch specified"
     exit 1
 fi
 
-echo "=== Запуск тестов ветки $BRANCH ==="
+echo "🧪 Running tests for branch: $BRANCH_NAME"
 
-cd "$APP_DIR"
+cd "$PROJECT_DIR"
 
 git fetch --all
-git checkout -B "$BRANCH" "origin/$BRANCH" 2>/dev/null || git checkout "$BRANCH"
-git pull origin "$BRANCH"
+git checkout -B "$BRANCH_NAME" "origin/$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
+git pull origin "$BRANCH_NAME"
 
 if [ ! -d "venv" ]; then
     python3 -m venv venv
@@ -23,6 +23,6 @@ fi
 
 source venv/bin/activate
 
-pip install -q -r requirements.txt
+pip install -q -r requirements.txt 2>/dev/null || true
 
 python3 -m pytest -v --tb=short

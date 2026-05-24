@@ -52,7 +52,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
     def _handle_push(self, data):
         branch = data.get('ref', '').replace('refs/heads/', '')
-        commit = data.get('after')  # ЭТОТ КОММИТ МЫ ТЕСТИРУЕМ И ДЕПЛОИМ
+        commit = data.get('after')
         author = data.get('pusher', {}).get('name', 'unknown')
         commits_count = len(data.get('commits', []))
 
@@ -67,11 +67,11 @@ class WebhookHandler(BaseHTTPRequestHandler):
             return
 
         print("   🧪 Running tests...")
-        subprocess.run([TEST_SCRIPT, branch], check=True)  # Тест на ветке
+        subprocess.run([TEST_SCRIPT, branch], check=True)
         print("   ✅ Tests passed")
 
         print("   🚀 Deploying...")
-        subprocess.run([DEPLOY_SCRIPT, commit], check=True)  # Деплой на коммит
+        subprocess.run([DEPLOY_SCRIPT, commit], check=True)
         print("   ✅ Deploy complete")
 
 
