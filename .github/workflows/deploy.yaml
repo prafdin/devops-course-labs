@@ -52,14 +52,13 @@ jobs:
         target: /home/qzm/Desktop/catty-reminders-app
 
     - name: Deploy to server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          set -x
-          cd /home/qzm/Desktop/catty-reminders-app
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          sudo docker compose up -d --pull always --remove-orphans --force-recreate
+      env:
+        SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        REPO_NAME: ${{ github.repository }}
+      run: |
+        scp -P ${SERVER_PORT:-22} -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
+        chmod +x deploy.sh
+        ./deploy.sh
