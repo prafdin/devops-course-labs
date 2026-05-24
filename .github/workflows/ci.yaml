@@ -1,21 +1,17 @@
 name: CI
 on:
   push:
-<<<<<<< HEAD
     branches: [ lab4* ]
   pull_request:
     branches: [ lab4* ]
 
-=======
     branches:
       - '**'
->>>>>>> d8cc141 (test: trigger deploy pipeline)
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-<<<<<<< HEAD
       - name: Hadolint
         run: docker run --rm -i hadolint/hadolint hadolint - < Dockerfile
 
@@ -42,7 +38,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt uvicorn pytest-playwright
-=======
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -50,11 +45,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest-playwright
->>>>>>> d8cc141 (test: trigger deploy pipeline)
           playwright install --with-deps chromium
       - name: Build Docker image for testing
         run: |
-<<<<<<< HEAD
           sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
       - name: Start app
         run: |
@@ -98,7 +91,6 @@ jobs:
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "OWNER_LOWER=$OWNER_LOWER" >> $GITHUB_ENV
 
-=======
           docker build -t catty-test .
       - name: Run MySQL container
         run: |
@@ -146,7 +138,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
->>>>>>> d8cc141 (test: trigger deploy pipeline)
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
