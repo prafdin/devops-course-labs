@@ -2,60 +2,39 @@
 
 set -e
 
-if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" ]]; then
-    echo "CRITICAL: SERVER_HOST and SERVER_USER variables are required."
-    exit 1
-fi
-
-if [[ -z "$RELEASE_HASH" ]]; then
-    echo "CRITICAL: RELEASE_HASH is missing."
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" || -z "$REPO_NAME" ]]; then
     exit 1
 fi
 
 TARGET_PORT="${SERVER_PORT:-22}"
-APP_DIR="/home/yarik/Desktop/catty-reminders-app"
 
-echo "=== Starting deployment process ==="
-echo "Target: ${SERVER_USER}@${SERVER_HOST}:${TARGET_PORT}"
-echo "Updating to commit: ${RELEASE_HASH}"
+REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+IMAGE_NAME="ghcr.io/${REPO_LOWER}:${RELEASE_HASH}"
 
 ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
 
-    echo "--> Navigating to application directory"
-    cd ${APP_DIR}
-    
-    echo "--> Fetching latest changes"
-    git fetch origin
-    
-    echo "--> Checking out specific release commit"
-    git checkout ${RELEASE_HASH}
-    
-    CURRENT_REF=\$(git rev-parse HEAD)
-    echo "DEPLOY_REF=\$CURRENT_REF" > .env
-    echo "--> Successfully written DEPLOY_REF: \$CURRENT_REF"
-    
-    echo "--> Setting up Virtual Environment"
-    if [[ ! -d "venv" ]]; then
-        python3 -m venv venv
-    fi
-    source venv/bin/activate
-    
-    echo "--> Installing dependencies"
-    if [[ -f "requirements.txt" ]]; then
-        python -m pip install -r requirements.txt
-    fi
-    
-    echo "--> Restarting Systemd Service"
-    sudo systemctl restart app.service
-    
-    echo "--> Verifying application status..."
+    sudo systemctl stop app.service || true
+    sudo systemctl disable app.service || true
+
+    docker pull \${IMAGE_NAME}
+
+    docker stop catty-app || true
+    docker rm catty-app || true
+
+    docker run -d \
+      --name catty-app \
+      --restart always \
+      -p 8181:8181 \
+      --env-file /home/yarik/Desktop/catty-reminders-app/.env \
+      \${IMAGE_NAME}
+
     sleep 5
-    
-    if sudo systemctl is-active --quiet app.service; then
-        echo "=== Deployment successful ==="
+
+    if [ \$(docker inspect -f '{{.State.Running}}' catty-app) == "true" ]; then
+        exit 0
     else
-        echo "=== DEPLOYMENT FAILED: Service is not active ==="
+        docker logs catty-app
         exit 1
     fi
 REMOTE_SCRIPT
