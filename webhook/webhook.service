@@ -7,7 +7,7 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/devops/catty-reminders-app
-Environment="PATH=/home/ubuntu/devops/catty-reminders-app/venv/bin"
+Environment="PATH=/usr/bin:/bin:/usr/local/bin:/home/ubuntu/devops/catty-reminders-app/venv/bin"
 ExecStart=/home/ubuntu/devops/catty-reminders-app/venv/bin/python3 /home/ubuntu/devops/catty-reminders-app/webhook/webhook.py
 Restart=always
 RestartSec=5
