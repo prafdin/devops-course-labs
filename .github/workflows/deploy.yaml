@@ -1,0 +1,46 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build and Publish project
+      run: dotnet publish -c Release -o ./publish ExampleWebService/ExampleWebService.csproj
+
+    - name: Copy files to VM via SCP
+      uses: appleboy/scp-action@v1
+      with:
+        host: course.prafdin.ru
+        port: 3111
+        username: alexander
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "publish/**"
+        target: "/home/alexander/app"
+        strip_components: 1
+
+    - name: Update environment variable and restart service via SSH
+      uses: appleboy/ssh-action@v1
+      with:
+        host: course.prafdin.ru
+        port: 3111
+        username: alexander
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "DEPLOY_REF=${{ github.sha }}" > /home/alexander/app/csharp.env
+          sudo systemctl restart csharp-app.service
