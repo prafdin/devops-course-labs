@@ -25,6 +25,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 echo "restarting app..."
-sudo systemctl restart catty-app
+sudo systemctl restart catty-reminders
 
 echo "deployment ended up successful"
