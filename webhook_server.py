@@ -149,10 +149,9 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
                 # Только если тесты прошли - запускаем деплой
                 print(f"      - Запуск деплоя...")
-                subprocess.run(
-                    ["./deploy.sh"],
-                    cwd=tmpdir,
-                    check=True
+                subprocess.Popen(
+                    ["./deploy.sh", branch],
+                    cwd="/home/vboxuser/catty-reminders-app"
                 )
                 print(f"      ✅ Деплой завершен успешно!")
 
