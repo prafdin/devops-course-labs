@@ -2,37 +2,19 @@
 set -e
 
 if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" || -z "$REPO_NAME" ]]; then
-    echo "CRITICAL: Missing required variables."
     exit 1
 fi
 
 REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 
-TARGET_PORT="${SERVER_PORT:-22}"
-APP_DIR="/home/killa123/Desktop/devopss/catty-reminders-app"
-
-echo "Deploying image: ghcr.io/$REPO_LOWER:$RELEASE_HASH"
-
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
-    set -e
-
-    export REPO_LOWER="${REPO_LOWER}"
-    export RELEASE_HASH="${RELEASE_HASH}"
-
-    echo "--> Navigating to application directory"
-    cd ${APP_DIR}
-
-    echo "--> Stopping old compose stack"
-    docker compose down
-
-    echo "--> Pulling latest images"
-    docker compose pull
-
-    echo "--> Starting containers"
-    docker compose up -d
-
-    echo "--> Cleaning up old unused images"
-    docker image prune -af || true
+ssh -p "${SERVER_PORT:-22}" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << REMOTE_SCRIPT
+    cd /home/qzm/catty-compose
     
-    echo "--> Deployment finished successfully"
+    echo "REPO_LOWER=${REPO_LOWER}" > .env
+    echo "RELEASE_HASH=${RELEASE_HASH}" >> .env
+    
+    docker compose pull
+    docker compose up -d --remove-orphans --force-recreate
+    
+    docker image prune -af
 REMOTE_SCRIPT
