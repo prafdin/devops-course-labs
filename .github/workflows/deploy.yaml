@@ -27,7 +27,7 @@ jobs:
           host: course.prafdin.ru
           username: strebelev
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3120
+          port: 3122
           script: |
             IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ steps.prep.outputs.release_sha }}"
             CONTAINER_NAME="catty-container"
