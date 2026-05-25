@@ -30,22 +30,22 @@ jobs:
           IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
           CONTAINER_NAME="catty-reminders"
 
-          echo "Авторизация в GitHub Container Registry..."
+          echo "Authorization in в GitHub Container Registry..."
           echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          echo "Скачиваем образ $IMAGE_NAME..."
+          echo "downloading image $IMAGE_NAME..."
           docker pull $IMAGE_NAME
 
-          echo "Останавливаем старый контейнер..."
+          echo "stopping old container..."
           docker stop $CONTAINER_NAME || true
           docker rm -f $CONTAINER_NAME || true
 
-          echo "Запускаем новый контейнер..."
+          echo "launching a new container..."
           docker run -d \
             --name $CONTAINER_NAME \
             -p 8181:8181 \
             --restart always \
             $IMAGE_NAME
 
-          echo "Очищаем старые неиспользуемые образы Docker..."
+          echo "cleaning up old unused Docker images..."
           docker image prune -af || true
