@@ -5,16 +5,4 @@ __pycache__/
 deploy/frpc.local.toml
 deploy/webhook.env
 deploy/webhook.macos.env
-app/
-templates/
-static/
 .idea/
-params.json
-schema-params.json
-tests/
-testlib/
-requirements.txt
-config.json
-inputs.json
-LICENSE
-README.md
