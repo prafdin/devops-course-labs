@@ -35,7 +35,6 @@ jobs:
               --name $CONTAINER_NAME \
               -p 8181:8181 \
               --restart unless-stopped \
-              -e DEPLOY_REF=${{ github.sha }} \
               $IMAGE
             
             docker image prune -f
