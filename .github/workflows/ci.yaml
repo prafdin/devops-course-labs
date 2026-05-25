@@ -52,11 +52,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest --junitxml=test_result.xml || true
-          # Гарантируем совместимый формат XML отчета для бота
-          if [ ! -f test_result.xml ] || grep -q 'tests="0"' test_result.xml || grep -q '<testsuites />' test_result.xml; then
-            echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="0.01" timestamp="2026-05-23T22:45:17" hostname="localhost"><testcase classname="tests.test_app" name="test_dummy_pass" time="0.01"/></testsuite></testsuites>' > test_result.xml
-          fi
+          pytest --junitxml=test_result.xml
           cp test_result.xml results.xml
 
       - name: Upload results
@@ -93,6 +89,8 @@ jobs:
           push: true
           provenance: false
           sbom: false
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
             ghcr.io/${{ steps.prep.outputs.owner_lower }}/catty-reminders-app:latest
             ghcr.io/${{ steps.prep.outputs.owner_lower }}/catty-reminders-app:${{ github.sha }}
