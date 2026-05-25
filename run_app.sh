@@ -16,11 +16,11 @@ git reset --hard "$SHA"
 echo "DEPLOY_REF=$SHA" | sudo tee /etc/catty-app-env
 
 # Restart the application itself
-sudo systemctl restart catty-app
+sudo systemctl restart catty
 
 # Check
 sleep 3
-if systemctl is-active --quiet catty-app; then
+if systemctl is-active --quiet catty
 echo "SUCCESS: Deployed $SHA"
 else
 echo "ERROR: App failed"
