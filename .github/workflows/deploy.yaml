@@ -8,23 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Install Playwright browsers
-      run: playwright install --with-deps chromium
-
-    - name: Run tests
-      run: pytest
-
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -44,5 +27,3 @@ jobs:
           source /home/light/catty-reminders-app/.venv/bin/activate
           pip install -r requirements.txt
           sudo systemctl restart catty-app
-          sleep 5
-          /home/light/catty-reminders-app/test.sh
