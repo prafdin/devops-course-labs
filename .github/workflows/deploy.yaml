@@ -1,21 +1,48 @@
-name: CD
-
+name: Deploy
 on:
   release:
-    types:
-      - published
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
 
     steps:
-      - name: Deploy via SSH
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "release_sha=$(git rev-list -n 1 ${{ github.event.release.tag_name }})" >> $GITHUB_OUTPUT
+
+      - name: Remote Docker Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USER }}
+          host: course.prafdin.ru
+          username: strebelev
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ vars.SSH_PORT }}
+          port: 3120
           script: |
-            bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ steps.prep.outputs.release_sha }}"
+            CONTAINER_NAME="catty-container"
+
+            echo "Pulling image: $IMAGE"
+            docker pull "$IMAGE"
+
+            docker stop "$CONTAINER_NAME" || true
+            docker rm "$CONTAINER_NAME" || true
+
+            docker run -d \
+              --name "$CONTAINER_NAME" \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              -e DEPLOY_REF=${{ steps.prep.outputs.release_sha }} \
+              "$IMAGE"
+
+            docker image prune -f
