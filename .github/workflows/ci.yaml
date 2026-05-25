@@ -120,20 +120,17 @@ jobs:
       
       - name: Deploy to server
         env:
-          # Привязываем к правильным именам из вкладки Repository variables
           SERVER_HOST: ${{ vars.DEPLOY_HOST }}
           SERVER_USER: ${{ vars.DEPLOY_USER }}
           SERVER_PORT: ${{ vars.DEPLOY_PORT }}
-          # Ключ забираем из вкладки Repository secrets
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           RELEASE_HASH: ${{ env.RELEASE_HASH }}
           REPO_NAME: ${{ github.repository }}
         run: |
-          # 1. Записываем приватный ключ для авторизации
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p /home/qzm/Desktop/catty-reminders-app
+          ssh -p ${SERVER_PORT} -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p /home/qzm/Desktop/catty-reminders-app"
           scp -P ${SERVER_PORT} -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
           chmod +x deploy.sh
           ./deploy.sh
