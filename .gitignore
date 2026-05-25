@@ -1,0 +1,16 @@
+.idea/
+*.iml
+.vscode/
+
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+webhook.py
+
+params.json
+schema-params.json
+
+.DS_Store
+Thumbs.db
