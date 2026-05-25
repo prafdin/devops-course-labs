@@ -379,6 +379,11 @@
       "login": "Jupiter0303",
       "id": "loshmankin",
       "app": "csharp-example"
+    },
+    {
+      "login": "ctwoth",
+      "id": "dubrovin",
+      "app": "catty-reminders-app"
     }
   ]
 }
