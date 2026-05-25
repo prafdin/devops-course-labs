@@ -23,6 +23,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: mypass
           MYSQL_DATABASE: catty_reminders
+          MYSQL_USER: ct
+          MYSQL_PASSWORD: catty_pass_123
         ports:
           - 3306:3306
         options: >-
@@ -43,7 +45,7 @@ jobs:
 
       - name: Temporary swap config for tests
         run: |
-          sed -i 's/"host": "db"/"host": "localhost"/' config.json
+          sed -i 's/"host": "db"/"host": "127.0.0.1"/' config.json
 
       - name: Install dependencies
         run: |
