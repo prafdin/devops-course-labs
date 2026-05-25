@@ -63,6 +63,8 @@ jobs:
           "
 
       - name: Initialize Database and Create User
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           python3 -c "
           import sys
@@ -121,6 +123,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}:latest
           build-args: |
             DEPLOY_REF=${{ github.sha }}
