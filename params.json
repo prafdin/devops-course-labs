@@ -21,6 +21,11 @@
       "app": "catty-reminders-app"
     },
     {
+      "login": "AlexCirkova",
+      "id": "chirkova",
+      "app": "catty-reminders-app"
+    },
+    {
       "login": "sh1kaff",
       "id": "sheff",
       "app": "catty-reminders-app"
@@ -383,6 +388,11 @@
     {
       "login": "ctwoth",
       "id": "dubrovin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Getsomelight",
+      "id": "volyanyuk",
       "app": "catty-reminders-app"
     }
   ]
