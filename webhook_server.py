@@ -8,7 +8,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 PORT = 8080
 TARGET_BRANCH = "lab1"
-PROJECT_DIR = "/home/light/Рабочий стол/web-app/catty-reminders-app"
+PROJECT_DIR = "/home/light/catty-reminders-app"
 
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_GET(self):
