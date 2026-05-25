@@ -1,28 +1,37 @@
 #!/bin/bash
 set -e
 
-REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" ]]; then
+    echo "CRITICAL: Missing required variables."
+    exit 1
+fi
 
+TARGET_PORT="${SERVER_PORT:-22}"
+REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
 APP_DIR="/home/qzm/Desktop/catty-reminders-app"
 
-echo "Deploying to $APP_DIR..."
+echo "Deploying via Docker Compose..."
 
-ssh -p "${SERVER_PORT:-22}" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << REMOTE_SCRIPT
+ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
+
+    export REPO_LOWER="${REPO_LOWER}"
+    export RELEASE_HASH="${RELEASE_HASH}"
+
+    echo "--> Navigating to application directory"
     cd ${APP_DIR}
-    
-    echo "REPO_LOWER=${REPO_LOWER}" > .env
-    echo "RELEASE_HASH=${RELEASE_HASH}" >> .env
 
-    echo "--> Stopping stack"
-    docker compose down --remove-orphans
+    echo "--> Stopping old compose stack"
+    docker compose down
 
-    echo "--> Pulling image"
+    echo "--> Pulling latest images"
     docker compose pull
 
-    echo "--> Starting stack"
+    echo "--> Starting containers"
     docker compose up -d
 
-    echo "--> Cleanup"
+    echo "--> Cleaning up old unused images"
     docker image prune -af || true
+    
+    echo "--> Deployment finished successfully"
 REMOTE_SCRIPT
