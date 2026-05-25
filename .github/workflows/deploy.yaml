@@ -1,4 +1,5 @@
-name: Deploy
+name: CD
+
 on:
   release:
     types: [published]
@@ -7,11 +8,41 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via script
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: course.prafdin.ru
-          username: light
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3137
-          script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Install Playwright browsers
+      run: playwright install --with-deps chromium
+
+    - name: Run tests
+      run: pytest
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 3137
+        script: |
+          cd /home/light/catty-reminders-app
+          git fetch origin lab2
+          git checkout lab2
+          git reset --hard origin/lab2
+          
+          # Записываем хэш коммита в .env
+          echo "DEPLOY_REF=$(git rev-parse HEAD)" > /home/light/catty-reminders-app/.env
+          
+          source /home/light/catty-reminders-app/.venv/bin/activate
+          pip install -r requirements.txt
+          sudo systemctl restart catty-app
+          sleep 5
+          /home/light/catty-reminders-app/test.sh
