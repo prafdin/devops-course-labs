@@ -45,7 +45,7 @@ jobs:
 
       - name: Temporary swap config for tests
         run: |
-          sed -i 's/"host": "db"/"host": "localhost"/' scripts/config.json 
+          sed -i 's/"host": "db"/"host": "localhost"/' config.json
 
       - name: Install dependencies
         run: |
@@ -56,7 +56,7 @@ jobs:
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 7 # Ждем чуть дольше, чтобы приложение успело подключиться к БД
+          sleep 7
 
       - name: Run tests
         env:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Revert config swap before build
         run: |
-          git checkout scripts/config.json
+          git checkout config.json
 
       - name: Upload test results
         if: always()
