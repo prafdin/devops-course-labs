@@ -1,0 +1,12 @@
+[Unit]
+Description=Webhook Handler
+After=network.target
+
+[Service]
+User=ubu
+WorkingDirectory=/home/ubu/webhook-handler
+ExecStart=/home/ubu/webhook-handler/venv/bin/python webhook_handler.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
