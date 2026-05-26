@@ -28,8 +28,11 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
+        envs: GHCR_PAT
         script: |
-          set -e
+          echo "check: is param here? ${#GHCR_PAT}" 
+          GHCR_PAT='${{ secrets.GHCR_PAT }}'
+          echo "check2: is param here? ${#GHCR_PAT}"
           IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
           CONTAINER_NAME="catty-reminders"
 
