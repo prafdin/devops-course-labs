@@ -17,11 +17,7 @@ jobs:
         username: rave
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /home/rave/catty-reminders-app
-          git fetch origin
-          git checkout lab2
-          git reset --hard origin/lab2
-          echo "DEPLOY_REF=${{ github.sha }}" > .env
-          echo "Wrote DEPLOY_REF=${{ github.sha }} to .env"
-          sudo systemctl restart catty.service
-          echo "catty.service restarted successfully."
+          docker pull ghcr.io/zurmes/catty-reminders-app:latest
+          docker stop catty-container || true
+          docker rm catty-container || true
+          docker run -d --name catty-container -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} ghcr.io/zurmes/catty-reminders-app:latest
