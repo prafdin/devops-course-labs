@@ -13,15 +13,15 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: password-123
+          username: sa3000udp
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3121
           script: |
             cd ~/catty-reminders-app
 
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            export DEPLOY_REF=${{ github.sha }}
+            echo ${{ secrets.GITHUB_TOKEN }} > token.txt
+            cat token.txt | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            rm token.txt
 
             docker compose pull
             docker compose up -d --remove-orphans
