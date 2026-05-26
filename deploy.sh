@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 set -e
 
 TARGET_DIR="/home/light/catty-reminders-app"
