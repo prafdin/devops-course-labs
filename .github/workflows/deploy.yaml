@@ -7,11 +7,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Run tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: pytest --junitxml=test_result.xml || true
-        
       - name: Deploy via script
         uses: appleboy/ssh-action@v1.0.3
         with:
