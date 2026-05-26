@@ -13,7 +13,7 @@ jobs:
           host: course.prafdin.ru
           username: light
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 2200
+          port: 3137
           script: |
             cd /home/light/catty-reminders-app
             git fetch origin lab2
