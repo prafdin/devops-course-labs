@@ -34,7 +34,8 @@ jobs:
         target: "/home/alexander/app"
         strip_components: 1
 
-    - name: Update environment variable and restart service via SSH
+    # Подключение по SSH и запуск контейнера на целевом хосте
+    - name: Deploy Docker container via SSH
       uses: appleboy/ssh-action@v1
       with:
         host: course.prafdin.ru
@@ -42,5 +43,20 @@ jobs:
         username: alexander
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "DEPLOY_REF=${{ github.sha }}" > /home/alexander/app/csharp.env
-          sudo systemctl restart csharp-app.service
+          # Авторизация Docker в реестре GHCR
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # Скачивание актуального образа из реестра
+          docker pull ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
+          
+          # Остановка и удаление старого контейнера
+          docker stop csharp-web-container || true
+          docker rm csharp-web-container || true
+          
+          # Запуск нового контейнера с передачей хэша коммита в переменные окружения
+          docker run -d \
+            -p 8181:8181 \
+            --name csharp-web-container \
+            -e DEPLOY_REF=${{ github.sha }} \
+            --restart always \
+            ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
