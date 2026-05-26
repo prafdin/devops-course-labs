@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 cd /home/light/catty-reminders-app || exit 1
 
 SHA=$1
