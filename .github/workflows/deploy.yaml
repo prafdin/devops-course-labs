@@ -12,29 +12,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0'
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build and Publish project
-      run: dotnet publish -c Release -o ./publish ExampleWebService/ExampleWebService.csproj
-
-    - name: Copy files to VM via SCP
-      uses: appleboy/scp-action@v1
-      with:
-        host: course.prafdin.ru
-        port: 3111
-        username: alexander
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "publish/**"
-        target: "/home/alexander/app"
-        strip_components: 1
-
-    - name: Update environment variable and restart service via SSH
+    # Подключаемся по SSH и управляем Docker-контейнерами на виртуалке
+    - name: Deploy Docker container via SSH
       uses: appleboy/ssh-action@v1
       with:
         host: course.prafdin.ru
@@ -42,5 +21,20 @@ jobs:
         username: alexander
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "DEPLOY_REF=${{ github.sha }}" > /home/alexander/app/csharp.env
-          sudo systemctl restart csharp-app.service
+          # 1. Авторизуем Docker на виртуалке в реестре GHCR, используя временный токен
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # 2. Скачиваем свежий образ нашего приложения
+          docker pull ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
+          
+          # 3. Останавливаем и удаляем старый контейнер (если он запущен)
+          docker stop csharp-web-container || true
+          docker rm csharp-web-container || true
+          
+          # 4. Запускаем новый контейнер на порту 8181 и передаем туда хэш коммита релиза
+          docker run -d \
+            -p 8181:8181 \
+            --name csharp-web-container \
+            -e DEPLOY_REF=${{ github.sha }} \
+            --restart always \
+            ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
