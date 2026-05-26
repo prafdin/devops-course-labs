@@ -7,11 +7,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via script
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
           username: light
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3137
-          script: bash ~/catty-reminders-app/run_app.sh ${{ github.sha }}
+          port: 2200
+          script: |
+            cd /home/light/catty-reminders-app
+            git fetch origin lab2
+            git checkout lab2
+            git reset --hard origin/lab2
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart catty-app
+            sleep 5
