@@ -8,14 +8,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
+        host: course.prafdin.ru
+        username: light
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 3137
         script: |
