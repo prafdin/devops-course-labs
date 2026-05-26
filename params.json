@@ -21,6 +21,11 @@
       "app": "catty-reminders-app"
     },
     {
+      "login": "AlexChirkova",
+      "id": "chirkova",
+      "app": "catty-reminders-app"
+    },
+    {
       "login": "sh1kaff",
       "id": "sheff",
       "app": "catty-reminders-app"
@@ -373,6 +378,21 @@
     {
       "login": "Tyty-land",
       "id": "shankin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Jupiter0303",
+      "id": "loshmankin",
+      "app": "csharp-example"
+    },
+    {
+      "login": "ctwoth",
+      "id": "dubrovin",
+      "app": "catty-reminders-app"
+    },
+    {
+      "login": "Getsomelight",
+      "id": "volyanyuk",
       "app": "catty-reminders-app"
     }
   ]
