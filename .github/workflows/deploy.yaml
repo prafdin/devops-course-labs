@@ -20,8 +20,8 @@ jobs:
           git fetch origin lab2
           git checkout lab2
           git reset --hard origin/lab2
-          echo "DEPLOY_REF=$(git rev-parse HEAD)" > /home/light/catty-reminders-app/.env
-          source /home/light/catty-reminders-app/.venv/bin/activate
+          echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
+          source .venv/bin/activate
           pip install -r requirements.txt
           sudo systemctl restart catty-app
           sleep 5

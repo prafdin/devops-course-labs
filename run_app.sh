@@ -1,5 +1,6 @@
 #!/bin/bash
 cd /home/light/catty-reminders-app || exit 1
+echo "DEPLOY_REF=$1" > .env
 
 SHA=$1
 echo "Deploying SHA: $SHA"
