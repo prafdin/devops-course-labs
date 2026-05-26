@@ -10,7 +10,7 @@ jobs:
     permissions:
       packages: write
       contents: read
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,14 +31,14 @@ jobs:
         envs: GHCR_PAT
         script: |
           set -e
-          echo "check: is param here? ${#GHCR_PAT}" 
+          echo "check: is param here? ${#GHCR_PAT}"
           GHCR_PAT='${{ secrets.GHCR_PAT }}'
           echo "check2: is param here? ${#GHCR_PAT}"
           IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
           CONTAINER_NAME="catty-reminders"
 
           echo "Authorization in в GitHub Container Registry..."
-          echo "$GHCR_PAT" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+          echo "$GHCR_PAT" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "downloading image $IMAGE_NAME..."
           docker pull $IMAGE_NAME
 
