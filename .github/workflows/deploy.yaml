@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Docker container
+      - name: Deploy via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -17,19 +17,7 @@ jobs:
           port: 3121
           script: |
             cd ~/catty-reminders-app
-            
+            git pull origin lab4 --rebase
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            docker pull ghcr.io/sofiastepanova/catty-reminders-app:lab3
-            
-            docker stop catty-app || true
-            docker rm catty-app || true
-            
-            docker run -d \
-              --name catty-app \
-              --restart always \
-              -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
-              ghcr.io/sofiastepanova/catty-reminders-app:lab3
-            sleep 10
-            curl --retry 5 --retry-delay 2 http://localhost:8181/login
+            docker compose pull app
+            docker compose up -d --remove-orphans
