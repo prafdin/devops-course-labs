@@ -24,3 +24,5 @@ jobs:
           source /home/light/catty-reminders-app/.venv/bin/activate
           pip install -r requirements.txt
           sudo systemctl restart catty-app
+          sleep 5
+          ./test.sh
