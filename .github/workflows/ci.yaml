@@ -86,6 +86,8 @@ jobs:
           context: .
           push: true
           platforms: linux/arm64
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab4
+            ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab3
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}

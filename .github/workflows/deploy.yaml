@@ -7,23 +7,26 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy via Docker Compose
+      - name: Deploy Docker container
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: sa3000udp
+          username: password-123
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3121
           script: |
             cd ~/catty-reminders-app
-
-            echo ${{ secrets.GITHUB_TOKEN }} > token.txt
-            cat token.txt | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            rm token.txt
-
-            docker compose pull
-            docker compose up -d --remove-orphans
-
-            docker ps
+            
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            docker pull ghcr.io/sofiastepanova/catty-reminders-app:lab3
+            
+            docker stop catty-app || true
+            docker rm catty-app || true
+            
+            docker run -d \
+              --name catty-app \
+              --restart always \
+              -p 8181:8181 \
+              ghcr.io/sofiastepanova/catty-reminders-app:lab3
