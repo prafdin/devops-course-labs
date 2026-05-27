@@ -1,8 +1,9 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
-    # Добавляем контекст сборки, чтобы docker compose build знал, где искать Dockerfile:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: catty-reminders-app:local
     restart: unless-stopped
     depends_on:
       db:
