@@ -23,6 +23,7 @@ jobs:
           git checkout lab2
           git pull origin lab2
 
-          echo "DEPLOY_REF=${{ github.event.release.tag_name }}" | sudo tee /etc/catty-app-env
+          echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
 
           sudo systemctl restart catty.service
+
