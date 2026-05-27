@@ -16,7 +16,9 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
+        IMAGE_LOWER=$(echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" | tr '[:upper:]' '[:lower:]')
+        
+        echo "APP_IMAGE=${IMAGE_LOWER}" > .env
         echo "DEPLOY_REF=${{ github.sha }}" >> .env
         echo "APP_PORT=8181" >> .env
         echo "APP_CONTAINER_NAME=catty-app" >> .env
@@ -54,7 +56,6 @@ jobs:
         username: ${{ vars.DEPLOY_USER }}
         port: ${{ vars.DEPLOY_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        command_timeout: 30m
         script: |
           set -x
           cd /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
