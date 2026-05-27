@@ -23,47 +23,74 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set lowercase image name
+      - name: Convert repository name to lowercase
         run: |
-          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository_owner }}/catty-reminders-app" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=$REPO_LOWER" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-    permissions:
-      contents: read
-      packages: read
     steps:
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Execute remote deploy
-        run: |
-          IMAGE_LOWER=$(echo "ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}" | tr '[:upper:]' '[:lower:]')
+    - name: Create .env file
+      run: |
+        REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+        
+        echo "APP_IMAGE=ghcr.io/${REPO_LOWER}:${{ github.sha }}" > .env
+        echo "DEPLOY_REF=${{ github.sha }}" >> .env
+        echo "APP_PORT=8181" >> .env
+        echo "APP_CONTAINER_NAME=catty-app" >> .env
+        
+        echo "DB_CONTAINER_NAME=catty_db" >> .env
+        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+        echo "MYSQL_USER=ct" >> .env
+        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+        echo "MYSQL_DATABASE=catty_reminders" >> .env
+        echo "DB_PORT=3306" >> .env
+    
+    - name: Copy .env to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ./.env
+        target: /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
+    
+    - name: Copy docker-compose.yaml to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ./docker-compose.yaml
+        target: /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
+
+    - name: Deploy to server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -x
+          cd /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
           
-          ssh -T -p ${{ vars.DEPLOY_PORT }} -o StrictHostKeyChecking=no ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }} << EOF
-            cd /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
-            
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            echo "APP_IMAGE=$IMAGE_LOWER" > .env
-            echo "DB_CONTAINER_NAME=catty_db" >> .env
-            echo "APP_CONTAINER_NAME=catty-app" >> .env
-            echo "MYSQL_ROOT_PASSWORD=root_pass_123" >> .env
-            echo "MYSQL_USER=ct" >> .env
-            echo "MYSQL_PASSWORD=catty_pass_123" >> .env
-            echo "MYSQL_DATABASE=catty_reminders" >> .env
-            
-            sudo docker compose pull
-            sudo docker compose up -d --remove-orphans --force-recreate
-          EOF
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          sudo docker rm -f catty_db catty-app || true
+          
+          sudo docker compose up -d --pull always --remove-orphans --force-recreate
