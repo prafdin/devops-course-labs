@@ -35,8 +35,8 @@ services:
       retries: 10
       start_period: 20s
     volumes:
-      # Меняем db-data на жесткую папку на твоем диске
-      - ./mysql_data:/var/lib/mysql
+      # Указываем точный путь к папке внутри проекта
+      - /home/vboxuser/catty-reminders-app/mysql_data:/var/lib/mysql
     networks:
       - app-network
 
