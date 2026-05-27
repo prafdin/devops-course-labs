@@ -1,41 +1,59 @@
-name: Deploy
+name: CD
 
 on:
   release:
     types: [published]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches:
+      - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+    if: ${{ github.event_name == 'release'  github.event.workflow_run.conclusion == 'success' }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Get release commit hash
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-list -n 1 $TAG)
-        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-        echo "Deploying release: $TAG"
-        echo "Commit hash: $HASH"
-        echo "Image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$COMMIT_HASH"
-    
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-    - name: Deploy to server
-      env:
-        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_ACTOR: ${{ github.repository_owner }}
-      run: |
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh        
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          port: 3155
+          username: kali
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /home/vboxuser/catty-reminders-app  exit 1
+            
+            git fetch origin
+            git checkout lab4  true
+            git pull origin lab4  true
+            
+            TARGET_SHA="${{ github.event.workflow_run.head_sha  github.sha }}"
+            
+            echo "DEPLOY_REF=$TARGET_SHA" > .env
+            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u avofl1ow --password-stdin
+            
+            sudo docker compose down --remove-orphans  true
+            
+            sudo docker stop catty-reminders-app 2>/dev/null  true
+            sudo docker rm catty-reminders-app 2>/dev/null  true
+            
+            sudo docker compose pull
+            sudo docker compose up -d --force-recreate
+            
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null  curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed"  curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+                echo "App is healthy and responds correctly"
+                exit 0
+              fi
+              echo "Waiting for app... ($i/30)"
+              sleep 5
+            done
+            
+            echo "App failed to start"
+            sudo docker compose logs app
+            exit 1
