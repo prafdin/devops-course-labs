@@ -56,7 +56,6 @@ jobs:
               --name "$CONTAINER_NAME" \
               -p 8181:8181 \
               --restart unless-stopped \
-              -e DEPLOY_REF=${{ steps.prep.outputs.release_sha }} \
               "$IMAGE"
 
             docker image prune -f
