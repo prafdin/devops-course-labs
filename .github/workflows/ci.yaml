@@ -83,10 +83,11 @@ jobs:
           tags: |
             type=raw,value=${{ steps.vars.outputs.commit_hash }}
 
-      - name: Build and push image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}

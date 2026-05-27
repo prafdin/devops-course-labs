@@ -13,4 +13,6 @@ COPY config.json .
 
 EXPOSE 8181
 
+ARG DEPLOY_REF
+ENV DEPLOY_REF=$DEPLOY_REF
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
