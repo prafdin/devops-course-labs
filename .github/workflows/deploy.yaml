@@ -21,6 +21,7 @@ jobs:
           username: semen
           port: 3122
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
             bash -c '
               set -e
