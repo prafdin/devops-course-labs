@@ -1,37 +1,25 @@
-services:
-  db:
-    image: mariadb:10.11
-    container_name: ${DB_CONTAINER_NAME}
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+version: '3'
 
-  backend:
+services:
+  catty-app:
     image: ${APP_IMAGE}
     container_name: ${APP_CONTAINER_NAME}
-    restart: always
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
-      - "8181:8181"
-    environment:
-      DB_HOST: ${DB_CONTAINER_NAME}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      - "${APP_PORT}:8181"
+    env_file:
+      - .env
+    depends_on:
+      - catty_db
+
+  catty_db:
+    image: mariadb:10.11
+    container_name: ${DB_CONTAINER_NAME}
+    ports:
+      - "${DB_PORT}:3306"
+    env_file:
+      - .env
     volumes:
-      - ./config.json:/catty-reminders-app/config.json
+      - catty_db_data:/var/lib/mysql
 
 volumes:
-  db_data:
+  catty_db_data:
