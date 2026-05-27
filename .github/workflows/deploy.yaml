@@ -56,7 +56,7 @@ jobs:
           scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:$APP_DIR/docker-compose.yaml
           ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
             cd $APP_DIR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.MY_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "APP_IMAGE=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/catty-reminders-app:${{ github.sha }}" > .env
             echo "DEPLOY_REF=${{ github.sha }}" >> .env
             echo "APP_PORT=8181" >> .env
