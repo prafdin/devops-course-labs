@@ -10,28 +10,15 @@ services:
       MYSQL_DATABASE: catty_reminders
     volumes:
       - db_data:/var/lib/mysql
-    networks:
-      - app-network
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH}
+    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
     container_name: catty_backend
     restart: unless-stopped
     ports:
       - "8181:8181"
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=mypass
-      - DB_NAME=catty_reminders
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   db_data:
