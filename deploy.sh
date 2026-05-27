@@ -5,8 +5,8 @@ APP_DIR="/home/qzm/Desktop/catty-reminders-app"
 
 ssh -p "$SERVER_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
     set -e
-    export REPO_LOWER=\"${REPO_LOWER}\"
-    export RELEASE_HASH=\"${RELEASE_HASH}\"
+    export REPO_LOWER="${REPO_LOWER}\"
+    export RELEASE_HASH="${RELEASE_HASH}\"
 
     cd ${APP_DIR}
     
