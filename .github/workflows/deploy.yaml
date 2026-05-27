@@ -56,6 +56,11 @@ jobs:
           
           ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
             cd $APP_DIR
+            docker compose down --remove-orphans || true
+            
+            docker rm -f catty_db catty-app 2>/dev/null || true
+            
+            docker system prune -f
             echo "APP_IMAGE=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/catty-reminders-app:${{ github.sha }}" > .env
             echo "DEPLOY_REF=${{ github.sha }}" >> .env
             echo "APP_PORT=8181" >> .env
@@ -66,12 +71,6 @@ jobs:
             echo "MYSQL_PASSWORD=catty_pass_123" >> .env
             echo "MYSQL_DATABASE=catty_reminders" >> .env
             echo "DB_PORT=3306" >> .env
-            
-            for i in {1..5}; do
-              docker compose pull && break
-              echo "Retrying pull..."
-              sleep 10
-            done
-            
-            docker compose up -d --remove-orphans
+            docker compose pull
+            docker compose up -d
           EOF
