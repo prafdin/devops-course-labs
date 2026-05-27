@@ -36,26 +36,36 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER }}
-          port: ${{ vars.DEPLOY_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -x
-            # Переходим в папку
-            cd /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
-            
+      - name: Deploy
+        env:
+          SERVER_HOST: ${{ vars.DEPLOY_HOST }}
+          SERVER_USER: ${{ vars.DEPLOY_USER }}
+          SERVER_PORT: ${{ vars.DEPLOY_PORT }}
+          APP_DIR: /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
+        run: |
+          scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:$APP_DIR/docker-compose.yaml
+          ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
+            cd $APP_DIR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "APP_IMAGE=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/catty-reminders-app:${{ github.sha }}" > .env
+            echo "DEPLOY_REF=${{ github.sha }}" >> .env
+            echo "APP_PORT=8181" >> .env
+            echo "APP_CONTAINER_NAME=catty-app" >> .env
+            echo "DB_CONTAINER_NAME=catty_db" >> .env
+            echo "MYSQL_ROOT_PASSWORD=root_pass_123" >> .env
+            echo "MYSQL_USER=ct" >> .env
+            echo "MYSQL_PASSWORD=catty_pass_123" >> .env
+            echo "MYSQL_DATABASE=catty_reminders" >> .env
+            echo "DB_PORT=3306" >> .env
             sudo docker compose up -d --pull always --remove-orphans --force-recreate
+          EOF
