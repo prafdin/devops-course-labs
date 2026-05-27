@@ -234,8 +234,6 @@
       "login": "vissstu",
       "id": "chernikova",
       "app": "catty-reminders-app"
-<<<<<<< HEAD
-=======
     },
     {
       "login": "KuzminStanislav",
@@ -396,7 +394,6 @@
       "login": "Getsomelight",
       "id": "volyanyuk",
       "app": "catty-reminders-app"
->>>>>>> upstream/main
     }
   ]
 }
