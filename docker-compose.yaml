@@ -1,29 +1,38 @@
+version: '3.8'
 services:
   db:
     image: mariadb:10.11
     container_name: ${DB_CONTAINER_NAME}
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     image: ${APP_IMAGE}
     container_name: ${APP_CONTAINER_NAME}
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
-    environment:
-      - DB_HOST=db
-      - DB_USER=${MYSQL_USER}
-      - DB_PASSWORD=${MYSQL_PASSWORD}
-      - DB_NAME=${MYSQL_DATABASE}
+    restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    ports:
+      - "8181:8181"
+    environment:
+      DB_HOST: ${DB_CONTAINER_NAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./config.json:/catty-reminders-app/config.json
 
 volumes:
   db_data:
