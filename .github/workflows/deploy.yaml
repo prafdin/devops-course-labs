@@ -1,6 +1,10 @@
 name: Deploy
 
 on:
+  push:
+    branches:
+      - lab4
+      - lab4_autotests*
   release:
     types: [published]
 
@@ -12,12 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get release commit hash
-        run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
-          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -28,7 +26,7 @@ jobs:
           SERVER_HOST: ${{ vars.DEPLOY_HOST }}
           SERVER_USER: ${{ vars.DEPLOY_USER }}
           SERVER_PORT: ${{ vars.DEPLOY_PORT }}
-          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          RELEASE_HASH: ${{ github.sha }}
           REPO_NAME: ${{ github.repository }}
         run: |
           scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/Desktop/catty-reminders-app/docker-compose.yaml
