@@ -31,10 +31,11 @@ jobs:
             -p 3306:3306 \
             mysql:8.0
           sleep 15
-          sed -i 's/"host": "db"/"host": "localhost"/' config.json
 
-      - name: Start Application
+      - name: Start Application with test config
         run: |
+          cp config.json config.json.bak
+          sed -i 's/"host": "db"/"host": "localhost"/' config.json
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
 
@@ -43,6 +44,11 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest --junitxml=test_result.xml
+
+      - name: Restore original config
+        if: always()
+        run: |
+          cp config.json.bak config.json
 
       - name: Upload test results
         if: always()
@@ -89,5 +95,5 @@ jobs:
           build-args: |
             DEPLOY_REF=${{ github.sha }}
           tags: |
-            ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab3
+            ghcr.io/${{ steps.prep.outputs.repo_lower }}:lab4
             ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}
