@@ -31,5 +31,5 @@ jobs:
         
         scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/Desktop/catty-reminders-app/docker-compose.yaml
         
-        chmod +x deploy.sh
-        ./deploy.sh
+        ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST \
+        "REPO_LOWER=$REPO_LOWER RELEASE_HASH=$RELEASE_HASH bash /home/$SERVER_USER/Desktop/catty-reminders-app/deploy.sh"
