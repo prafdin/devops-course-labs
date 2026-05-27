@@ -22,20 +22,20 @@ jobs:
     - name: Deploy to Server via SSH
       uses: appleboy/ssh-action@v1.0.3
       env:
-        GHCR_PAT: ${{ secrets.GHCR_PAT }}
+        PAT: ${{ secrets.GIT_TOKEN }}
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
-        envs: GHCR_PAT
+        envs: PAT
         script: |
           set -e
           IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
           CONTAINER_NAME="catty-reminders"
 
           echo "Authorization in в GitHub Container Registry..."
-          echo "$GHCR_PAT" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "$PAT" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "downloading image $IMAGE_NAME..."
           docker pull $IMAGE_NAME
 
