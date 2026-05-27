@@ -23,7 +23,8 @@ jobs:
         env:
           MARIADB_ROOT_PASSWORD: mypass
           MARIADB_DATABASE: catty_reminders
-        ports: [ 3306:3306 ]
+        ports:
+          - "3306:3306"
 
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +41,8 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Patch config for CI
-        run: sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
+        run: |
+           sed -i 's/"host": "db"/"host": "127.0.0.1"/g' config.json
 
       - name: Start app
         run: |
