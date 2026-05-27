@@ -7,58 +7,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Create .env and config.json
-      run: |
-        echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
-        echo "DEPLOY_REF=${{ github.sha }}" >> .env
-        echo "APP_PORT=8181" >> .env
-        echo "APP_CONTAINER_NAME=catty-app" >> .env
-        echo "DB_CONTAINER_NAME=catty_db" >> .env
-        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD}}" >> .env
-        echo "MYSQL_USER=ct" >> .env
-        echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD}}" >> .env
-        echo "MYSQL_DATABASE=catty_reminders" >> .env
-        echo "DB_PORT=3306" >> .env
-        
-        cat <<EOF > config.json
-        {
-          "db_config": {
-            "host": "db",
-            "port": 3306,
-            "user": "ct",
-            "password": "${{ secrets.MYSQL_PASSWORD }}",
-            "database": "catty_reminders"
-          },
-          "users": {
-            "admin": "admin"
-          },
-          "secret_key": "very-secret-production-key"
-        }
-        EOF
+      - name: Get release commit hash
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
 
-    - name: Copy files to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ vars.DEPLOY_HOST }}
-        username: ${{ vars.DEPLOY_USER }}
-        port: ${{ vars.DEPLOY_PORT }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: ".env,docker-compose.yaml,config.json"
-        target: /home/qzm/Desktop/catty-reminders-app
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy to server
-      env:
-        SERVER_HOST: ${{ vars.DEPLOY_HOST }}
-        SERVER_USER: ${{ vars.DEPLOY_USER }}
-        SERVER_PORT: ${{ vars.DEPLOY_PORT }}
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        REPO_NAME: ${{ github.repository }}
-      run: |
-        scp -P ${SERVER_PORT:-22} -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
-        chmod +x deploy.sh
-        ./deploy.sh
+      - name: Deploy to server
+        env:
+          SERVER_HOST: ${{ vars.DEPLOY_HOST }}
+          SERVER_USER: ${{ vars.DEPLOY_USER }}
+          SERVER_PORT: ${{ vars.DEPLOY_PORT }}
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/Desktop/catty-reminders-app/docker-compose.yaml
+          chmod +x deploy.sh
+          ./deploy.sh

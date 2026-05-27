@@ -12,7 +12,7 @@ services:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER:-kuzminstanislav/catty-reminders-app}:${RELEASE_HASH:-latest}
+    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
     container_name: catty_backend
     restart: unless-stopped
     ports:
