@@ -33,15 +33,16 @@ jobs:
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
             echo "DEPLOY_REF=$TARGET_SHA" > .env
-            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
-            
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
+            echo "IMAGE=catty-reminders-app:local" >> .env
             
             sudo docker compose down --remove-orphans || true
             sudo docker stop catty-reminders-app 2>/dev/null || true
             sudo docker rm catty-reminders-app 2>/dev/null || true
             
-            sudo docker compose pull
+            # Собираем приложение локально из исходников на Debian
+            sudo docker compose build app
+            
+            # Запускаем связку (MySQL подхватится из локального кэша)
             sudo docker compose up -d --force-recreate
             
             for i in $(seq 1 30); do
