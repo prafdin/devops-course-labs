@@ -1,10 +1,6 @@
 services:
   app:
-    # Указываем собирать образ локально из текущей папки, а не качать его
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: catty-reminders-app:local
+    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
     restart: unless-stopped
     depends_on:
       db:
