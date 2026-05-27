@@ -19,7 +19,7 @@ jobs:
         with:
           host: course.prafdin.ru
           port: 3155
-          username: kali
+          username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 30m
           script: |
