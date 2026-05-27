@@ -1,22 +1,27 @@
-version: '3.8'
-
 services:
   db:
     image: mariadb:10.11
-    container_name: catty_db
+    container_name: ${DB_CONTAINER_NAME}
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: mypass
-      MYSQL_DATABASE: catty_reminders
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
 
   backend:
-    image: ghcr.io/${REPO_LOWER}:${RELEASE_HASH:-latest}
-    container_name: catty_backend
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
     restart: unless-stopped
     ports:
-      - "8181:8181"
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      - DB_HOST=db
+      - DB_USER=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${MYSQL_DATABASE}
     depends_on:
       - db
 
