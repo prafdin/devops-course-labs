@@ -1,0 +1,12 @@
+venv/
+.venv/
+ENV/
+*.рус
+__pycache__/
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.log
