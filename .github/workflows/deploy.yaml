@@ -27,7 +27,7 @@ jobs:
           SERVER_USER: ${{ vars.DEPLOY_USER }}
           SERVER_PORT: ${{ vars.DEPLOY_PORT }}
           RELEASE_HASH: ${{ github.sha }}
-          REPO_NAME: ${{ github.repository }}
+          REPO_LOWER: ${{ github.repository_owner_owner_lower_if_needed }}/catty-reminders-app
         run: |
           scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/Desktop/catty-reminders-app/docker-compose.yaml
           chmod +x deploy.sh

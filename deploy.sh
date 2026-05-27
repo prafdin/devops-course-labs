@@ -1,31 +1,18 @@
 #!/bin/bash
 set -e
 
-if [[ -z "$SERVER_HOST" || -z "$SERVER_USER" || -z "$RELEASE_HASH" || -z "$REPO_NAME" ]]; then
+if [[ -z "$REPO_LOWER" || -z "$RELEASE_HASH" ]]; then
+    echo "Ошибка: Переменные REPO_LOWER или RELEASE_HASH не установлены."
     exit 1
 fi
 
-TARGET_PORT="${SERVER_PORT:-22}"
-REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
-APP_DIR="/home/${SERVER_USER}/Desktop/catty-reminders-app"
-
-ssh -p "$TARGET_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" "bash -s" << REMOTE_SCRIPT
+ssh -p "$SERVER_PORT" -o StrictHostKeyChecking=no "${SERVER_USER}@${SERVER_HOST}" << REMOTE_SCRIPT
     set -e
+    cd /home/${SERVER_USER}/Desktop/catty-reminders-app
 
-    cd ${APP_DIR}
-
-    export REPO_LOWER="${REPO_LOWER}"
-    export RELEASE_HASH="${RELEASE_HASH}"
+    echo "REPO_LOWER=${REPO_LOWER}" > .env
+    echo "RELEASE_HASH=${RELEASE_HASH}" >> .env
 
     docker compose pull
-    docker compose up -d --remove-orphans
-
-    sleep 5
-
-    if [ \$(docker inspect -f '{{.State.Running}}' catty_backend) == "true" ]; then
-        exit 0
-    else
-        docker logs catty_backend
-        exit 1
-    fi
+    docker compose up -d --remove-orphans --pull always
 REMOTE_SCRIPT
