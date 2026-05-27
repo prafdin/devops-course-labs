@@ -1,5 +1,6 @@
 services:
   app:
+    # Указываем собирать образ локально из текущей папки, а не качать его
     build:
       context: .
       dockerfile: Dockerfile

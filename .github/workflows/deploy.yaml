@@ -12,7 +12,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'release'  github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -24,29 +24,29 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            cd /home/vboxuser/catty-reminders-app || exit 1
+            cd /home/vboxuser/catty-reminders-app  exit 1
             
             git fetch origin
-            git checkout lab4 || true
-            git pull origin lab4 || true
+            git checkout lab4  true
+            git pull origin lab4  true
             
-            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+            TARGET_SHA="${{ github.event.workflow_run.head_sha  github.sha }}"
             
             echo "DEPLOY_REF=$TARGET_SHA" > .env
-            echo "IMAGE=catty-reminders-app:local" >> .env
+            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
             
-            sudo docker compose down --remove-orphans || true
-            sudo docker stop catty-reminders-app 2>/dev/null || true
-            sudo docker rm catty-reminders-app 2>/dev/null || true
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u avofl1ow --password-stdin
             
-            # Собираем приложение локально из исходников на Debian
-            sudo docker compose build app
+            sudo docker compose down --remove-orphans  true
             
-            # Запускаем связку (MySQL подхватится из локального кэша)
+            sudo docker stop catty-reminders-app 2>/dev/null  true
+            sudo docker rm catty-reminders-app 2>/dev/null  true
+            
+            sudo docker compose pull
             sudo docker compose up -d --force-recreate
             
             for i in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null  curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed"  curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
                 echo "App is healthy and responds correctly"
                 exit 0
               fi
