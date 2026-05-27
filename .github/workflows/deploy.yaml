@@ -4,31 +4,22 @@ on:
   push:
     branches:
       - lab4
-      - lab4_autotests*
   release:
     types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to server
-        env:
-          SERVER_HOST: ${{ vars.DEPLOY_HOST }}
-          SERVER_USER: ${{ vars.DEPLOY_USER }}
-          SERVER_PORT: ${{ vars.DEPLOY_PORT }}
-          RELEASE_HASH: ${{ github.sha }}
-          REPO_LOWER: ${{ github.repository_owner_owner_lower_if_needed }}/catty-reminders-app
-        run: |
-          scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/Desktop/catty-reminders-app/docker-compose.yaml
-          chmod +x deploy.sh
-          ./deploy.sh
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Run deploy
+      run: |
+        scp -P 3149 -o StrictHostKeyChecking=no docker-compose.yaml qzm@course.prafdin.ru:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
+        ssh -p 3149 -o StrictHostKeyChecking=no qzm@course.prafdin.ru "bash /home/qzm/Desktop/catty-reminders-app/deploy.sh"
