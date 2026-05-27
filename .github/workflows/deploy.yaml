@@ -36,6 +36,8 @@ jobs:
             IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ steps.prep.outputs.release_sha }}"
             CONTAINER_NAME="catty-container"
 
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             echo "Pulling image: $IMAGE"
 
             i=1
