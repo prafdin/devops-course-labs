@@ -21,10 +21,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest
 
     - name: Run tests
       run: |
-        python -m unittest discover tests > test_result.txt || true
+        pytest --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
