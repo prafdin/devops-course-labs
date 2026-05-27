@@ -53,9 +53,9 @@ jobs:
 
     - name: Deploy to server
       env:
-        SERVER_HOST: ${{ secrets.SERVER_HOST }}
-        SERVER_USER: ${{ secrets.SERVER_USER }}
-        SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        SERVER_HOST: ${{ vars.DEPLOY_HOST }}
+        SERVER_USER: ${{ vars.DEPLOY_USER }}
+        SERVER_PORT: ${{ vars.DEPLOY_PORT }}
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
         REPO_NAME: ${{ github.repository }}
       run: |
