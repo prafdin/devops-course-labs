@@ -56,7 +56,7 @@ jobs:
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            echo "APP_IMAGE=\$IMAGE_LOWER" > .env
+            echo "APP_IMAGE=$IMAGE_LOWER" > .env
             echo "DB_CONTAINER_NAME=catty_db" >> .env
             echo "APP_CONTAINER_NAME=catty-app" >> .env
             echo "MYSQL_ROOT_PASSWORD=root_pass_123" >> .env
