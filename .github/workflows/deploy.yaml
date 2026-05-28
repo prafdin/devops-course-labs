@@ -45,7 +45,7 @@ jobs:
             
             echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:$TARGET_SHA" > .env
             
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u kuzminstanislav --password-stdin
             
             sudo docker compose pull app
             
