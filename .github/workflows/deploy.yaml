@@ -18,14 +18,22 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         command_timeout: 30m
         script: |
+          export GIT_TERMINAL_PROMPT=0
+          export GIT_SSH_COMMAND="ssh -o BatchMode=yes"
+
           cd /home/rave/catty-reminders-app
-          git fetch origin
-          git checkout lab4
-          git reset --hard origin/lab4
+          
+          git fetch origin || echo "Fetch failed"
+          git checkout lab4 || echo "Checkout failed"
+          git reset --hard origin/lab4 || echo "Reset failed"
+          
           export IMAGE_TAG=${{ github.sha }}
+          
           docker stop catty-container || true
           docker rm catty-container || true
+          
           docker compose down || true
-          docker compose pull
+          docker compose pull app
           docker compose up -d
+          
           sleep 15
