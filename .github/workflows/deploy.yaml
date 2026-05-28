@@ -32,20 +32,18 @@ jobs:
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-            # Записываем свежие переменные в .env
             echo "DEPLOY_REF=$TARGET_SHA" > .env
             echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
-            # Чистое тушение старого контейнера
-            sudo docker compose down --remove-orphans || true
-            
-            # Подтягиваем новый образ
+            # Скачиваем свежий образ приложения
             sudo docker compose pull app
             
-            # Запуск с явным указанием свежего файла окружения и пересозданием
-            sudo docker compose --env-file .env up -d --force-recreate
+            # Вместо down мы мягко обновляем ТОЛЬКО сервис 'app'. 
+            # Docker Compose сам пошлет правильный SIGTERM, приложение сбросит буфер в json, 
+            # после чего контейнер обновится на новый хэш!
+            sudo docker compose --env-file .env up -d --force-recreate app
             
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
