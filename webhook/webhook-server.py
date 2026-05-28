@@ -132,7 +132,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             print(f"      - Запуск тестов...")
             try:
                 result = subprocess.run(
-                    ["./test.sh"],
+                    ["webhook/test.sh"],
                     cwd=tmpdir,
                     check=True,
                     capture_output=True,
