@@ -2,13 +2,11 @@
 
 echo "🧪 Running tests..."
 
-# Проверяем что есть ракетка на сайте
-if grep -q "🚀" webhook/index.html; then
-    echo "✅ Rocket emoji found on site"
-else
-    echo "❌ Rocket emoji missing - site is not ready for launch!"
-    exit 1
-fi
+cd webhook
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r ../requirements.txt
+python3 -m pytest ../tests/test_unit.py
 
 echo "🎉 All tests passed!"
 exit 0
