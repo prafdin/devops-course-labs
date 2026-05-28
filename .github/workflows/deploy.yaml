@@ -1,19 +1,12 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - lab4
-      - lab4_autotests*
   release:
     types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     
     steps:
     - name: Checkout repository
@@ -21,11 +14,12 @@ jobs:
 
     - name: Create .env file
       run: |
-        REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        echo "APP_IMAGE=ghcr.io/${REPO_LOWER}:${{ github.sha }}" > .env
+        # app env vars
+        echo "APP_IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}" > .env
         echo "DEPLOY_REF=${{ github.sha }}" >> .env
         echo "APP_PORT=8181" >> .env
         echo "APP_CONTAINER_NAME=catty-app" >> .env
+        # database env vars
         echo "DB_CONTAINER_NAME=catty_db" >> .env
         echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "MYSQL_USER=ct" >> .env
@@ -53,6 +47,16 @@ jobs:
         source: ./docker-compose.yaml
         target: /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
 
+    - name: Copy config.json to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ vars.DEPLOY_HOST }}
+        username: ${{ vars.DEPLOY_USER }}
+        port: ${{ vars.DEPLOY_PORT }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: ./config.json
+        target: /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
+
     - name: Deploy to server
       uses: appleboy/ssh-action@master
       with:
@@ -60,12 +64,8 @@ jobs:
         username: ${{ vars.DEPLOY_USER }}
         port: ${{ vars.DEPLOY_PORT }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        command_timeout: 30m
         script: |
-          set -e
+          set -x
           cd /home/${{ vars.DEPLOY_USER }}/Desktop/catty-reminders-app
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          sudo docker compose down --remove-orphans || true
-          sudo docker compose pull
-          sudo docker compose up -d --force-recreate
-          sudo docker image prune -f
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          sudo docker compose up -d --pull always --remove-orphans --force-recreate
