@@ -49,10 +49,15 @@ jobs:
             git fetch origin
             git reset --hard origin/lab4
             
-            export APP_IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
-            export DEPLOY_REF="${{ github.sha }}"
-            export MYSQL_ROOT_PASSWORD="mypass"
-            export MYSQL_DATABASE="catty_reminders"
+            echo "APP_IMAGE=ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}" > .env
+            echo "DEPLOY_REF=${{ github.sha }}" >> .env
+            echo "MYSQL_ROOT_PASSWORD=mypass" >> .env
+            echo "MYSQL_DATABASE=catty_reminders" >> .env
+            
+            echo "DB_CONTAINER_NAME=catty_db" >> .env
+            echo "APP_CONTAINER_NAME=catty-app" >> .env
+            echo "DB_PORT=3306" >> .env
+            echo "APP_PORT=8181" >> .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
