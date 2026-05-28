@@ -10,7 +10,6 @@ services:
     env_file:
       - .env
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-latest}
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_USER=catty
