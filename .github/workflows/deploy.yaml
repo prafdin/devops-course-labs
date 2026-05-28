@@ -24,4 +24,5 @@ jobs:
           docker stop catty-container || true
           docker rm catty-container || true
           docker compose down || true
+          docker compose pull
           docker compose up -d
