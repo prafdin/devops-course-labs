@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: csharp-db-container
+    environment:
+      POSTGRES_DB: words_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d words_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  app:
+    image: ghcr.io/jupiter0303/csharp-example:${TAG:-latest}
+    container_name: csharp-web-container
+    ports:
+      - "8181:8181"
+    environment:
+      ConnectionStrings__Postgres: "Host=db;Port=5432;Database=words_db;Username=postgres;Password=mysecretpassword"
+      DEPLOY_REF: "${DEPLOY_REF:-N/A}"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge

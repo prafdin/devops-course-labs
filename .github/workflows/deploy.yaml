@@ -34,8 +34,8 @@ jobs:
         target: "/home/alexander/app"
         strip_components: 1
 
-    # Подключение по SSH и запуск контейнера на целевом хосте
-    - name: Deploy Docker container via SSH
+    # Подключение по SSH и запуск мультиконтейнерного стека
+    - name: Deploy Docker Compose stack via SSH
       uses: appleboy/ssh-action@v1
       with:
         host: course.prafdin.ru
@@ -43,20 +43,15 @@ jobs:
         username: alexander
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Авторизация Docker в реестре GHCR
+          # 1. Авторизуем Docker в реестре пакетов GHCR
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # Скачивание актуального образа из реестра
-          docker pull ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
+          # 2. Переходим в папку проекта и обновляем файлы (включая docker-compose.yml)
+          cd /home/alexander/csharp-example
+          git pull origin lab4
           
-          # Остановка и удаление старого контейнера
-          docker stop csharp-web-container || true
-          docker rm csharp-web-container || true
+          # 3. Скачиваем свежий образ приложения
+          TAG=${{ github.sha }} docker-compose pull app
           
-          # Запуск нового контейнера с передачей хэша коммита в переменные окружения
-          docker run -d \
-            -p 8181:8181 \
-            --name csharp-web-container \
-            -e DEPLOY_REF=${{ github.sha }} \
-            --restart always \
-            ghcr.io/jupiter0303/csharp-example:${{ github.sha }}
+          # 4. Запускаем весь стек, передавая тег образа и хэш деплоя
+          TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker-compose up -d
