@@ -20,9 +20,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3158
           script: |
-              bash ~/catty-reminders-app/deploy.sh \
-              ${{ github.sha }} \
-              "ghcr.io/${{ steps.prep.outputs.repo_lower }}:{{ github.sha }}t" \
-              "${{secrets.GIT_TOKEN}}" \
-              "${{github.actor}}"
+              bash ~/catty-reminders-app/deploy.sh ${{ github.sha }} "ghcr.io/${{ steps.prep.outputs.repo_lower }}:{{ github.sha }}t" "${{secrets.GIT_TOKEN}}" "${{github.actor}}"
           debug: true
