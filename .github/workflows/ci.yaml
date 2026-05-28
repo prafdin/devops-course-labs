@@ -15,7 +15,7 @@ on:
       - lab3_autotests*
 
 jobs:
-  pipeline:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           path: test_result.xml
 
   build-and-push:
-    needs: pipeline
+    needs: tests
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     permissions:
