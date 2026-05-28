@@ -1,4 +1,6 @@
 FROM python:3.12
+ARG DEPLOY_REF=unknown
+ENV DEPLOY_REF=${DEPLOY_REF}
 
 WORKDIR /catty-reminders-app
 

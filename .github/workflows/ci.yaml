@@ -93,6 +93,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}
           tags: |
             ghcr.io/${{ steps.image.outputs.owner }}/catty-reminders-app:latest
             ghcr.io/${{ steps.image.outputs.owner }}/catty-reminders-app:${{ github.sha }}
