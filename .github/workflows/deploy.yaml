@@ -23,7 +23,7 @@ jobs:
           host: course.prafdin.ru
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3129
+          port: 3306
           script: |
             cd /home/qzm/Desktop/catty-reminders-app
             
