@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12
 
 WORKDIR /catty-reminders-app
 
@@ -10,7 +10,7 @@ COPY static/ ./static/
 COPY templates/ ./templates/
 COPY config.json .
 
-ARG DEPLOY_REF=unknown
+ARG DEPLOY_REF=no
 ENV DEPLOY_REF=${DEPLOY_REF}
 
 EXPOSE 8181
