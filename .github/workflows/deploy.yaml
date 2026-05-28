@@ -1,23 +1,26 @@
 name: CD
 
 on:
+  release:
+    types: [published]
+
   workflow_run:
     workflows: ["CI"]
     types:
       - completed
-
-  release:
-    types:
-      - published
+    branches:
+      - "**"
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: ubuntu-latest
 
+    if: >
+      github.event_name == 'release' ||
+      github.event.workflow_run.conclusion == 'success'
+
     steps:
-      - name: Deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
 
         with:
@@ -26,16 +29,28 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+          command_timeout: 30m
+
           script: |
             set -e
 
             cd /home/vboxuser/catty-reminders-app
 
-            git fetch origin
+            echo "=== UPDATE REPOSITORY ==="
+
+            git remote set-url origin \
+              https://github.com/Vadimkadkdoofjf/catty-reminders-app.git
+
+            git fetch origin lab4
+
             git checkout lab4
-            git pull origin lab4
+
+            git reset --hard origin/lab4
+
+            echo "=== SET DEPLOY VARIABLES ==="
 
             DEPLOY_REF="${{ github.event.workflow_run.head_sha || github.sha }}"
+
             IMAGE="ghcr.io/vadimkadkdoofjf/catty-reminders-app:${DEPLOY_REF}"
 
             cat > .env <<EOF
@@ -43,14 +58,40 @@ jobs:
             IMAGE=${IMAGE}
             EOF
 
+            cat .env
+
+            echo "=== LOGIN TO GHCR ==="
+
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io \
               -u vadimkadkdoofjf \
               --password-stdin
 
-            sudo docker compose pull app
+            echo "=== PULL IMAGE ==="
 
-            sudo docker compose up -d --force-recreate app
+            sudo docker compose \
+              --env-file .env \
+              pull app
 
-            sleep 10
+            echo "=== RECREATE APP CONTAINER ==="
 
-            curl -f http://127.0.0.1:8181/
+            sudo docker compose \
+              --env-file .env \
+              up -d --force-recreate app
+
+            echo "=== WAIT FOR APP ==="
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null; then
+                echo "Application is healthy"
+                break
+              fi
+
+              echo "Waiting for application... ($i/30)"
+              sleep 5
+            done
+
+            echo "=== CHECK DEPLOY REF ==="
+
+            curl -s http://127.0.0.1:8181/login | grep "${DEPLOY_REF}"
+
+            echo "=== DONE ==="
