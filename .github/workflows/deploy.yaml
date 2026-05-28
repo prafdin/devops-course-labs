@@ -2,104 +2,62 @@ name: CD
 
 on:
   release:
-    types:
-      - published
-
+    types: [published]
   workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+    workflows: ["CI"]
+    types: [completed]
     branches:
-      - "**"
+      - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    if: >
-      github.event_name == 'release' ||
-      github.event.workflow_run.conclusion == 'success'
-
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Deploy application
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
-
         with:
           host: course.prafdin.ru
           port: 3155
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-
           command_timeout: 30m
-
           script: |
             set -e
-
-            echo "=== GO TO PROJECT ==="
-
-            cd /home/vboxuser/catty-reminders-app
-
-            echo "=== UPDATE REPOSITORY ==="
-
-            git remote set-url origin git@github.com:vadimkadkdoofjf/catty-reminders-app.git
-
-            git fetch origin lab4
-
-            git checkout lab4
-
-            git reset --hard origin/lab4
-
-            echo "=== SET DEPLOY VARIABLES ==="
-
-            DEPLOY_REF="${{ github.event.workflow_run.head_sha || github.sha }}"
-
-            IMAGE="ghcr.io/vadimkadkdoofjf/catty-reminders-app:${DEPLOY_REF}"
-
-            cat > .env <<EOF
-            DEPLOY_REF=${DEPLOY_REF}
-            IMAGE=${IMAGE}
-            EOF
-
-            cat .env
-
-            echo "=== LOGIN TO GHCR ==="
-
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io \
-              -u vadimkadkdoofjf \
-              --password-stdin
-
-            echo "=== PULL NEW IMAGE ==="
-
-            sudo docker compose \
-              --env-file .env \
-              pull app
-
-            echo "=== RECREATE APPLICATION ==="
-
-            sudo docker compose \
-              --env-file .env \
-              up -d --force-recreate app
-
-            echo "=== WAIT FOR APPLICATION ==="
-
+            cd /home/vboxuser/catty-reminders-app || exit 1
+            
+            git fetch origin
+            git checkout lab4 || true
+            git pull origin lab4 || true
+            
+            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+            
+            # Записываем актуальные переменные окружения для текущего коммита
+            echo "DEPLOY_REF=$TARGET_SHA" > .env
+            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
+            
+            # Авторизуемся в реестре пакетов GitHub
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
+            
+            # Чисто останавливаем старый стек контейнеров приложений
+            sudo docker compose down --remove-orphans || true
+            
+            # Скачиваем свежий собранный образ приложения
+            sudo docker compose pull app
+            
+            # Разворачиваем стек заново с принудительным пересозданием из нового образа
+            sudo docker compose --env-file .env up -d --force-recreate
+            
+            # Проверяем доступность приложения перед завершением воркфлоу
             for i in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:8181/ >/dev/null; then
-                echo "Application is healthy"
-                break
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+                echo "App is healthy and responds correctly"
+                exit 0
               fi
-
-              echo "Waiting for application... ($i/30)"
-
+              echo "Waiting for app... ($i/30)"
               sleep 5
             done
-
-            echo "=== VERIFY DEPLOY REF ==="
-
-            curl -s http://127.0.0.1:8181/login | grep "${DEPLOY_REF}"
-
-            echo "=== DOCKER STATUS ==="
-
-            sudo docker ps
-
-            echo "=== DONE ==="
+            
+            echo "App failed to start"
+            sudo docker compose logs app
+            exit 1
