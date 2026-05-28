@@ -1,4 +1,4 @@
-name: CD
+name: Deploy
 
 on:
   release:
@@ -7,7 +7,7 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches:
-      - 'lab4'
+      - lab4
 
 jobs:
   deploy:
@@ -18,39 +18,31 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          port: 3306
+          port: 22
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 30m
           script: |
             set -e
-            cd /home/qzm/Desktop/catty-reminders-app || exit 1
-            
+            cd /home/qzm/Desktop/catty-reminders-app
             git fetch origin
-            git checkout lab4 || true
-            git pull origin lab4 || true
+            git checkout lab4
+            git pull origin lab4
             
-            if [ -d reminder_db.json ]; then sudo rm -rf reminder_db.json; fi
-            if [ ! -f reminder_db.json ]; then echo "{}" > reminder_db.json; fi
-            
-            # Качаем всегда latest, DEPLOY_REF не передаем через env
-            echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:latest" > .env
+            echo "REPO_LOWER=ghcr.io/kuzminstanislav/catty-reminders-app" > .env
+            echo "RELEASE_HASH=latest" >> .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u KuzminStanislav --password-stdin
             
             sudo docker compose pull
-            sudo docker compose --env-file .env down || true
             sudo docker compose --env-file .env up -d --remove-orphans --force-recreate
             
-            for i in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
-                echo "App is healthy and responds correctly"
+            for i in {1..30}; do
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "200"; then
+                echo "App is healthy"
                 exit 0
               fi
               echo "Waiting for app... ($i/30)"
               sleep 3
             done
-            
-            echo "App failed to start"
-            sudo docker compose logs app
+            sudo docker compose logs backend
             exit 1
