@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
+    image: ${IMAGE:-ghcr.io/kuzminstanislav/catty-reminders-app:latest}
     restart: unless-stopped
     depends_on:
       db:
