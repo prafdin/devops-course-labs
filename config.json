@@ -1,5 +1,6 @@
 {
-  "db_path": "reminder_db.json",
+  "db_path": "/catty-reminders-app/data/reminder_db.json",
+
   "db_config": {
     "host": "db",
     "port": 3306,
@@ -7,9 +8,12 @@
     "password": "cattypass",
     "database": "catty_reminders"
   },
+
   "secret_key": "Cats are awesome!",
+
   "users": {
     "heisenberg": "P@ssw0rd",
     "tester": "foobar123"
   }
 }
+```

@@ -1,48 +1,65 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
+    image: ${IMAGE}
+    container_name: catty-app
+
     restart: unless-stopped
+
     depends_on:
       db:
         condition: service_healthy
+
     ports:
       - "8181:8181"
+
     env_file:
       - .env
+
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-latest}
-      - MYSQL_HOST=db
-      - MYSQL_USER=catty
-      - MYSQL_PASSWORD=cattypass
-      - MYSQL_DATABASE=catty_reminders
+      DEPLOY_REF: ${DEPLOY_REF}
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: catty
+      MYSQL_PASSWORD: cattypass
+      MYSQL_DATABASE: catty_reminders
+
     volumes:
+      - app-data:/catty-reminders-app/data
+
       - ./config.json:/catty-reminders-app/config.json:ro
-      # Правильное, точечное монтирование файла базы данных
-      - ./reminder_db.json:/catty-reminders-app/reminder_db.json
+
     networks:
       - app-network
 
   db:
     image: mysql:8.0
+
+    container_name: catty-db
+
     restart: unless-stopped
+
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: catty_reminders
       MYSQL_USER: catty
       MYSQL_PASSWORD: cattypass
-      MYSQL_DATABASE: catty_reminders
+
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ucatty -pcattypass"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 20s
+
     volumes:
-      - db-data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
+
     networks:
       - app-network
 
 volumes:
-  db-data:
+  mysql-data:
+  app-data:
 
 networks:
   app-network:
