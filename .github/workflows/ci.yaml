@@ -20,9 +20,14 @@ jobs:
           pip install -r requirements.txt uvicorn pytest-playwright
           playwright install --with-deps chromium
       
+   
+      - name: Prepare configuration files for build
+        run: |
+          echo '{"db_path": "reminder_db.json", "db_config": {"host": "db", "port": 3306, "user": "catty", "password": "cattypass", "database": "catty_reminders"}, "secret_key": "Cats are awesome!", "users": {"heisenberg": "P@ssw0rd", "tester": "foobar123"}}' > config.json
+          echo '{"reminder_lists": {}}' > reminder_db.json
+
       - name: Build Docker image for testing
         run: |
-   
           docker build --build-arg DEPLOY_REF=${{ github.sha }} -t catty-test .
       
       - name: Run MySQL container
@@ -78,6 +83,13 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+      
+   
+      - name: Prepare configuration files for build
+        run: |
+          echo '{"db_path": "reminder_db.json", "db_config": {"host": "db", "port": 3306, "user": "catty", "password": "cattypass", "database": "catty_reminders"}, "secret_key": "Cats are awesome!", "users": {"heisenberg": "P@ssw0rd", "tester": "foobar123"}}' > config.json
+          echo '{"reminder_lists": {}}' > reminder_db.json
+
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
