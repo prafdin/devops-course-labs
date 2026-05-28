@@ -1,24 +1,30 @@
-services:
-  catty-app:
-    image: ${APP_IMAGE}
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT}:8181"
-    env_file:
-      - .env
-    depends_on:
-      - catty_db
+version: '3.8'
 
+services:
   catty_db:
     image: mariadb:10.11
+    container_name: ${DB_CONTAINER_NAME}
     restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "${DB_PORT}:3306"
-    env_file:
-      - .env
     volumes:
       - catty_db_data:/var/lib/mysql
 
+  catty-app:
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    restart: unless-stopped
+    depends_on:
+      - catty_db
+    ports:
+      - "${APP_PORT}:8181"
+    environment:
+      DEPLOY_REF: ${DEPLOY_REF}
+
 volumes:
   catty_db_data:
-
