@@ -1,18 +1,13 @@
 name: CD
 
 on:
-  release:
-    types: [published]
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches:
       - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -35,10 +30,10 @@ jobs:
             export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             
             git fetch origin
-            git checkout lab4 || true
-            git pull origin lab4 || true
+            git checkout ${{ github.ref_name }} || git checkout lab4 || true
+            git pull origin ${{ github.ref_name }} || git pull origin lab4 || true
             
-            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+            TARGET_SHA="${{ github.sha }}"
             
             echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" > .env
             
