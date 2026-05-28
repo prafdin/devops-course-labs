@@ -11,6 +11,7 @@ on:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:latest
@@ -19,15 +20,28 @@ jobs:
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install --with-deps chromium
+
+      - name: Initialize DB
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: catty_reminders
+        run: |
+          python3 -c "from app.db import init_db; init_db()"
+
       - name: Start app
         env:
           MYSQL_HOST: 127.0.0.1
@@ -37,10 +51,12 @@ jobs:
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 10
+
       - name: Run tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest --junitxml=test_result.xml
+
       - if: always()
         uses: actions/upload-artifact@v4
         with:
