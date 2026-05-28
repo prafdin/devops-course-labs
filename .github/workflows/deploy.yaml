@@ -7,12 +7,12 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches:
-      - '**'
+      - 'lab4'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'release' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'lab4') }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -30,6 +30,9 @@ jobs:
             git checkout lab4 || true
             git pull origin lab4 || true
             
+            if [ -d reminder_db.json ]; then sudo rm -rf reminder_db.json; fi
+            if [ ! -f reminder_db.json ]; then echo "{}" > reminder_db.json; fi
+            
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
             echo "DEPLOY_REF=$TARGET_SHA" > .env
@@ -37,9 +40,8 @@ jobs:
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u KuzminStanislav --password-stdin
             
-            sudo docker compose pull app
-            
-            sudo docker compose --env-file .env up -d --force-recreate app
+            sudo docker compose pull
+            sudo docker compose --env-file .env up -d --remove-orphans --force-recreate
             
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
