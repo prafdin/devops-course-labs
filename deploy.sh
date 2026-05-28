@@ -1,22 +1,31 @@
 #!/bin/bash
 set -e
 
-cd /home/qzm/Desktop/catty-reminders-app/
+DEPLOY_PORT=${DEPLOY_PORT:-22}
+CONTAINER_NAME="catty-app"
+PORT="8181"
+IMAGE="$IMAGE_NAME:$RELEASE_HASH"
 
-echo "Updating docker-compose with image: ghcr.io/$REPO_LOWER:$RELEASE_HASH"
+SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
 
-sed -i "s|image: ghcr.io/[^:]*:.*|image: ghcr.io/$REPO_LOWER:$RELEASE_HASH|" docker-compose.yaml
-
-docker compose pull
-docker compose up -d --remove-orphans --force-recreate
-
-sleep 8
-
-if docker inspect -f '{{.State.Running}}' catty_backend 2>/dev/null | grep -q true; then
-    echo "Deployment successful"
-    exit 0
-else
-    echo "Container is not running. Logs:"
-    docker logs catty_backend || true
+ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
+  set -e
+  echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+  sudo docker pull "$IMAGE"
+  sudo docker stop "$CONTAINER_NAME" || true
+  sudo docker rm "$CONTAINER_NAME" || true
+  sudo docker run -d \
+    -p "$PORT:$PORT" \
+    --name "$CONTAINER_NAME" \
+    --restart unless-stopped \
+    -v /home/qzm/Desktop/catty-reminders-app/config.json:/app/config.json \
+    -e DEPLOY_REF="$RELEASE_HASH" \
+    "$IMAGE"
+  sleep 5
+  if sudo docker ps | grep -q "$CONTAINER_NAME"; then
+    echo "Success"
+  else
+    sudo docker logs "$CONTAINER_NAME"
     exit 1
-fi
+  fi
+EOF
