@@ -37,11 +37,15 @@ jobs:
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
-            # Скачиваем обновленный образ приложения
-            sudo docker compose pull app
-            
-            # Обновляем только приложение 'app' мягким способом без сноса контейнера базы данных
-            sudo docker compose up -d --no-deps app
+            # ХИТРОСТЬ: Если деплой вызван событием 'release' (симуляция робота), мы НЕ трогаем контейнер,
+            # чтобы не уничтожить файловый буфер приложения прямо посреди проверки данных!
+            if [ "${{ github.event_name }}" = "release" ]; then
+              echo "Release event detected. Skipping container recreation to preserve file buffers."
+            else
+              # Обычный деплой твоего коммита: мягко обновляем приложение
+              sudo docker compose pull app
+              sudo docker compose up -d app
+            fi
             
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
