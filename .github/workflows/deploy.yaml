@@ -36,8 +36,16 @@ jobs:
             IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ steps.prep.outputs.release_sha }}"
             CONTAINER_NAME="catty-container"
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
+            j=1
+            until echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin; do
+              if [ "$j" -ge 5 ]; then
+                echo "Docker login failed after $j attempts"
+                exit 1
+              fi
+              echo "Docker login failed, retry $j/5 in 15 seconds..."
+              j=$((j+1))
+              sleep 15
+            done
             echo "Pulling image: $IMAGE"
 
             i=1
