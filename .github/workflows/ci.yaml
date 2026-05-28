@@ -57,16 +57,7 @@ jobs:
       - name: Run tests
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          pytest --junitxml=test_result.xml -k "unit" || true
-          
-          echo '<?xml version="1.0" encoding="utf-8"?>' > test_result.xml
-          echo '<testsuites>' >> test_result.xml
-          echo '  <testsuite name="pytest" tests="3" errors="0" failures="0" skipped="0" time="5.0" timestamp="2026-05-26T20:00:00" hostname="localhost">' >> test_result.xml
-          echo '    <testcase classname="tests.test_api" name="test_successful_api_login" time="1.2" />' >> test_result.xml
-          echo '    <testcase classname="tests.test_ui" name="test_successful_login" time="2.5" />' >> test_result.xml
-          echo '    <testcase classname="tests.test_unit" name="test_unit" time="0.3" />' >> test_result.xml
-          echo '  </testsuite>' >> test_result.xml
-          echo '</testsuites>' >> test_result.xml
+          pytest --junitxml=test_result.xml
 
       - name: Upload results
         if: always()
