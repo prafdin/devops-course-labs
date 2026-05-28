@@ -9,7 +9,7 @@ services:
       - db_data:/var/lib/mysql
 
   app:
-    image: ghcr.io/zurmes/catty-reminders-app:latest
+    image: ghcr.io/zurmes/catty-reminders-app:${IMAGE_TAG:-latest}
     restart: always
     ports:
       - "8181:8181"
