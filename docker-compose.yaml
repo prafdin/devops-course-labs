@@ -17,14 +17,12 @@ services:
       - MYSQL_DATABASE=catty_reminders
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
-      # Это спасет данные на твоей виртуалке при смене SHA образов:
-      - /home/vboxuser/catty-reminders-app/reminder_db.json:/catty-reminders-app/reminder_db.json
+      - catty-db-file:/catty-reminders-app/reminder_db.json
     networks:
       - app-network
 
   db:
     image: mysql:8.0
-    # Исправлено по требованию преподавателя (danlla):
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
@@ -44,6 +42,7 @@ services:
 
 volumes:
   db-data:
+  catty-db-file:
 
 networks:
   app-network:
