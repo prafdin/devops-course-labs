@@ -3,46 +3,34 @@ name: Deploy
 on:
   release:
     types: [published]
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches:
-      - lab4
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'lab4') }}
+    
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: course.prafdin.ru
-          port: 22
-          username: qzm
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd /home/qzm/Desktop/catty-reminders-app
-            git fetch origin
-            git checkout lab4
-            git pull origin lab4
-            
-            echo "REPO_LOWER=ghcr.io/kuzminstanislav/catty-reminders-app" > .env
-            echo "RELEASE_HASH=latest" >> .env
-            
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u KuzminStanislav --password-stdin
-            
-            sudo docker compose pull
-            sudo docker compose --env-file .env up -d --remove-orphans --force-recreate
-            
-            for i in {1..30}; do
-              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "200"; then
-                echo "App is healthy"
-                exit 0
-              fi
-              echo "Waiting for app... ($i/30)"
-              sleep 3
-            done
-            sudo docker compose logs backend
-            exit 1
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        SERVER_HOST: course.prafdin.ru
+        SERVER_USER: qzm
+        SERVER_PORT: 3306
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        REPO_NAME: ${{ github.repository }}
+      run: |
+        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
+        ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "chmod +x /home/qzm/Desktop/catty-reminders-app/deploy.sh"
+        ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "/home/qzm/Desktop/catty-reminders-app/deploy.sh"
