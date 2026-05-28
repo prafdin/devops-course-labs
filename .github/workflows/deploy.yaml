@@ -32,13 +32,12 @@ jobs:
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-            echo "DEPLOY_REF=$TARGET_SHA" > .env
-            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
+   
+            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" > .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
             sudo docker compose pull app
-            
             sudo docker compose --env-file .env up -d --force-recreate app
             
             for i in $(seq 1 30); do
