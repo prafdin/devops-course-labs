@@ -7,7 +7,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -31,6 +30,5 @@ jobs:
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
         REPO_NAME: ${{ github.repository }}
       run: |
-        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
-        ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "chmod +x /home/qzm/Desktop/catty-reminders-app/deploy.sh"
-        ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "/home/qzm/Desktop/catty-reminders-app/deploy.sh"
+        chmod +x ./deploy.sh
+        ./deploy.sh
