@@ -26,15 +26,14 @@ jobs:
             set -e
             cd /home/vboxuser/catty-reminders-app || exit 1
             
+   
             eval "$(ssh-agent -s)"
-            
             if [ -f /home/vboxuser/.ssh/id_rsa ]; then
               ssh-add /home/vboxuser/.ssh/id_rsa
-              export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             elif [ -f /home/vboxuser/.ssh/id_ed25519 ]; then
               ssh-add /home/vboxuser/.ssh/id_ed25519
-              export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             fi
+            export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             
             git fetch origin
             git checkout lab4 || true
@@ -42,13 +41,19 @@ jobs:
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-            echo "IMAGE_TAG=$TARGET_SHA" > .env
+   
+            echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" > .env
             
-            sudo docker compose build --build-arg DEPLOY_REF=$TARGET_SHA app
+   
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
+            
+   
+            sudo docker compose pull app
             
    
             sudo docker compose --env-file .env up -d app
             
+   
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
                 echo "App is healthy and responds correctly"
