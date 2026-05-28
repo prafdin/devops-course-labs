@@ -36,6 +36,9 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      - name: Copy config to app directory
+        run: cp config.json app/config.json
+
       - name: Initialize DB
         env:
           MYSQL_PWD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
