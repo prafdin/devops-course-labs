@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/avofl1ow/catty-reminders-app:latest}
+    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
     restart: unless-stopped
     depends_on:
       db:
@@ -17,7 +17,8 @@ services:
       - MYSQL_DATABASE=catty_reminders
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
-      - ./reminder_db.json:/catty-reminders-app/reminder_db.json
+      # МАГИЯ ЗДЕСЬ: Заменили относительный путь на жесткий абсолютный
+      - /home/vboxuser/catty-reminders-app/reminder_db.json:/catty-reminders-app/reminder_db.json
     networks:
       - app-network
 
