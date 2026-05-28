@@ -2,8 +2,7 @@
 
 set -e
 
-cd cd "/home/seva/Documents/catty-reminders-app"
-
+cd "/home/seva/Documents/catty-reminders-app"
 
 echo "Pulling latest changes..."
 git pull
@@ -15,6 +14,6 @@ echo "Restarting app..."
 
 pkill -f "python3 app.py" || true
 
-nohup python3 app.py > app.log 2>&1 &
+nohup ./venv/bin/python app.py > app.log 2>&1 &
 
 echo "Deploy completed"
