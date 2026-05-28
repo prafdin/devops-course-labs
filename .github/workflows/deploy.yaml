@@ -1,13 +1,18 @@
 name: CD
 
 on:
-  push:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["CI"] 
+    types: [completed]
     branches:
       - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -30,17 +35,16 @@ jobs:
             export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             
             git fetch origin
-            git checkout ${{ github.ref_name }} || git checkout lab4 || true
-            git pull origin ${{ github.ref_name }} || git pull origin lab4 || true
+            git checkout lab4 || true
+            git pull origin lab4 || true
             
-            TARGET_SHA="${{ github.sha }}"
+            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
             echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" > .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
             sudo docker compose pull app
-            
             sudo docker compose --env-file .env up -d app
             
             for i in $(seq 1 30); do
