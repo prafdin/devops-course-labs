@@ -26,10 +26,14 @@ jobs:
             set -e
             cd /home/vboxuser/catty-reminders-app || exit 1
             
+            eval "$(ssh-agent -s)"
+            
             if [ -f /home/vboxuser/.ssh/id_rsa ]; then
-              export GIT_SSH_COMMAND="ssh -i /home/vboxuser/.ssh/id_rsa -o StrictHostKeyChecking=no"
+              ssh-add /home/vboxuser/.ssh/id_rsa
+              export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             elif [ -f /home/vboxuser/.ssh/id_ed25519 ]; then
-              export GIT_SSH_COMMAND="ssh -i /home/vboxuser/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+              ssh-add /home/vboxuser/.ssh/id_ed25519
+              export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             fi
             
             git fetch origin
