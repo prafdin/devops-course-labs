@@ -32,30 +32,25 @@ jobs:
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-            # Записываем актуальные переменные окружения для текущего коммита
             echo "DEPLOY_REF=$TARGET_SHA" > .env
             echo "IMAGE=ghcr.io/vadimkadkdoofjf/catty-reminders-app:$TARGET_SHA" >> .env
             
-            # Авторизуемся в реестре пакетов GitHub
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
-            # Чисто останавливаем старый стек контейнеров приложений
-            sudo docker compose down --remove-orphans || true
-            
-            # Скачиваем свежий собранный образ приложения
+            # Скачиваем свежий образ приложения
             sudo docker compose pull app
             
-            # Разворачиваем стек заново с принудительным пересозданием из нового образа
-            sudo docker compose --env-file .env up -d --force-recreate
+            # МЯГКИЙ ПЕРЕЗАПУСК: Пересоздаем ТОЛЬКО контейнер приложения, база остается онлайн!
+            sudo docker compose --env-file .env up -d --force-recreate app
             
-            # Проверяем доступность приложения перед завершением воркфлоу
+            # Проверяем доступность порта 8181
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
                 echo "App is healthy and responds correctly"
                 exit 0
               fi
               echo "Waiting for app... ($i/30)"
-              sleep 5
+              sleep 3
             done
             
             echo "App failed to start"
