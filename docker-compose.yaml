@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
+    image: ${IMAGE:-ghcr.io/avofl1ow/catty-reminders-app:latest}
     restart: unless-stopped
     depends_on:
       db:
@@ -17,14 +17,13 @@ services:
       - MYSQL_DATABASE=catty_reminders
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
-      # ДОБАВЛЕНО: намертво связываем файл базы данных приложения с диском Debian
       - ./reminder_db.json:/catty-reminders-app/reminder_db.json
     networks:
       - app-network
 
   db:
     image: mysql:8.0
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_USER: catty
