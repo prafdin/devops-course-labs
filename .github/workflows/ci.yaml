@@ -3,55 +3,45 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - lab4*
+  pull_request:
+    branches:
+      - lab4*
 
 jobs:
-  test:
+  pipeline:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: catty_reminders
+        ports:
+          - 3306:3306
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install dependencies
-        run: |
+      - run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt uvicorn pytest-playwright
+          pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Build Docker image for testing
+      - name: Start app
+        env:
+          MYSQL_HOST: mysql
+          MYSQL_USER: root
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: catty_reminders
         run: |
-          docker build -t catty-test .
-      - name: Run MySQL container
-        run: |
-          docker run -d \
-            --name mysql-test \
-            -e MYSQL_ROOT_PASSWORD=rootpass \
-            -e MYSQL_USER=catty \
-            -e MYSQL_PASSWORD=cattypass \
-            -e MYSQL_DATABASE=catty_reminders \
-            -p 3306:3306 \
-            mysql:8.0
-          sleep 15
-      - name: Run app container
-        run: |
-          docker run -d \
-            --name app-test \
-            --link mysql-test:db \
-            -e MYSQL_HOST=mysql-test \
-            -e MYSQL_USER=catty \
-            -e MYSQL_PASSWORD=cattypass \
-            -e MYSQL_DATABASE=catty_reminders \
-            -p 8181:8181 \
-            catty-test
-          sleep 5
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 10
       - name: Run tests
-        run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          # Запускаем все реальные тесты приложения и сохраняем отчет
-          pytest --junitxml=test_result.xml
-
-      - name: Upload results
-        if: always()
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest --junitxml=test_result.xml
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_result
@@ -59,26 +49,29 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
-    needs: test
+    needs: pipeline
+    if: success()
     permissions:
+      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Login to GHCR
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: type=raw,value=latest
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          provenance: false
-          sbom: false
-          tags: |
-            ghcr.io/kuzminstanislav/catty-reminders-app:latest
-            ghcr.io/kuzminstanislav/catty-reminders-app:${{ github.sha }}
-          build-args: |
-            DEPLOY_REF=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
