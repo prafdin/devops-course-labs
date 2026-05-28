@@ -20,9 +20,6 @@ jobs:
             docker stop catty-app || true
             docker rm catty-app || true
 
-            sudo systemctl stop catty-app || true
-            sudo systemctl disable catty-app || true
-
             echo "$GHCR_PAT" | docker login ghcr.io -u getsomelight --password-stdin
 
             docker pull ghcr.io/getsomelight/catty-app:latest
