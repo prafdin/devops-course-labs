@@ -4,14 +4,15 @@ services:
   db:
     image: postgres:15-alpine
     container_name: csharp-db-container
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: words_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d words_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,11 +22,11 @@ services:
   app:
     image: ghcr.io/jupiter0303/csharp-example:${TAG:-latest}
     container_name: csharp-web-container
+    restart: unless-stopped
     ports:
       - "8181:8181"
     environment:
-      ConnectionStrings__Postgres: "Host=db;Port=5432;Database=words_db;Username=postgres;Password=mysecretpassword"
-      DEPLOY_REF: "${DEPLOY_REF:-N/A}"
+      ConnectionStrings__Postgres: ${DB_CONNECTION_STRING}
     depends_on:
       db:
         condition: service_healthy

@@ -34,7 +34,7 @@ jobs:
         target: "/home/alexander/app"
         strip_components: 1
 
-    # Подключение по SSH и запуск мультиконтейнерного стека
+    # Подключение по SSH и запуск мультиконтейнерного стека через Docker Compose
     - name: Deploy Docker Compose stack via SSH
       uses: appleboy/ssh-action@v1
       with:
@@ -46,12 +46,12 @@ jobs:
           # 1. Авторизуем Docker в реестре пакетов GHCR
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # 2. Переходим в папку проекта и обновляем файлы (включая docker-compose.yml)
+          # 2. Переходим в папку проекта и обновляем файлы (включая docker-compose.yml и .env)
           cd /home/alexander/csharp-example
           git pull origin lab4
           
           # 3. Скачиваем свежий образ приложения
           TAG=${{ github.sha }} docker-compose pull app
           
-          # 4. Запускаем весь стек, передавая тег образа и хэш деплоя
-          TAG=${{ github.sha }} DEPLOY_REF=${{ github.sha }} docker-compose up -d
+          # 4. Запускаем весь стек, передавая только тег образа
+          TAG=${{ github.sha }} docker-compose up -d
