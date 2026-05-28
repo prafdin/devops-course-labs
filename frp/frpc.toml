@@ -4,13 +4,13 @@ auth.method = "token"
 auth.token = "devops"
 
 [[proxies]]
-name = "hook-zavadskiy"
-type = "http"
-localPort = 8080
-customDomains = ["webhook.zavadskiy.course.prafdin.ru"]
-
-[[proxies]]
 name = "app-zavadskiy"
 type = "http"
 localPort = 8181
 customDomains = ["app.zavadskiy.course.prafdin.ru"]
+
+[[proxies]]
+name = "ssh-zavadskiy"
+type = "tcp"
+localPort = 22
+remotePort = 3143
