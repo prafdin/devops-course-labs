@@ -8,21 +8,28 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: course.prafdin.ru
-        username: light
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 3137
-        script: |
-          cd /home/light/catty-reminders-app
-          git fetch origin lab2
-          git checkout lab2
-          git reset --hard origin/lab2
-          echo "DEPLOY_REF=${{ github.sha }}" > .env
-          echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
-          source .venv/bin/activate
-          pip install -r requirements.txt
-          sudo systemctl restart catty-app
-          sleep 5
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: light
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3137
+          envs: GHCR_PAT, GITHUB_REPOSITORY_OWNER, GITHUB_SHA
+          script: |
+            docker stop catty-app || true
+            docker rm catty-app || true
+
+            sudo systemctl stop catty-app || true
+            sudo systemctl disable catty-app || true
+
+            echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_REPOSITORY_OWNER" --password-stdin
+
+            docker pull ghcr.io/$GITHUB_REPOSITORY_OWNER/catty-app:latest
+
+            docker run -d \
+              --name catty-app \
+              -p 8181:8181 \
+              -e DEPLOY_REF=$GITHUB_SHA \
+              --restart unless-stopped \
+              ghcr.io/$GITHUB_REPOSITORY_OWNER/catty-app:latest

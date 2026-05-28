@@ -1,5 +1,6 @@
 venv/
-
+.git
+.venv
 __pycache__/
 *.pyc
 .DS_Store
@@ -9,3 +10,4 @@ __pycache__/
 *.pyc
 deploy.log
 venv/
+test_results
