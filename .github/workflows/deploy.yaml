@@ -1,5 +1,4 @@
-name: CD Pipeline
-
+name: Deploy
 on:
   release:
     types: [published]
@@ -7,48 +6,23 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Convert repository name to lowercase
-      id: prep
-      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      env:
-        PAT: ${{ secrets.GIT_TOKEN }}
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        envs: PAT
-        script: |
-          set -e
-          IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
-          CONTAINER_NAME="catty-reminders"
-
-          echo "Authorization in в GitHub Container Registry..."
-          echo "$PAT" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          echo "downloading image $IMAGE_NAME..."
-          docker pull $IMAGE_NAME
-
-          echo "stopping old container..."
-          docker stop $CONTAINER_NAME || true
-          docker rm -f $CONTAINER_NAME || true
-
-          echo "launching a new container..."
-          docker run -d \
-            --name $CONTAINER_NAME \
-            -p 8181:8181 \
-            --restart always \
-            $IMAGE_NAME
-
-          echo "cleaning up old unused Docker images..."
-          docker image prune -af || true
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+      - name: Deploy via script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: user
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3158
+          script: |
+              bash ~/catty-reminders-app/deploy.sh \
+              ${{ github.sha }} \
+              "ghcr.io/${{steps.prep.outputs.repo_lower}}:latest" \
+              "${{secrets.GIT_TOKEN}}" \
+              "${{github.actor}}"
+          debug: true

@@ -13,3 +13,6 @@ schema-params.json
 
 .DS_Store
 Thumbs.db
+
+.venv/
+deploy/

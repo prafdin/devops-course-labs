@@ -1,30 +1,17 @@
 #!/bin/bash
-set -e
+SHA=$1
+IMAGE=$2
+GITHUBTOKEN=$3
+GITHUBACTOR=$4
+CONTAINER_NAME="catty-container"
 
-TARGET_DIR="/home/vboxuser/catty-reminders-app"
+echo "Logging in GHCR"
+echo "$GITHUBTOKEN" | docker login ghcr.io -u $GITHUBACTOR --password-stdin
 
-BRANCH=${1:-lab2}
-COMMIT_SHA=$2
+echo "Pulling image: $IMAGE"
+docker pull $IMAGE
+docker stop $CONTAINER_NAME || true
+docker rm $CONTAINER_NAME || true
 
-echo "cd to $TARGET_DIR..."
-cd "$TARGET_DIR"
-
-echo "fetch the latest version..."
-git fetch origin "$BRANCH"
-git checkout "$BRANCH"
-git reset --hard "origin/$BRANCH"
-
-echo "wrighting hash into .env..."
-if [ -z "$COMMIT_SHA" ] || [ "$COMMIT_SHA" == "unknown" ]; then
-    COMMIT_SHA=$(git rev-parse HEAD)
-fi
-echo "DEPLOY_REF=$COMMIT_SHA" > "$TARGET_DIR/.env"
-
-echo "update reqs..."
-source .venv/bin/activate
-pip install -r requirements.txt
-
-echo "restarting app..."
-sudo systemctl restart catty-reminders
-
-echo "deployment ended up successful"
+docker run -d --name $CONTAINER_NAME -p 8181:8181 --restart always $IMAGE
+docker image prune -f
