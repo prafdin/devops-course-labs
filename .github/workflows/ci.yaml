@@ -21,7 +21,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install pytest
+        pip install pytest uvicorn playwright
+
+    - name: Install Playwright Browsers
+      run: |
+        playwright install chromium --with-deps
+
+    - name: Start Application in Background
+      run: |
+        python -m uvicorn app.main:app --port 8181 &
+        sleep 3
 
     - name: Run tests
       run: |
