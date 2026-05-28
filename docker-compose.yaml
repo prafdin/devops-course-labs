@@ -1,7 +1,6 @@
 services:
   catty-app:
     image: ${APP_IMAGE}
-    container_name: ${APP_CONTAINER_NAME}
     restart: unless-stopped
     ports:
       - "${APP_PORT}:8181"
@@ -12,7 +11,6 @@ services:
 
   catty_db:
     image: mariadb:10.11
-    container_name: ${DB_CONTAINER_NAME}
     restart: unless-stopped
     ports:
       - "${DB_PORT}:3306"
