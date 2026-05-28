@@ -33,14 +33,12 @@ jobs:
             if [ -d reminder_db.json ]; then sudo rm -rf reminder_db.json; fi
             if [ ! -f reminder_db.json ]; then echo "{}" > reminder_db.json; fi
             
-            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
-            
-            echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:$TARGET_SHA" > .env
+            # Качаем всегда latest, DEPLOY_REF не передаем через env
+            echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:latest" > .env
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u KuzminStanislav --password-stdin
             
             sudo docker compose pull
-            
             sudo docker compose --env-file .env down || true
             sudo docker compose --env-file .env up -d --remove-orphans --force-recreate
             
@@ -53,6 +51,6 @@ jobs:
               sleep 3
             done
             
-            echo "App failed"
+            echo "App failed to start"
             sudo docker compose logs app
             exit 1
