@@ -49,7 +49,7 @@ jobs:
             
             sudo docker compose pull app
             
-            sudo docker compose --env-file .env up -d app
+            sudo docker compose --env-file .env up -d
             
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
