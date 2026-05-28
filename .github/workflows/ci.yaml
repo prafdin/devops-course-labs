@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt uvicorn pytest-playwright
+          playwright install --with-deps chromium
+
+      - name: Prepare configuration files for build
+        run: |
+          echo '{"db_path": "reminder_db.json", "db_config": {"host": "db", "port": 3306, "user": "catty", "password": "cattypass", "database": "catty_reminders"}, "secret_key": "Cats are awesome!", "users": {"heisenberg": "P@ssw0rd", "tester": "foobar123"}}' > config.json
+          echo '{"reminder_lists": {}}' > reminder_db.json
+
+      - name: Build Docker image for testing
+        run: |
+          docker build --build-arg DEPLOY_REF=${{ github.sha }} -t catty-test .
+
+      - name: Run MySQL container
+        run: |
+          docker run -d \
+            --name mysql-test \
+            -e MYSQL_ROOT_PASSWORD=rootpass \
+            -e MYSQL_USER=catty \
+            -e MYSQL_PASSWORD=cattypass \
+            -e MYSQL_DATABASE=catty_reminders \
+            -p 3306:3306 \
+            mysql:8.0
+          sleep 15
+
+      - name: Run app container
+        run: |
+          docker run -d \
+            --name app-test \
+            --link mysql-test:db \
+            -e MYSQL_HOST=mysql-test \
+            -e MYSQL_USER=catty \
+            -e MYSQL_PASSWORD=cattypass \
+            -e MYSQL_DATABASE=catty_reminders \
+            -p 8181:8181 \
+            catty-test
+          sleep 5
+
+      - name: Run tests
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest --junitxml=test_result.xml
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_result.xml
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare configuration files for build
+        run: |
+          echo '{"db_path": "reminder_db.json", "db_config": {"host": "db", "port": 3306, "user": "catty", "password": "cattypass", "database": "catty_reminders"}, "secret_key": "Cats are awesome!", "users": {"heisenberg": "P@ssw0rd", "tester": "foobar123"}}' > config.json
+          echo '{"reminder_lists": {}}' > reminder_db.json
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ghcr.io/avofl1ow/catty-reminders-app:latest
+            ghcr.io/avofl1ow/catty-reminders-app:${{ github.sha }}
+          build-args: |
+            DEPLOY_REF=${{ github.sha }}

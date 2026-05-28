@@ -1,0 +1,67 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches:
+      - '**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          port: 3126
+          username: kali
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /home/kali/catty-reminders-app || exit 1
+
+            eval "$(ssh-agent -s)"
+            if [ -f /home/kali/.ssh/id_rsa ]; then
+              ssh-add /home/kali/.ssh/id_rsa
+            elif [ -f /home/kali/.ssh/id_ed25519 ]; then
+              ssh-add /home/kali/.ssh/id_ed25519
+            fi
+            export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+
+            git fetch origin
+            git checkout lab4 || true
+            git pull origin lab4 || true
+
+            # Извлекаем SHA коммита
+            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+
+            # Больше не используем latest для деплоя, фиксируем образ по коммиту
+            echo "IMAGE=ghcr.io/avofl1ow/catty-reminders-app:$TARGET_SHA" > .env
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u avofl1ow --password-stdin
+
+            sudo docker compose down --remove-orphans || true
+            sudo docker stop catty-reminders-app 2>/dev/null || true
+            sudo docker rm catty-reminders-app 2>/dev/null || true
+
+            sudo docker compose pull
+            sudo docker compose up -d --force-recreate
+
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+                echo "App is healthy and responds correctly"
+                exit 0
+              fi
+              echo "Waiting for app... ($i/30)"
+              sleep 5
+            done
+
+            echo "App failed to start"
+            sudo docker compose logs app
+            exit 1
