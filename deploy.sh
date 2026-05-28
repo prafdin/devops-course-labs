@@ -1,31 +1,24 @@
 #!/bin/bash
 set -e
+cd /home/qzm/Desktop/catty-reminders-app || exit 1
 
-DEPLOY_PORT=${DEPLOY_PORT:-22}
-CONTAINER_NAME="catty-app"
-PORT="8181"
-IMAGE="$IMAGE_NAME:$RELEASE_HASH"
+echo "${{ secrets.DOCKER_TOKEN }}" | sudo docker login ghcr.io -u kuzminstanislav --password-stdin
 
-SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
+TARGET_SHA="${{ github.sha }}"
+echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:$TARGET_SHA" > .env
 
-ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-  set -e
-  echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-  sudo docker pull "$IMAGE"
-  sudo docker stop "$CONTAINER_NAME" || true
-  sudo docker rm "$CONTAINER_NAME" || true
-  sudo docker run -d \
-    -p "$PORT:$PORT" \
-    --name "$CONTAINER_NAME" \
-    --restart unless-stopped \
-    -v /home/qzm/Desktop/catty-reminders-app/config.json:/app/config.json \
-    -e DEPLOY_REF="$RELEASE_HASH" \
-    "$IMAGE"
-  sleep 5
-  if sudo docker ps | grep -q "$CONTAINER_NAME"; then
-    echo "Success"
-  else
-    sudo docker logs "$CONTAINER_NAME"
-    exit 1
+sudo docker compose down --remove-orphans
+sudo docker compose pull
+sudo docker compose --env-file .env up -d
+
+for i in $(seq 1 30); do
+  if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+    echo "App is healthy"
+    exit 0
   fi
-EOF
+  echo "Waiting for app... ($i/30)"
+  sleep 5
+done
+
+sudo docker compose logs app
+exit 1
