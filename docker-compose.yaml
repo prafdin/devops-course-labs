@@ -1,38 +1,35 @@
 services:
+  catty_db:
+    image: mysql:latest
+    container_name: ${DB_CONTAINER_NAME}
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - catty_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]  
+      timeout: 20s
+      retries: 10
+
   catty-app:
     image: ${APP_IMAGE}
     container_name: ${APP_CONTAINER_NAME}
     restart: always
     environment:
       - DEPLOY_REF=${DEPLOY_REF}
-    ports: 
-      - "${APP_PORT}:${APP_PORT}"
+    ports:
+      - "${APP_PORT}:8181"
     volumes:
       - ./config.json:/catty-reminders-app/config.json:ro
     depends_on:
-      - db
-    networks:
-      - catty-network
-  
-  db:
-    image: mysql:latest
-    container_name: ${DB_CONTAINER_NAME}
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-    ports:
-      - "${DB_PORT}:${DB_PORT}"
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - catty-network
-
-networks:
-  catty-network:
-    driver: bridge
+      catty_db:
+        condition: service_healthy
 
 volumes:
-  db_data:
+  catty_db_data:

@@ -1,11 +1,11 @@
 {
   "db_config": {
-    "host": "catty_db",
-    "port": 3306,
-    "user": "ct",
-    "password": "catty_pass_123",
-    "database": "catty_reminders"
-  },
+  "host": "db",
+  "port": 3306,
+  "user": "root",
+  "password": "mypass",
+  "database": "catty_reminders"
+},
   "users": {
     "admin": "admin"
   },
