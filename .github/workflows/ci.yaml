@@ -16,7 +16,7 @@ jobs:
       mysql:
         image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: mypass
           MYSQL_DATABASE: catty_reminders
         ports:
           - 3306:3306
@@ -36,19 +36,21 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      - name: Copy config to app directory
-        run: cp config.json app/config.json
-
-      - name: Initialize DB
-        env:
-          MYSQL_PWD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      - name: Wait for MySQL
         run: |
-          mysql -h 127.0.0.1 -u root -e "CREATE USER IF NOT EXISTS 'catty'@'%' IDENTIFIED BY 'cattypass'; GRANT ALL PRIVILEGES ON catty_reminders.* TO 'catty'@'%'; FLUSH PRIVILEGES;"
+          for i in {1..10}; do
+            mysql -h 127.0.0.1 -u root -pmypass -e "SELECT 1" && break
+            sleep 2
+          done
+
+      - name: Initialize DB User
+        run: |
+          mysql -h 127.0.0.1 -u root -pmypass -e "CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY 'mypass'; GRANT ALL PRIVILEGES ON catty_reminders.* TO 'root'@'%'; FLUSH PRIVILEGES;"
 
       - name: Start app
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
-          sleep 4
+          sleep 10
 
       - name: Run tests
         env:
@@ -69,32 +71,24 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
       - name: Get commit hash
         id: vars
-        run: |
-          COMMIT_HASH=$(git rev-parse HEAD)
-          echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
-
+        run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          tags: |
-            type=raw,value=${{ steps.vars.outputs.commit_hash }}
-
+          tags: type=raw,value=${{ steps.vars.outputs.commit_hash }}
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
