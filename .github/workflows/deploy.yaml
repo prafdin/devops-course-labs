@@ -34,12 +34,11 @@ jobs:
             fi
             export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             
-   
             git fetch origin
             git checkout lab4 || true
             
-   
-            git checkout HEAD -- reminder_db.json || true
+            git update-index --assume-unchanged reminder_db.json || true
+            
             git pull origin lab4 || true
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
@@ -49,6 +48,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
             sudo docker compose pull app
+            
             sudo docker compose --env-file .env up -d app
             
             for i in $(seq 1 30); do
