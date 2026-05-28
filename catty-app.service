@@ -1,0 +1,13 @@
+[Unit]
+Description=Catty Reminders FastAPI App
+After=network.target
+
+[Service]
+User=light
+WorkingDirectory=/home/light/catty-reminders-app
+EnvironmentFile=/home/light/catty-reminders-app/.env
+ExecStart=/home/light/catty-reminders-app/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8181
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
