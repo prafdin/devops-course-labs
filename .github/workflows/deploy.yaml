@@ -1,41 +1,55 @@
 name: CD
 
 on:
-  push:
-    branches: [ lab4 ]
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches:
+      - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Prepare Image Name
-        id: prep
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
-
-      - name: Remote Docker Compose Deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
+          port: 3306
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 3306
+          command_timeout: 30m
           script: |
-            cd /home/qzm/Desktop/catty-reminders-app
+            set -e
+            cd /home/qzm/Desktop/catty-reminders-app || exit 1
             
             git fetch origin
-            git reset --hard origin/lab4
+            git checkout lab4 || true
+            git pull origin lab4 || true
             
-            export APP_IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
-            export MYSQL_ROOT_PASSWORD="mypass"
-            export MYSQL_DATABASE="catty_reminders"
+            TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "DEPLOY_REF=$TARGET_SHA" > .env
+            echo "IMAGE=ghcr.io/kuzminstanislav/catty-reminders-app:$TARGET_SHA" >> .env
             
-            sudo docker compose up -d --pull always --remove-orphans --force-recreate
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u KuzminStanislav --password-stdin
             
-            sudo docker image prune -f
+            sudo docker compose pull app
+            
+            sudo docker compose --env-file .env up -d --force-recreate app
+            
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
+                echo "App is healthy and responds correctly"
+                exit 0
+              fi
+              echo "Waiting for app... ($i/30)"
+              sleep 3
+            done
+            
+            echo "App failed to start"
+            sudo docker compose logs app
+            exit 1
