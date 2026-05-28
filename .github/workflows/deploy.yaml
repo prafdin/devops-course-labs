@@ -8,28 +8,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Get release commit hash
-      run: |
-        TAG=${{ github.event.release.tag_name }}
-        HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
-        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
-    
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-    - name: Deploy to server
-      env:
-        SERVER_HOST: course.prafdin.ru
-        SERVER_USER: qzm
-        SERVER_PORT: 3306
-        RELEASE_HASH: ${{ env.RELEASE_HASH }}
-        REPO_NAME: ${{ github.repository }}
-      run: |
-        scp -P $SERVER_PORT -o StrictHostKeyChecking=no docker-compose.yaml $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
-        chmod +x ./deploy.sh
-        ./deploy.sh
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get release commit hash
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-parse $TAG^{commit} || git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        env:
+          SERVER_HOST: course.prafdin.ru
+          SERVER_USER: qzm
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          REPO_LOWER=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+          
+          scp -P 22 -o StrictHostKeyChecking=no docker-compose.yaml \
+            $SERVER_USER@$SERVER_HOST:/home/qzm/Desktop/catty-reminders-app/docker-compose.yaml
+
+          ssh -p 22 -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST \
+            "REPO_LOWER=$REPO_LOWER RELEASE_HASH=$RELEASE_HASH bash -s" < deploy.sh
