@@ -17,7 +17,11 @@ jobs:
         username: rave
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          docker pull ghcr.io/zurmes/catty-reminders-app:latest
+          cd /home/rave/catty-reminders-app
+          git fetch origin
+          git checkout lab4
+          git reset --hard origin/lab4
           docker stop catty-container || true
           docker rm catty-container || true
-          docker run -d --name catty-container -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} ghcr.io/zurmes/catty-reminders-app:latest
+          docker compose down || true
+          docker compose up -d

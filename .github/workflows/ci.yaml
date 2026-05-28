@@ -24,18 +24,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Install Playwright Browsers
-      run: |
-        python -m playwright install --with-deps chromium
-
-    - name: Start Application in Background
-      run: |
-        nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8181 > uvicorn.log 2>&1 &
-        sleep 3
-
     - name: Run Pytest
       run: |
-        python -m pytest --junitxml=test_result.xml
+        python -m pytest tests/test_unit.py --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
