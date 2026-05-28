@@ -16,7 +16,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
-          username: user
+          username: lina
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3158
           script: |
