@@ -20,10 +20,10 @@ jobs:
       - name: Remote Docker Compose Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
+          host: course.prafdin.ru
           username: qzm
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.DEPLOY_PORT }}
+          port: 3129
           script: |
             cd /home/qzm/Desktop/catty-reminders-app
             
