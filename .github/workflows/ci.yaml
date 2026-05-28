@@ -50,7 +50,7 @@ jobs:
           path: test_result.xml
 
   build-and-push:
-    needs: tests
+    needs: pipeline
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     permissions:
