@@ -26,22 +26,24 @@ jobs:
             set -e
             cd /home/vboxuser/catty-reminders-app || exit 1
             
+            if [ -f /home/vboxuser/.ssh/id_rsa ]; then
+              export GIT_SSH_COMMAND="ssh -i /home/vboxuser/.ssh/id_rsa -o StrictHostKeyChecking=no"
+            elif [ -f /home/vboxuser/.ssh/id_ed25519 ]; then
+              export GIT_SSH_COMMAND="ssh -i /home/vboxuser/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+            fi
+            
             git fetch origin
             git checkout lab4 || true
             git pull origin lab4 || true
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
-   
             echo "IMAGE_TAG=$TARGET_SHA" > .env
             
-   
             sudo docker compose build --build-arg DEPLOY_REF=$TARGET_SHA app
             
-   
             sudo docker compose --env-file .env up -d --force-recreate app
             
-   
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
                 echo "App is healthy and responds correctly"
