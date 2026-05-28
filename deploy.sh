@@ -2,7 +2,7 @@
 
 set -e
 
-cd cd ~/Documents/catty-reminders-app
+cd cd "/home/seva/Documents/catty-reminders-app"
 
 
 echo "Pulling latest changes..."
