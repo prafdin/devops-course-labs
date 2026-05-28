@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   workflow_run:
-    workflows: ["CI"] 
+    workflows: ["CI"]
     types: [completed]
     branches:
       - '**'
@@ -34,8 +34,12 @@ jobs:
             fi
             export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             
+   
             git fetch origin
             git checkout lab4 || true
+            
+   
+            git checkout HEAD -- reminder_db.json || true
             git pull origin lab4 || true
             
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
