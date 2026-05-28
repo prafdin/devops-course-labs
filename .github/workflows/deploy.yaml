@@ -20,4 +20,4 @@ jobs:
           docker pull ghcr.io/zurmes/catty-reminders-app:latest
           docker stop catty-container || true
           docker rm catty-container || true
-          docker run -d --name catty-container -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} ghcr.io/zurmes/catty-reminders-app:latest
+          docker run -d --name catty-container -p 8181:8181 ghcr.io/zurmes/catty-reminders-app:latest
