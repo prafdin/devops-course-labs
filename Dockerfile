@@ -10,6 +10,7 @@ RUN pip install pytest-playwright && playwright install --with-deps chromium
 
 COPY . .
 
+ARG DEPLOY_REF="unknown"
 ENV DEPLOY_REF=unknown
 
 EXPOSE 8181
