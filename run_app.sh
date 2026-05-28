@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/ilya/catty-reminders-app || exit 1
+cd /home/nixel/catty-reminders-app || exit 1
 
 SHA=$1
 echo "Deploying SHA: $SHA"
