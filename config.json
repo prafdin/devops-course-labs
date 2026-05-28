@@ -1,6 +1,6 @@
 {
   "db_config": {
-    "host": "db",
+    "host": "catty_db",
     "port": 3306,
     "user": "ct",
     "password": "catty_pass_123",
