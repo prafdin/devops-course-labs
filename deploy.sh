@@ -2,7 +2,8 @@
 
 set -e
 
-cd /opt/devops-app
+cd cd ~/Documents/catty-reminders-app
+
 
 echo "Pulling latest changes..."
 git pull
