@@ -1,5 +1,5 @@
 {
-  "db_path": "catty_reminders.db",
+  "db_path": "reminder_db.json",
   "db_config": {
     "host": "db",
     "port": 3306,
