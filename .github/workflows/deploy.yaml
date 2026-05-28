@@ -16,6 +16,7 @@ jobs:
         port: 3123
         username: rave
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        command_timeout: 30m
         script: |
           cd /home/rave/catty-reminders-app
           git fetch origin
