@@ -1,36 +1,41 @@
-services:
-  db:
-    image: mysql:latest
-    container_name: ${DB_CONTAINER_NAME}
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - "${DB_PORT}:3306"
-    volumes:
-      - catty_db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
-      timeout: 20s
-      retries: 10
-      interval: 10s
+name: CD
 
-  catty-app:
-    image: ${APP_IMAGE}
-    container_name: ${APP_CONTAINER_NAME}
-    restart: always
-    environment:
-      - DEPLOY_REF=${DEPLOY_REF}
-    ports:
-      - "${APP_PORT}:8181"
-    volumes:
-      - ./config.json:/app/config.json:ro
-    depends_on:
-      db:
-        condition: service_healthy
+on:
+  push:
+    branches: [ lab4 ]
 
-volumes:
-  catty_db_data:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Image Name
+        id: prep
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_lower=${REPO_LOWER}" >> $GITHUB_OUTPUT
+
+      - name: Remote Docker Compose Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: qzm
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            cd /home/qzm/Desktop/catty-reminders-app
+            
+            git fetch origin
+            git reset --hard origin/lab4
+            
+            export APP_IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            export MYSQL_ROOT_PASSWORD="mypass"
+            export MYSQL_DATABASE="catty_reminders"
+            
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            sudo docker compose up -d --pull always --remove-orphans --force-recreate
+            
+            sudo docker image prune -f
