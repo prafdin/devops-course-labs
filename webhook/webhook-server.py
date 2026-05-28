@@ -128,12 +128,11 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
             subprocess.run(["git", "checkout", branch], cwd=tmpdir, check=True)
 
-            print(os.getcwd())
             # Запускаем тесты перед деплоем
             print(f"      - Запуск тестов...")
             try:
                 result = subprocess.run(
-                    ["./test.sh"],
+                    ["webhook/test.sh"],
                     cwd=tmpdir,
                     check=True,
                     capture_output=True,
