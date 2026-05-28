@@ -3,15 +3,17 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN pip install pytest-playwright && playwright install --with-deps chromium
 
-COPY . .
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
+COPY config.json .
 
-ARG DEPLOY_REF="unknown"
-ENV DEPLOY_REF=unknown
+ARG DEPLOY_REF=
+ENV DEPLOY_REF=$DEPLOY_REF
 
 EXPOSE 8181
 

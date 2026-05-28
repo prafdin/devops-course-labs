@@ -8,6 +8,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Image Name
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -15,18 +19,24 @@ jobs:
           username: light
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3137
-          envs: GHCR_PAT, GITHUB_SHA
+          envs: GHCR_PAT
           script: |
-            docker stop catty-app || true
-            docker rm catty-app || true
-
-            echo "$GHCR_PAT" | docker login ghcr.io -u getsomelight --password-stdin
-
-            docker pull ghcr.io/getsomelight/catty-app:latest
-
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-container"
+            
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+            
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+            
             docker run -d \
-              --name catty-app \
+              --name $CONTAINER_NAME \
               -p 8181:8181 \
-              -e DEPLOY_REF=$GITHUB_SHA \
               --restart unless-stopped \
-              ghcr.io/getsomelight/catty-app:latest
+              $IMAGE
+            
+            docker image prune -f
