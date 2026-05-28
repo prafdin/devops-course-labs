@@ -1,4 +1,4 @@
-name: CD Pipeline
+name: Deploy
 
 on:
   release:
@@ -7,23 +7,43 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    permissions:
+      packages: read
     steps:
-    - name: Deploy to VM via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: course.prafdin.ru
-        username: vboxuser
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 3107
-        script: |
-          cd ~/catty-reminders-app
+      - uses: actions/checkout@v4
 
-          git fetch --all
-          git checkout lab2
-          git pull origin lab2
+      - name: Prepare Image Name
+        id: prep
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-          echo "DEPLOY_REF=${{ github.sha }}" | sudo tee /etc/catty-app-env
+      - name: Remote Docker Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: course.prafdin.ru
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 3107
+          script: |
+            IMAGE="ghcr.io/${{ steps.prep.outputs.repo_lower }}:latest"
+            CONTAINER_NAME="catty-container"
 
-          sudo systemctl restart catty.service
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+
+            echo "Stopping old container if exists..."
+            docker stop $CONTAINER_NAME || true
+            docker rm $CONTAINER_NAME || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p 8181:8181 \
+              --restart unless-stopped \
+              -e DEPLOY_REF=${{ github.sha }} \
+              $IMAGE
+            
+            echo "Cleaning up unused Docker images..."
+            docker image prune -f
