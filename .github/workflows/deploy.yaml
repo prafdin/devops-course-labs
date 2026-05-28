@@ -33,7 +33,7 @@ jobs:
             TARGET_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
             
    
-            echo "IMAGE=catty-reminders-app:$TARGET_SHA" > .env
+            echo "IMAGE_TAG=$TARGET_SHA" > .env
             
    
             sudo docker compose build --build-arg DEPLOY_REF=$TARGET_SHA app

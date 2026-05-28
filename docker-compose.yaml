@@ -1,6 +1,10 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/vadimkadkdoofjf/catty-reminders-app:latest}
+   
+    image: catty-reminders-app:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       db:
