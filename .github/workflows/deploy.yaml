@@ -2,10 +2,12 @@ name: CD
 
 on:
   release:
-    types: [published]
+    types:
+      - published
 
   workflow_run:
-    workflows: ["CI"]
+    workflows:
+      - CI
     types:
       - completed
     branches:
@@ -20,7 +22,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
 
     steps:
-      - name: Deploy via SSH
+      - name: Deploy application
         uses: appleboy/ssh-action@v1.0.3
 
         with:
@@ -34,12 +36,13 @@ jobs:
           script: |
             set -e
 
+            echo "=== GO TO PROJECT ==="
+
             cd /home/vboxuser/catty-reminders-app
 
             echo "=== UPDATE REPOSITORY ==="
 
-            git remote set-url origin \
-              https://github.com/Vadimkadkdoofjf/catty-reminders-app.git
+            git remote set-url origin git@github.com:vadimkadkdoofjf/catty-reminders-app.git
 
             git fetch origin lab4
 
@@ -66,19 +69,19 @@ jobs:
               -u vadimkadkdoofjf \
               --password-stdin
 
-            echo "=== PULL IMAGE ==="
+            echo "=== PULL NEW IMAGE ==="
 
             sudo docker compose \
               --env-file .env \
               pull app
 
-            echo "=== RECREATE APP CONTAINER ==="
+            echo "=== RECREATE APPLICATION ==="
 
             sudo docker compose \
               --env-file .env \
               up -d --force-recreate app
 
-            echo "=== WAIT FOR APP ==="
+            echo "=== WAIT FOR APPLICATION ==="
 
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null; then
@@ -87,11 +90,16 @@ jobs:
               fi
 
               echo "Waiting for application... ($i/30)"
+
               sleep 5
             done
 
-            echo "=== CHECK DEPLOY REF ==="
+            echo "=== VERIFY DEPLOY REF ==="
 
             curl -s http://127.0.0.1:8181/login | grep "${DEPLOY_REF}"
+
+            echo "=== DOCKER STATUS ==="
+
+            sudo docker ps
 
             echo "=== DONE ==="
