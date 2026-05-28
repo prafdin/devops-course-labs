@@ -6,10 +6,10 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
-COPY app/ ./app/
-COPY static/ ./static/
-COPY templates/ ./templates/
-COPY config.json .
+COPY . .
+
+ARG DEPLOY_REF="NA"
+ENV DEPLOY_REF=${DEPLOY_REF}
 
 EXPOSE 8181
 
