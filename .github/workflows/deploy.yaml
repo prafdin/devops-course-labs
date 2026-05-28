@@ -37,13 +37,10 @@ jobs:
             
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u vadimkadkdoofjf --password-stdin
             
-            # Скачиваем свежий образ приложения
             sudo docker compose pull app
             
-            # МЯГКИЙ ПЕРЕЗАПУСК: Пересоздаем ТОЛЬКО контейнер приложения, база остается онлайн!
             sudo docker compose --env-file .env up -d --force-recreate app
             
-            # Проверяем доступность порта 8181
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:8181/ >/dev/null || curl -s http://127.0.0.1:8181/login | grep -q "Method Not Allowed" || curl -I http://127.0.0.1:8181/login 2>&1 | grep -q "405"; then
                 echo "App is healthy and responds correctly"
