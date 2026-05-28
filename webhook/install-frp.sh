@@ -12,13 +12,13 @@ set -e
 
 # Параметры
 SERVER_ADDR=${1:-"course.prafdin.ru"}
-AUTH_TOKEN=${2:-"mytoken"}
-USERNAME=${3:-"prafdin"}
+AUTH_TOKEN=${2:-"devops"}
+USERNAME=${3:-"kiselev"}
 
 echo "🚀 Установка FRP клиента..."
 echo "📋 Параметры:"
 echo "   Сервер: $SERVER_ADDR"
-echo "   Токен: ${AUTH_TOKEN:0:8}***"
+echo "   Токен: ${AUTH_TOKEN:0:3}***"
 echo "   Пользователь: $USERNAME"
 echo ""
 
