@@ -15,7 +15,7 @@ jobs:
           username: light
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3137
-          envs: GHCR_PAT, GITHUB_REPOSITORY_OWNER, GITHUB_SHA
+          envs: GHCR_PAT, GITHUB_SHA
           script: |
             docker stop catty-app || true
             docker rm catty-app || true
@@ -23,13 +23,13 @@ jobs:
             sudo systemctl stop catty-app || true
             sudo systemctl disable catty-app || true
 
-            echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_REPOSITORY_OWNER" --password-stdin
+            echo "$GHCR_PAT" | docker login ghcr.io -u getsomelight --password-stdin
 
-            docker pull ghcr.io/$GITHUB_REPOSITORY_OWNER/catty-app:latest
+            docker pull ghcr.io/getsomelight/catty-app:latest
 
             docker run -d \
               --name catty-app \
               -p 8181:8181 \
               -e DEPLOY_REF=$GITHUB_SHA \
               --restart unless-stopped \
-              ghcr.io/$GITHUB_REPOSITORY_OWNER/catty-app:latest
+              ghcr.io/getsomelight/catty-app:latest
