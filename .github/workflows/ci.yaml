@@ -67,7 +67,7 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Docker meta
