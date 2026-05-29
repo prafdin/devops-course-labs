@@ -36,5 +36,5 @@ jobs:
         RELEASE_HASH: ${{ env.RELEASE_HASH }}
         RELEASE_BRANCH: ${{ env.RELEASE_BRANCH }}
       run: |
-        chmod +x scripts/deploy.sh
-        ./scripts/deploy.sh
+        chmod +x webhook/deploy.sh
+        ./webhook/deploy.sh
