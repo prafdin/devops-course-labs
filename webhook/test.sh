@@ -16,7 +16,7 @@ echo "Running tests"
 
 if [ ! -d ".venv" ]; then
 	echo "Virtual environment was not found, creating..."
-	# python3 -m venv .venv/
+	python3 -m venv .venv/
 fi
 
 source .venv/bin/activate
@@ -24,7 +24,7 @@ echo "Virtual environment activated"
 
 if [ -f "requirements.txt" ]; then
 	echo "Installing/Updating requirements"
-	# pip install -r requirements.txt
+	pip install -r requirements.txt
 fi
 
 echo "Starting temporary app for testing"
