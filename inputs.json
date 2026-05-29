@@ -1,6 +1,5 @@
 {
   "base_url": "http://localhost:8181",
-
   "users": [
     {
       "username": "heisenberg",
