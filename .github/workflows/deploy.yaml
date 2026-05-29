@@ -1,0 +1,46 @@
+name: CD Pipeline
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Convert repository name to lowercase
+      id: prep
+      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: course.prafdin.ru
+        username: light
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 3137
+        script: |
+          IMAGE_NAME="ghcr.io/${{ steps.prep.outputs.repo_lower }}:${{ github.sha }}"
+          CONTAINER_NAME="catty-app"
+
+          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          docker pull $IMAGE_NAME
+
+          docker stop $CONTAINER_NAME || true
+          docker rm -f $CONTAINER_NAME || true
+
+          docker run -d \
+            --name $CONTAINER_NAME \
+            -p 8181:8181 \
+            --restart always \
+            $IMAGE_NAME
+
+          docker image prune -af || true
