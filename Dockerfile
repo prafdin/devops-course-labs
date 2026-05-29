@@ -1,5 +1,8 @@
 FROM python:3.12-slim
 
+ARG DEPLOY_REF=local
+ENV DEPLOY_REF=$DEPLOY_REF
+
 WORKDIR /app
 
 COPY requirements.txt .
