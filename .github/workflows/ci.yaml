@@ -36,9 +36,18 @@ jobs:
       run: |
         echo "127.0.0.1 db" | sudo tee -a /etc/hosts
 
+    - name: Install Playwright
+      run: |
+        python -m playwright install --with-deps
+
+    - name: Start Application
+      run: |
+        python -m uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+        sleep 5
+
     - name: Run Pytest
       run: |
-        python -m pytest --junitxml=test_result.xml
+        python -m pytest --base-url http://127.0.0.1:8181 --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
