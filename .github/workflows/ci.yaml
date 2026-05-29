@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  permissions:
+    contents: read
+    packages: write
   push:
     branches:
       - lab2
@@ -53,9 +56,6 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
       - name: Prepare Image Name
