@@ -18,9 +18,8 @@ services:
     ports:
       - "8181:8181"
     restart: always
+    volumes:
+      - ./config.json:/app/config.json:ro
     depends_on:
       db:
         condition: service_healthy
-
-volumes:
-  db_data:

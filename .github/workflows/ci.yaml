@@ -3,18 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
-      - lab3_autotests*
       - lab4
       - lab4_autotests*
   pull_request:
     branches:
-      - lab2
-      - lab2_autotests*
-      - lab3
-      - lab3_autotests*
       - lab4
       - lab4_autotests*
 
