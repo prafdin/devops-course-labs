@@ -20,21 +20,17 @@ jobs:
           script: |
             bash -c '
               set -e
-              # Переходим в твою домашнюю папку проекта
               cd /home/vboxuser/catty-reminders-app
 
-              # Приводим имя владельца репозитория к нижнему регистру для Docker
               OWNER=$(echo "${{ github.repository_owner }}" | tr "[:upper:]" "[:lower:]")
 
-              # Экспортируем переменные окружения для Docker Compose
-              export DEPLOY_REF=${{ github.sha }}
               export IMAGE=ghcr.io/$OWNER/catty-reminders-app:${{ github.sha }}
 
               export DB_CONTAINER_NAME=catty-db
               export APP_CONTAINER_NAME=catty-container
-              export MARIADB_ROOT_PASSWORD=mypass
+              export MARIADB_ROOT_PASSWORD="${{ secrets.MARIADB_ROOT_PASSWORD }}"
               export MARIADB_USER=root
-              export MARIADB_PASSWORD=mypass
+              export MARIADB_PASSWORD="${{ secrets.MARIADB_ROOT_PASSWORD }}"
               export MARIADB_DATABASE=catty_reminders
 
               export HOST_DB_PORT=3306
