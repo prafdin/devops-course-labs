@@ -45,11 +45,15 @@ jobs:
         run: docker run --rm -i hadolint/hadolint < Dockerfile
         continue-on-error: true
 
+      - name: Convert owner to lowercase
+        id: lowercase
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ steps.lowercase.outputs.owner }}/${{ github.event.repository.name }}:latest
+            ghcr.io/${{ steps.lowercase.outputs.owner }}/${{ github.event.repository.name }}:${{ github.sha }}
