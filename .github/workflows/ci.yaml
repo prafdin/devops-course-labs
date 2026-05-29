@@ -27,15 +27,15 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      - name: Run tests (optional)
-        run: pytest --junitxml=test_result.xml
-
       - name: List files for debugging
         run: |
           pwd
           ls -la
           ls -la tests/ || echo "No tests dir"
           find . -name "testlib" || echo "testlib not found"
+      
+      - name: Run tests (optional)
+        run: pytest --junitxml=test_result.xml
 
       - name: Upload test results
         if: always()
