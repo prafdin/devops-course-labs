@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ lab2, lab2_autotests* ]
+    branches: [ lab3, lab3_autotests* ]
   pull_request:
-    branches: [ lab2, lab2_autotests* ]
+    branches: [ lab3, lab3_autotests* ]
 
 jobs:
   build-and-push:
