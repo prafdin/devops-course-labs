@@ -9,7 +9,7 @@ This module provides security and authentication.
 import jwt
 import secrets
 
-from app import users, secret_key, db_config
+from app import db_config, users, secret_key
 from app.utils.exceptions import UnauthorizedException, UnauthorizedPageException
 from app.utils.mysql_storage import MySQLStorage
 
