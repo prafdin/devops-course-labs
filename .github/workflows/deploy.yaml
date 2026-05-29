@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-list -n 1 $TAG)
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+        echo "RELEASE_BRANCH=${{ github.event.release.target_commitish }}" >> $GITHUB_ENV
+        echo "Deploying release: $TAG, Hash: $HASH"
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+        DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        RELEASE_BRANCH: ${{ env.RELEASE_BRANCH }}
+      run: |
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh
