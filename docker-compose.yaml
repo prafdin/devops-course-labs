@@ -19,7 +19,6 @@ services:
     image: ${IMAGE}
     container_name: ${APP_CONTAINER_NAME}
     restart: unless-stopped
-    environment:
     ports:
       - "${HOST_APP_PORT}:${CONTAINER_APP_PORT}"
     volumes:
