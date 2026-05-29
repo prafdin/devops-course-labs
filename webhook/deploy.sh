@@ -44,11 +44,11 @@ ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
         pip install -r requirements.txt
     fi
     
-    sudo systemctl restart app.service
+    sudo /usr/bin/systemctl restart app.service
     
     sleep 4
     
-    if sudo systemctl is-active --quiet app.service; then
+    if sudo /usr/bin/systemctl is-active --quiet app.service; then
         echo "Deployment completed successfully"
     else
         echo "ERROR: Application failed to start"
