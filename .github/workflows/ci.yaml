@@ -45,9 +45,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Hadolint
-        uses: hadolint/hadolint-action@v3
-        with:
-          dockerfile: Dockerfile
+        run: docker run --rm -i hadolint/hadolint < Dockerfile
         continue-on-error: true
 
       - name: Build and push Docker image
