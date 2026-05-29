@@ -68,7 +68,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Docker meta
         id: meta
