@@ -9,6 +9,14 @@ permissions:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:10.11
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: mypass
+          MYSQL_DATABASE: catty_reminders
 
     steps:
     - name: Checkout repository
@@ -24,9 +32,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Map DB Host
+      run: |
+        echo "127.0.0.1 db" | sudo tee -a /etc/hosts
+
     - name: Run Pytest
       run: |
-        python -m pytest tests/test_unit.py --junitxml=test_result.xml
+        python -m pytest --junitxml=test_result.xml
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
