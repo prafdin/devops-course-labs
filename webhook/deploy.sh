@@ -1,6 +1,40 @@
 #!/bin/bash
 
-echo "🚀 Начинаем развертывание приложения..."
+set -e
 
-source webhook/.venv/bin/activate
-uvicorn ../app.main:app --reload --host 0.0.0.0 --port 8181
+REPO_DIR="/home/dmitriy/Desktop/study/semester6/open_information_systems/catty-reminders-app"
+BRANCH=$1
+
+echo "Deploying $BRANCH branch"
+
+
+cd "$REPO_DIR"
+echo "Directory changed to $REPO_DIR"
+
+git fetch origin
+git checkout -B "$BRANCH" "origin/$BRANCH"
+echo "Pull $BRANCH branch"
+git pull origin "$BRANCH"
+
+CLEAN_REF=$(git rev-parse HEAD | tr -d '\r')
+echo "DEPLOY_REF=$CLEAN_REF" > /tmp/app.env
+echo "DEPLOY_REF=$CLEAN_REF" > /home/dmitriy/Desktop/study/semester6/open_information_systems/catty-reminders-app/.env.deploy
+chmod 644 /home/dmitriy/Desktop/study/semester6/open_information_systems/catty-reminders-app/.env.deploy
+echo "Deploy ref: $CLEAN_REF"
+
+if [ ! -d ".venv" ]; then
+	echo "Virtual environment was not found, creating..."
+	python3 -m venv .venv/
+fi
+
+source .venv/bin/activate
+echo "Virtual environment activated"
+
+if [ -f "requirements.txt" ]; then
+	echo "Installing/Updating requirements"
+	# pip install -r requirements.txt
+fi
+
+echo "Restarting app..."
+sudo systemctl restart app.service
+echo "Done"
