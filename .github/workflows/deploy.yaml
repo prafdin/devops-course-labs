@@ -52,5 +52,8 @@ jobs:
             echo "Pulling images..."
             docker compose pull
             
+            echo "Removing old containers..."
+            docker compose down --remove-orphans || true
+            
             echo "Starting containers..."
             docker compose up -d --remove-orphans --force-recreate
