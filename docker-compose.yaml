@@ -1,12 +1,4 @@
 services:
-  backend:
-    image: ghcr.io/getsomelight/catty-reminders-app:${DEPLOY_REF:-latest}
-    ports:
-      - "8181:8181"
-    restart: always
-    depends_on:
-      - db
-
   db:
     image: mariadb:10.11
     restart: always
@@ -15,6 +7,17 @@ services:
       MARIADB_DATABASE: catty_reminders
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-volumes:
-  db_data:
+  backend:
+    image: ghcr.io/getsomelight/catty-reminders-app:${DEPLOY_REF:-latest}
+    ports:
+      - "8181:8181"
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
