@@ -30,6 +30,13 @@ jobs:
       - name: Run tests (optional)
         run: pytest --junitxml=test_result.xml
 
+      - name: List files for debugging
+        run: |
+          pwd
+          ls -la
+          ls -la tests/ || echo "No tests dir"
+          find . -name "testlib" || echo "testlib not found"
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
