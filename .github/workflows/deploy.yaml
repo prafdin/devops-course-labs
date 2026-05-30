@@ -18,5 +18,6 @@ jobs:
           script: |
             cd ~/catty-reminders-app
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose down || true
             export IMAGE="ghcr.io/sofiastepanova/catty-reminders-app:${{ github.sha }}"
             docker compose up -d --pull always --remove-orphans --force-recreate
