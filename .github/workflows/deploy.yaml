@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy via SSH
+      - name: Deploy via Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -16,23 +16,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3121
           script: |
-            echo "Logging in to GHCR..."
+            cd ~/catty-reminders-app
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            IMAGE="ghcr.io/sofiastepanova/catty-reminders-app:${{ github.sha }}"
-
-            echo "Pulling image: $IMAGE"
-            docker pull $IMAGE
-
-            docker stop catty-app || true
-            docker rm catty-app || true
-
-            docker run -d \
-              --name catty-app \
-              --restart unless-stopped \
-              -p 8181:8181 \
-              $IMAGE
-
-            sleep 3
-
-            docker image prune -f
+            export IMAGE="ghcr.io/sofiastepanova/catty-reminders-app:${{ github.sha }}"
+            docker compose up -d --pull always --remove-orphans --force-recreate
