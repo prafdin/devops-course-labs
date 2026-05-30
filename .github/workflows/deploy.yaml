@@ -1,5 +1,4 @@
 name: Deploy
-
 on:
   release:
     types: [published]
@@ -8,7 +7,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Docker container
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: course.prafdin.ru
@@ -16,22 +16,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 3121
           script: |
-            cd ~/catty-reminders-app
-            
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            docker pull ghcr.io/sofiastepanova/catty-reminders-app:lab3
-            
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            IMAGE="ghcr.io/sofiastepanova/catty-reminders-app:latest"
+
+            echo "Pulling image: $IMAGE"
+            docker pull $IMAGE
+
             docker stop catty-app || true
             docker rm catty-app || true
-            
+
             docker run -d \
               --name catty-app \
-              --restart always \
+              --restart unless-stopped \
               -p 8181:8181 \
-              -e DEPLOY_REF=${{ github.sha }} \
-              ghcr.io/sofiastepanova/catty-reminders-app:lab3
-            
-            echo "Waiting for new container to be healthy..."
-            sleep 1
-            docker ps --filter "name=catty-app" --filter "health=healthy"
+              $IMAGE
+
+            docker image prune -f

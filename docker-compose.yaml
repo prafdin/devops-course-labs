@@ -1,0 +1,26 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: mypass
+      MYSQL_DATABASE: catty_reminders
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: ghcr.io/sofiastepanova/catty-reminders-app:lab4
+    restart: unless-stopped
+    ports:
+      - "8181:8181"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
