@@ -33,4 +33,6 @@ jobs:
               -p 8181:8181 \
               $IMAGE
 
+            sleep 3
+
             docker image prune -f
