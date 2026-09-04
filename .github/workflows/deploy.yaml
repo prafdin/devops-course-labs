@@ -12,7 +12,7 @@ jobs:
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: course.prafdin.ru
+          host: course.prafdin.space
           username: dmitriy
           port: 3146
           key: ${{ secrets.SSH_PRIVATE_KEY }}
