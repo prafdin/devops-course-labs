@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROXY=course.prafdin.ru
+PROXY=course.prafdin.space
 TOKEN=devops
 ID=kiselev
 SSH_PORT=3146
