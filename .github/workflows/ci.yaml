@@ -1,0 +1,29 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to VM
+        run: |
+          ssh -o StrictHostKeyChecking=no -p 2200 lenya@course.prafdin.space << 'EOF'
+            cd /opt/catty-reminders-app
+            git pull origin lab2
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            python -m pytest tests/test_unit.py
+            sudo systemctl restart catty-app
+          EOF
