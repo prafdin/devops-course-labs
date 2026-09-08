@@ -13,9 +13,9 @@ git reset --hard "$SHA"
 source .venv/bin/activate
 pip install -r requirements.txt
 
-printf 'DEPLOY_REF=%s\n' "$SHA" | sudo tee /opt/catty-reminders-app/.env > /dev/null
+printf 'DEPLOY_REF=%s\n' "$SHA" | sudo -n tee /opt/catty-reminders-app/.env > /dev/null
 
-sudo systemctl restart catty-app
+sudo -n systemctl restart catty-app
 
 sleep 3
 
