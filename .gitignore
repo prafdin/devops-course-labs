@@ -1,0 +1,8 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+deploy/frpc.local.toml
+deploy/webhook.env
+deploy/webhook.macos.env
+.idea/
