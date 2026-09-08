@@ -26,5 +26,6 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt
             python -m pytest tests/test_unit.py
+            echo "DEPLOY_REF=$(git rev-parse HEAD)" > /opt/catty-reminders-app/.env
             sudo systemctl restart catty-app
           EOF

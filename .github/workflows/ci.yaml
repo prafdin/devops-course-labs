@@ -1,29 +1,35 @@
-name: CD
+name: CI
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [ "lab2" ]
+  pull_request:
+    branches: [ "catty-reminders-app" ]
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.7.0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          python-version: '3.10'
 
-      - name: Deploy to VM
+      - name: Install dependencies
         run: |
-          ssh -o StrictHostKeyChecking=no -p 2200 lenya@course.prafdin.space << 'EOF'
-            cd /opt/catty-reminders-app
-            git pull origin lab2
-            source .venv/bin/activate
-            pip install -r requirements.txt
-            python -m pytest tests/test_unit.py
-            sudo systemctl restart catty-app
-          EOF
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/test_unit.py --junitxml=test_result.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_result
+          path: test_result.xml
