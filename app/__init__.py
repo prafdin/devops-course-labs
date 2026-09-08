@@ -9,6 +9,7 @@ This module builds shared parts for other modules.
 import json
 import os
 
+from dotenv import load_dotenv
 from fastapi.templating import Jinja2Templates
 
 
@@ -16,6 +17,7 @@ from fastapi.templating import Jinja2Templates
 # Read Configuration
 # --------------------------------------------------------------------------------
 
+load_dotenv()
 with open('config.json') as config_json:
   config = json.load(config_json)
   users = config['users']
