@@ -25,3 +25,4 @@ else
     echo "ERROR: App failed"
     exit 1
 fi
+# CD test
