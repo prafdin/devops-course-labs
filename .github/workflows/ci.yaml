@@ -34,6 +34,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate Compose configuration
+        env:
+          DEPLOY_REF: ${{ github.sha }}
+        run: docker compose config --quiet
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

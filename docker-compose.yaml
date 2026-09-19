@@ -1,7 +1,7 @@
 services:
   db:
     image: mariadb:10.11
-    restart: always
+    restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: mypass
       MARIADB_DATABASE: catty_reminders
@@ -9,17 +9,25 @@ services:
       - db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 12
+      start_period: 30s
 
   backend:
-    image: ghcr.io/getsomelight/catty-reminders-app:${DEPLOY_REF:-latest}
+    image: ghcr.io/getsomelight/catty-reminders-app:${DEPLOY_REF:?Set DEPLOY_REF to the commit SHA}
+    restart: unless-stopped
     ports:
       - "8181:8181"
-    restart: always
-    volumes:
-      - ./config.json:/app/config.json:ro
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8181/login', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  db_data:

@@ -4,48 +4,63 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: catty-deployment
+  cancel-in-progress: false
+
+env:
+  SSH_HOST: course.prafdin.space
+  SSH_PORT: "3137"
+  SSH_USER: light
+  DEPLOY_DIR: /home/light/catty-app
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout released commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
-    - name: Convert repository name to lowercase
-      id: prep
-      run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      - name: Validate Compose configuration
+        env:
+          DEPLOY_REF: ${{ github.sha }}
+        run: docker compose config --quiet
 
-    - name: Copy docker-compose file
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: course.prafdin.ru
-        username: light
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 3137
-        source: "docker-compose.yaml"
-        target: "/home/light/catty-app"
+      - name: Copy Compose configuration
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SSH_HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.yaml
+          target: ${{ env.DEPLOY_DIR }}
 
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: course.prafdin.ru
-        username: light
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 3137
-        script: |
-          export DEPLOY_REF="${{ github.sha }}"
-          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
-          cd /home/${{ secrets.SSH_USER }}/catty-app
-          
-          docker compose down || true
-          docker rm -f catty-app-container || true
-          
-          docker compose pull
-          docker compose up -d
-          
-          docker image prune -af || true
+      - name: Deploy released image
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_REF: ${{ github.sha }}
+          GHCR_USER: ${{ github.repository_owner }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
+        with:
+          host: ${{ env.SSH_HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DEPLOY_REF,DEPLOY_DIR,GHCR_USER,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -eu
+            cd "$DEPLOY_DIR"
+            export DEPLOY_REF
+            docker compose config --quiet
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose pull
+            docker compose up --detach --wait --wait-timeout 180
+            curl -fsS http://127.0.0.1:8181/login | grep -F "content=\"$DEPLOY_REF\""
+            docker compose ps
