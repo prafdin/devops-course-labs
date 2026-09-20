@@ -409,6 +409,11 @@
       "login": "MaximAlmaev",
       "id": "almaev",
       "app": "catty-reminders-app"
+    },
+    {
+      "login": "haiIrake",
+      "id": "shilina",
+      "app": "catty-reminders-app"
     }
   ]
 }
